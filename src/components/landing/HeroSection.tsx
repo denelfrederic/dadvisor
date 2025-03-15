@@ -3,14 +3,23 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Interface pour les propriétés du composant HeroSection
+ * @param parallaxOffset - Décalage pour l'effet de parallaxe lors du défilement
+ */
 interface HeroSectionProps {
   parallaxOffset: number;
 }
 
+/**
+ * Composant HeroSection - Section principale de la page d'accueil
+ * Affiche le message principal de l'application avec des animations et un effet de parallaxe
+ */
 const HeroSection = ({
   parallaxOffset
 }: HeroSectionProps) => {
   return <section className="relative min-h-screen flex items-center overflow-hidden">
+      {/* Arrière-plan avec effet de parallaxe */}
       <div className="absolute inset-0 -z-10" style={{
       transform: `translateY(${parallaxOffset * 0.5}px)`,
       backgroundImage: "radial-gradient(circle at 50% 50%, rgba(238, 240, 255, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%)",
@@ -19,6 +28,7 @@ const HeroSection = ({
       
       <div className="container mx-auto px-4 pt-20 md:pt-0">
         <div className="max-w-4xl mx-auto">
+          {/* Conteneur principal avec animation d'entrée */}
           <motion.div initial={{
           opacity: 0,
           y: 20
@@ -29,6 +39,7 @@ const HeroSection = ({
           duration: 0.6,
           delay: 0.2
         }} className="text-center mb-8">
+            {/* Badge supérieur avec animation */}
             <motion.div initial={{
             opacity: 0,
             y: 10
@@ -41,6 +52,7 @@ const HeroSection = ({
               Toutes les classes d'actifs, une seule plateforme
             </motion.div>
             
+            {/* Titre principal avec animation */}
             <motion.h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight" initial={{
             opacity: 0,
             y: 20
@@ -55,6 +67,7 @@ const HeroSection = ({
               <span className="text-primary">simplifié</span>
             </motion.h1>
             
+            {/* Description avec animation */}
             <motion.p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed" initial={{
             opacity: 0,
             y: 20
@@ -69,6 +82,7 @@ const HeroSection = ({
               personnalisé, adapté à votre profil de risque et vos objectifs.
             </motion.p>
             
+            {/* Boutons d'action avec animation */}
             <motion.div initial={{
             opacity: 0,
             y: 20
@@ -88,6 +102,7 @@ const HeroSection = ({
             </motion.div>
           </motion.div>
           
+          {/* Conteneur pour une image ou élément supplémentaire avec animation */}
           <motion.div initial={{
           opacity: 0,
           y: 40
