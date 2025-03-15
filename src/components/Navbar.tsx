@@ -1,5 +1,5 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Effet pour détecter le défilement et mettre à jour l'état
   useEffect(() => {
@@ -61,6 +62,10 @@ const Navbar = () => {
     };
   }, []);
 
+  const handleAccountManagement = () => {
+    navigate("/account");
+  };
+
   return (
     <motion.nav
       initial={{ y: -100, opacity: 0 }}
@@ -90,8 +95,12 @@ const Navbar = () => {
           <NavLink to="/wallet" label="Wallet" currentPath={location.pathname} />
           
           {user ? (
-            <Button variant="outline" className="ml-4">
-              Connecté: {user.email}
+            <Button 
+              variant="outline" 
+              className="ml-4 hover:bg-dadvisor-lightblue" 
+              onClick={handleAccountManagement}
+            >
+              Connecté comme "{user.email}"
             </Button>
           ) : (
             <Button asChild className="ml-4">
