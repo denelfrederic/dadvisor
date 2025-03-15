@@ -38,7 +38,7 @@ const Navbar = () => {
           <img 
             src="/lovable-uploads/8c04feb5-4e71-478f-9b9d-105fbaba9a69.png" 
             alt="DADVISOR" 
-            className="h-8"
+            className="h-24"
           />
         </Link>
         
