@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { User, updatePassword } from "@/utils/auth";
+import { User, updatePassword, getLoggedInUser } from "@/utils/auth";
 
 const Account = () => {
   const navigate = useNavigate();
@@ -20,17 +20,34 @@ const Account = () => {
 
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
-    const storedUser = localStorage.getItem("dadvisor_user");
+    const fetchUserData = async () => {
+      // Vérifier d'abord dans localStorage
+      const storedUser = localStorage.getItem("dadvisor_user");
+      
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        setEmail(userData.email);
+      } else {
+        // Si pas dans localStorage, vérifier via Supabase
+        const currentUser = await getLoggedInUser();
+        if (currentUser) {
+          setUser(currentUser);
+          setEmail(currentUser.email);
+        } else {
+          // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+          navigate("/auth");
+        }
+      }
+    };
     
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      setEmail(userData.email);
-    } else {
-      // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
-      navigate("/auth");
-    }
+    fetchUserData();
   }, [navigate]);
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +81,11 @@ const Account = () => {
     e.preventDefault();
     
     if (!email || email === user?.email) {
+      return;
+    }
+    
+    if (!validateEmail(email)) {
+      toast.error("Adresse email invalide");
       return;
     }
     

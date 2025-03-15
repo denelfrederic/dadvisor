@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@/utils/auth";
+import { User, getLoggedInUser } from "@/utils/auth";
 
 /**
  * Composant Navbar - Barre de navigation principale de l'application
@@ -34,20 +34,30 @@ const Navbar = () => {
 
   // Effet pour vérifier si un utilisateur est connecté
   useEffect(() => {
-    // Vérifier s'il y a un utilisateur dans le localStorage
-    const storedUser = localStorage.getItem("dadvisor_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const loadUser = async () => {
+      // Récupérer l'utilisateur depuis localStorage
+      const storedUser = localStorage.getItem("dadvisor_user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+      
+      // Vérifier également avec Supabase pour s'assurer que les données sont à jour
+      const currentUser = await getLoggedInUser();
+      if (currentUser) {
+        setUser(currentUser);
+      }
+    };
+    
+    loadUser();
 
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          // Si un utilisateur se connecte, on met à jour l'état
-          const userData = localStorage.getItem("dadvisor_user");
-          if (userData) {
-            setUser(JSON.parse(userData));
+      async (event) => {
+        if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+          // Recharger l'utilisateur à chaque changement
+          const currentUser = await getLoggedInUser();
+          if (currentUser) {
+            setUser(currentUser);
           }
         } else if (event === "SIGNED_OUT") {
           // Si un utilisateur se déconnecte, on réinitialise l'état
@@ -61,6 +71,24 @@ const Navbar = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Mise à jour quand la route change, pour s'assurer d'avoir les données à jour
+  useEffect(() => {
+    const checkUserState = async () => {
+      // Vérifier si l'utilisateur est toujours connecté quand on change de page
+      const currentUser = await getLoggedInUser();
+      
+      // Si le localStorage a un utilisateur mais pas Supabase, nettoyer le localStorage
+      if (!currentUser && localStorage.getItem("dadvisor_user")) {
+        localStorage.removeItem("dadvisor_user");
+        setUser(null);
+      } else if (currentUser) {
+        setUser(currentUser);
+      }
+    };
+    
+    checkUserState();
+  }, [location.pathname]);
 
   const handleAccountManagement = () => {
     navigate("/account");

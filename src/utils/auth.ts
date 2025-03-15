@@ -64,12 +64,17 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
     throw new Error(error.message);
   }
 
-  return {
+  const user = {
     id: data.user.id,
     name: email.split('@')[0], // Utilise la partie avant @ comme nom
     email: data.user.email || '',
-    authProvider: "email"
+    authProvider: "email" as const
   };
+  
+  // Stocker l'utilisateur dans le localStorage
+  storeUserSession(user);
+
+  return user;
 };
 
 /**
@@ -86,12 +91,17 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
   }
 
   if (data.user) {
-    return {
+    const user = {
       id: data.user.id,
       name: email.split('@')[0], // Utilise la partie avant @ comme nom
       email: data.user.email || '',
-      authProvider: "email"
+      authProvider: "email" as const
     };
+    
+    // Stocker l'utilisateur dans le localStorage
+    storeUserSession(user);
+    
+    return user;
   } else {
     throw new Error("Erreur lors de l'inscription");
   }
@@ -130,12 +140,17 @@ export const getLoggedInUser = async (): Promise<User | null> => {
   const { data } = await supabase.auth.getSession();
   
   if (data && data.session && data.session.user) {
-    return {
+    const user = {
       id: data.session.user.id,
       name: data.session.user.email?.split('@')[0] || '',
       email: data.session.user.email || '',
-      authProvider: "email"
+      authProvider: "email" as const
     };
+    
+    // Mettre à jour le localStorage pour garder les données synchronisées
+    storeUserSession(user);
+    
+    return user;
   }
   
   return null;
