@@ -9,7 +9,12 @@ import { toast } from "@/components/ui/use-toast";
 import { getPortfolios, getRecommendedPortfolio } from "@/utils/portfolios";
 import { Home } from "lucide-react";
 
+/**
+ * Page Portfolios - Présente les différents portefeuilles d'investissement
+ * Permet à l'utilisateur de sélectionner un portefeuille adapté à son profil
+ */
 const Portfolios = () => {
+  // États pour gérer les portefeuilles et la sélection
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,19 +23,19 @@ const Portfolios = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get risk score from location state or use a default value
+  // Récupération du score de risque depuis l'état de navigation ou utilisation d'une valeur par défaut
   const riskScore = location.state?.score || 50;
   
-  // Load portfolios and determine recommended portfolio
+  // Chargement des portefeuilles et détermination du portefeuille recommandé
   useEffect(() => {
     const fetchPortfolios = async () => {
       setLoading(true);
       try {
-        // Get portfolios from utility function
+        // Récupération des portefeuilles depuis la fonction utilitaire
         const portfolioData = getPortfolios();
         setPortfolios(portfolioData);
         
-        // Determine recommended portfolio based on risk score
+        // Détermination du portefeuille recommandé en fonction du score de risque
         const recommendedId = getRecommendedPortfolio(riskScore);
         setRecommendedPortfolioId(recommendedId);
         setSelectedPortfolioId(recommendedId);
@@ -49,11 +54,14 @@ const Portfolios = () => {
     fetchPortfolios();
   }, [riskScore]);
   
-  // Function to handle portfolio selection
+  /**
+   * Gère la sélection d'un portefeuille par l'utilisateur
+   * @param portfolioId - ID du portefeuille sélectionné
+   */
   const handleSelectPortfolio = (portfolioId: string) => {
     setSelectedPortfolioId(portfolioId);
     
-    // Show confirmation toast
+    // Affiche une notification de confirmation
     const selectedPortfolio = portfolios.find(p => p.id === portfolioId);
     if (selectedPortfolio) {
       toast({
@@ -63,10 +71,12 @@ const Portfolios = () => {
     }
   };
   
-  // Function to proceed to wallet creation
+  /**
+   * Gère la validation et le passage à l'étape suivante
+   */
   const handleProceed = () => {
     if (selectedPortfolioId) {
-      // Check if user selected a riskier portfolio than recommended
+      // Vérifie si l'utilisateur a sélectionné un portefeuille plus risqué que celui recommandé
       const selectedPortfolio = portfolios.find(p => p.id === selectedPortfolioId);
       const recommendedPortfolio = portfolios.find(p => p.id === recommendedPortfolioId);
       
@@ -76,9 +86,9 @@ const Portfolios = () => {
           (recommendedPortfolio.riskLevel === "Modéré" && selectedPortfolio.riskLevel === "Élevé");
         
         if (isRiskier) {
-          // Alert user that they selected a riskier portfolio than recommended
+          // Alerte l'utilisateur qu'il a sélectionné un portefeuille plus risqué que celui recommandé
           toast({
-            variant: "destructive",  // Changed from "warning" to "destructive"
+            variant: "destructive",
             title: "Attention",
             description: "Vous avez sélectionné un portefeuille plus risqué que celui recommandé pour votre profil.",
             action: (
@@ -91,7 +101,7 @@ const Portfolios = () => {
             )
           });
         } else {
-          // Proceed to wallet creation
+          // Poursuit vers la création du wallet
           navigate("/wallet", { state: { portfolioId: selectedPortfolioId } });
         }
       }
@@ -117,11 +127,13 @@ const Portfolios = () => {
         </p>
         
         {loading ? (
+          // Affichage du chargement
           <div className="flex justify-center items-center py-20">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
           <>
+            {/* Grille des portefeuilles disponibles */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               {portfolios.map((portfolio) => (
                 <PortfolioCard
@@ -134,6 +146,7 @@ const Portfolios = () => {
               ))}
             </div>
             
+            {/* Bouton pour continuer avec le portefeuille sélectionné */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

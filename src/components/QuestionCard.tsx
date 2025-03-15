@@ -4,18 +4,37 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+/**
+ * Interface pour une option de réponse
+ * @param id - Identifiant unique de l'option
+ * @param text - Texte de l'option à afficher
+ * @param value - Valeur numérique associée à l'option (pour le calcul du score)
+ */
 export interface Option {
   id: string;
   text: string;
   value: number;
 }
 
+/**
+ * Interface pour une question du questionnaire
+ * @param id - Identifiant unique de la question
+ * @param text - Texte de la question
+ * @param options - Liste des options de réponse disponibles
+ */
 export interface Question {
   id: string;
   text: string;
   options: Option[];
 }
 
+/**
+ * Interface pour les propriétés du composant QuestionCard
+ * @param question - Objet contenant les données de la question
+ * @param onAnswer - Fonction de rappel appelée lorsque l'utilisateur sélectionne une réponse
+ * @param isAnswered - Indique si la question a déjà reçu une réponse
+ * @param selectedOptionId - ID de l'option actuellement sélectionnée (si applicable)
+ */
 interface QuestionCardProps {
   question: Question;
   onAnswer: (questionId: string, optionId: string, value: number) => void;
@@ -23,6 +42,10 @@ interface QuestionCardProps {
   selectedOptionId?: string;
 }
 
+/**
+ * Composant QuestionCard - Carte affichant une question et ses options de réponse
+ * Utilisé dans le questionnaire d'évaluation du profil d'investisseur
+ */
 const QuestionCard = ({ 
   question, 
   onAnswer, 
@@ -32,11 +55,12 @@ const QuestionCard = ({
   const [selected, setSelected] = useState<string | null>(selectedOptionId || null);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // Gère la sélection d'une option par l'utilisateur
   const handleOptionSelect = (optionId: string, value: number) => {
     setSelected(optionId);
     setIsAnimating(true);
     
-    // Delay the answer to allow animation to complete
+    // Délai pour permettre à l'animation de se terminer
     setTimeout(() => {
       onAnswer(question.id, optionId, value);
       setIsAnimating(false);
@@ -68,6 +92,13 @@ const QuestionCard = ({
   );
 };
 
+/**
+ * Interface pour les propriétés du composant OptionButton
+ * @param option - Objet contenant les données de l'option
+ * @param isSelected - Indique si l'option est actuellement sélectionnée
+ * @param isDisabled - Indique si le bouton est désactivé
+ * @param onSelect - Fonction de rappel appelée lorsque l'option est sélectionnée
+ */
 interface OptionButtonProps {
   option: Option;
   isSelected: boolean;
@@ -75,6 +106,10 @@ interface OptionButtonProps {
   onSelect: (optionId: string, value: number) => void;
 }
 
+/**
+ * Composant OptionButton - Bouton représentant une option de réponse
+ * Composant interne utilisé par QuestionCard
+ */
 const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButtonProps) => {
   return (
     <motion.div
@@ -91,6 +126,7 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
         disabled={isDisabled}
       >
         <div className="flex items-center gap-3">
+          {/* Indicateur de sélection (bouton radio) */}
           <div className={cn(
             "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
             isSelected ? "border-primary" : "border-muted"

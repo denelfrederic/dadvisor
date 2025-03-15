@@ -2,10 +2,15 @@
 import SectionHeader from "./SectionHeader";
 import StepItem from "./StepItem";
 
+/**
+ * Composant HowItWorksSection - Section expliquant le processus d'investissement
+ * Présente les étapes à suivre sous forme d'une liste chronologique
+ */
 const HowItWorksSection = () => {
   return (
     <section className="py-20 bg-gradient-radial">
       <div className="container mx-auto px-4">
+        {/* En-tête de la section */}
         <SectionHeader 
           eyebrow="Processus"
           title="Comment ça fonctionne"
@@ -14,8 +19,10 @@ const HowItWorksSection = () => {
         
         <div className="mt-16 max-w-4xl mx-auto">
           <div className="relative">
+            {/* Ligne verticale connectant les étapes */}
             <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-muted"></div>
             
+            {/* Liste des étapes du processus */}
             <StepItem 
               number="1"
               title="Créez votre compte"

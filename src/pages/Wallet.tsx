@@ -8,34 +8,44 @@ import { toast } from "@/components/ui/use-toast";
 import { getPortfolioById } from "@/utils/portfolios";
 import { Home } from "lucide-react";
 
+/**
+ * Page Wallet - Permet la création d'un wallet décentralisé
+ * Affiche les informations du portefeuille sélectionné et permet de générer un wallet
+ */
 const Wallet = () => {
+  // États pour suivre l'adresse du wallet et son statut de création
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isCreated, setIsCreated] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get portfolio ID from location state
+  // Récupération de l'ID du portefeuille depuis l'état de navigation
   const portfolioId = location.state?.portfolioId;
   
-  // Find the selected portfolio
+  // Recherche du portefeuille sélectionné dans les données
   const portfolio = portfolioId 
     ? getPortfolioById(portfolioId) 
     : null;
   
-  // Handle wallet creation
+  /**
+   * Gère la création réussie du wallet
+   * @param address - Adresse du wallet créé
+   */
   const handleWalletCreated = (address: string) => {
     setWalletAddress(address);
     setIsCreated(true);
     
-    // Show success toast
+    // Affiche une notification de succès
     toast({
       title: "Wallet créé avec succès",
       description: `Votre wallet a été créé à l'adresse ${address.substring(0, 8)}...${address.substring(address.length - 6)}`,
     });
   };
   
-  // Handle continue to investment
+  /**
+   * Gère la navigation vers la page d'investissement
+   */
   const handleContinue = () => {
     if (portfolio && walletAddress) {
       navigate("/investment", { 
@@ -65,6 +75,7 @@ const Wallet = () => {
         </p>
         
         <div className="mb-8">
+          {/* Affichage du portefeuille sélectionné, si disponible */}
           {portfolio && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -87,9 +98,11 @@ const Wallet = () => {
             </motion.div>
           )}
           
+          {/* Composant de création de wallet */}
           <WalletCreation onWalletCreated={handleWalletCreated} />
         </div>
         
+        {/* Bouton pour continuer vers l'investissement une fois le wallet créé */}
         {isCreated && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

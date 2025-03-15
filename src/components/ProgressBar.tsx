@@ -1,22 +1,33 @@
 
 import { motion } from "framer-motion";
 
+/**
+ * Interface pour les propriétés du composant ProgressBar
+ * @param currentStep - Étape actuelle dans le processus
+ * @param totalSteps - Nombre total d'étapes
+ * @param labels - Libellés optionnels pour chaque étape
+ */
 interface ProgressBarProps {
   currentStep: number;
   totalSteps: number;
   labels?: string[];
 }
 
+/**
+ * Composant ProgressBar - Barre de progression pour les processus multi-étapes
+ * Utilisé dans le questionnaire pour indiquer la progression de l'utilisateur
+ */
 const ProgressBar = ({ currentStep, totalSteps, labels }: ProgressBarProps) => {
+  // Calcul du pourcentage de progression
   const progress = (currentStep / totalSteps) * 100;
 
   return (
     <div className="w-full max-w-3xl mx-auto my-8">
       <div className="relative">
-        {/* Background track */}
+        {/* Piste de fond */}
         <div className="h-1 bg-secondary rounded-full w-full"></div>
         
-        {/* Progress overlay */}
+        {/* Superposition de progression avec animation */}
         <motion.div 
           className="absolute top-0 left-0 h-1 bg-primary rounded-full"
           initial={{ width: 0 }}
@@ -24,7 +35,7 @@ const ProgressBar = ({ currentStep, totalSteps, labels }: ProgressBarProps) => {
           transition={{ duration: 0.5, ease: "easeInOut" }}
         ></motion.div>
         
-        {/* Step markers */}
+        {/* Marqueurs d'étapes */}
         <div className="flex justify-between mt-1">
           {Array.from({ length: totalSteps }).map((_, index) => {
             const isCompleted = index < currentStep;
@@ -43,6 +54,7 @@ const ProgressBar = ({ currentStep, totalSteps, labels }: ProgressBarProps) => {
                   }}
                   transition={{ duration: 0.3 }}
                 >
+                  {/* Coche pour les étapes complétées */}
                   {isCompleted && !isCurrent && (
                     <motion.svg 
                       className="absolute inset-0 text-white" 
@@ -59,6 +71,7 @@ const ProgressBar = ({ currentStep, totalSteps, labels }: ProgressBarProps) => {
                   )}
                 </motion.div>
                 
+                {/* Libellés des étapes si fournis */}
                 {labels && (
                   <span className={`text-xs mt-2 transition-colors ${
                     isCompleted || isCurrent ? "text-primary font-medium" : "text-muted-foreground"

@@ -7,6 +7,13 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
+/**
+ * Interface pour les propriétés du composant InvestmentInput
+ * @param portfolioName - Nom du portefeuille dans lequel investir
+ * @param expectedReturn - Rendement attendu (format texte)
+ * @param minInvestment - Montant minimum d'investissement
+ * @param onInvest - Fonction de rappel appelée lorsque l'utilisateur confirme l'investissement
+ */
 interface InvestmentInputProps {
   portfolioName: string;
   expectedReturn: string;
@@ -14,22 +21,28 @@ interface InvestmentInputProps {
   onInvest: (amount: number) => void;
 }
 
+/**
+ * Composant InvestmentInput - Formulaire pour définir le montant d'investissement
+ * Permet à l'utilisateur de sélectionner un montant et affiche des projections de rendement
+ */
 const InvestmentInput = ({ 
   portfolioName, 
   expectedReturn,
   minInvestment = 100,
   onInvest 
 }: InvestmentInputProps) => {
+  // États pour le montant, sa validité et les projections
   const [amount, setAmount] = useState<number>(minInvestment);
   const [isValidAmount, setIsValidAmount] = useState<boolean>(true);
   const [projections, setProjections] = useState<{ year: number; amount: number }[]>([]);
   
+  // Calcule les projections de rendement lorsque le montant change
   useEffect(() => {
     if (amount >= minInvestment) {
       setIsValidAmount(true);
       
-      // Calculate projections based on expected return
-      // For demonstration, using a fixed annual return rate
+      // Calcul des projections basé sur le rendement attendu
+      // Pour la démonstration, utilisation d'un taux fixe
       const returnRate = parseFloat(expectedReturn.replace(/[^0-9.-]+/g, "")) / 100;
       
       const newProjections = [];
@@ -47,11 +60,19 @@ const InvestmentInput = ({
     }
   }, [amount, expectedReturn, minInvestment]);
   
+  /**
+   * Gère le changement de montant via l'input texte
+   * @param value - Valeur saisie par l'utilisateur
+   */
   const handleAmountChange = (value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "");
     setAmount(numericValue ? parseFloat(numericValue) : 0);
   };
   
+  /**
+   * Gère le changement de montant via le slider
+   * @param value - Tableau contenant la valeur sélectionnée
+   */
   const handleSliderChange = (value: number[]) => {
     setAmount(value[0]);
   };
@@ -70,6 +91,7 @@ const InvestmentInput = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Section de saisie du montant */}
           <div className="space-y-3">
             <Label htmlFor="amount">Montant (€)</Label>
             <div className="relative">
@@ -83,6 +105,7 @@ const InvestmentInput = ({
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
             </div>
             
+            {/* Slider pour ajuster le montant */}
             <div className="pt-4 pb-2">
               <Slider
                 defaultValue={[minInvestment]}
@@ -98,6 +121,7 @@ const InvestmentInput = ({
               </div>
             </div>
             
+            {/* Message d'erreur si montant invalide */}
             {!isValidAmount && (
               <p className="text-destructive text-sm">
                 Le montant minimum d'investissement est de {minInvestment} €.
@@ -105,6 +129,7 @@ const InvestmentInput = ({
             )}
           </div>
           
+          {/* Section de projections de rendement */}
           <div className="bg-secondary/50 rounded-lg p-4">
             <h4 className="font-medium mb-3">Projections de rendement</h4>
             <div className="space-y-3">

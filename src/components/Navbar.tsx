@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+/**
+ * Composant Navbar - Barre de navigation principale de l'application
+ * Change d'apparence lors du défilement et met en évidence le lien actif
+ */
 const Navbar = () => {
+  // État pour suivre si l'utilisateur a fait défiler la page
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
+  // Effet pour détecter le défilement et mettre à jour l'état
   useEffect(() => {
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
@@ -34,6 +40,7 @@ const Navbar = () => {
       }`}
     >
       <div className="container mx-auto flex justify-between items-center px-4 md:px-6">
+        {/* Logo */}
         <Link to="/" className="flex items-center space-x-2">
           <img 
             src="/lovable-uploads/8c04feb5-4e71-478f-9b9d-105fbaba9a69.png" 
@@ -42,6 +49,7 @@ const Navbar = () => {
           />
         </Link>
         
+        {/* Liens de navigation - version desktop */}
         <div className="hidden md:flex space-x-6 items-center">
           <NavLink to="/" label="Accueil" currentPath={location.pathname} />
           <NavLink to="/questionnaire" label="Questionnaire" currentPath={location.pathname} />
@@ -52,6 +60,7 @@ const Navbar = () => {
           </Button>
         </div>
         
+        {/* Bouton de menu - version mobile */}
         <Button variant="ghost" size="icon" className="md:hidden">
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
@@ -74,12 +83,22 @@ const Navbar = () => {
   );
 };
 
+/**
+ * Interface pour les propriétés du composant NavLink
+ * @param to - URL de destination du lien
+ * @param label - Texte à afficher
+ * @param currentPath - Chemin actuel pour détecter si le lien est actif
+ */
 interface NavLinkProps {
   to: string;
   label: string;
   currentPath: string;
 }
 
+/**
+ * Composant NavLink - Lien de navigation avec indication visuelle de l'élément actif
+ * Composant interne utilisé par Navbar
+ */
 const NavLink = ({ to, label, currentPath }: NavLinkProps) => {
   const isActive = currentPath === to;
   

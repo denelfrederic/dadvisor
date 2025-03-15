@@ -3,6 +3,16 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 
+/**
+ * Interface pour un portefeuille d'investissement
+ * @param id - Identifiant unique du portefeuille
+ * @param name - Nom du portefeuille
+ * @param riskLevel - Niveau de risque (Faible, Modéré, Élevé)
+ * @param description - Description détaillée du portefeuille
+ * @param expectedReturn - Rendement attendu (format texte)
+ * @param assets - Liste des actifs composant le portefeuille avec leur allocation
+ * @param suitableFor - Liste des profils d'investisseurs pour lesquels ce portefeuille est adapté
+ */
 export interface Portfolio {
   id: string;
   name: string;
@@ -16,6 +26,13 @@ export interface Portfolio {
   suitableFor: string[];
 }
 
+/**
+ * Interface pour les propriétés du composant PortfolioCard
+ * @param portfolio - Objet contenant les données du portefeuille
+ * @param isRecommended - Indique si ce portefeuille est recommandé pour le profil de l'utilisateur
+ * @param onSelect - Fonction de rappel appelée lorsque l'utilisateur sélectionne ce portefeuille
+ * @param isSelected - Indique si ce portefeuille est actuellement sélectionné
+ */
 interface PortfolioCardProps {
   portfolio: Portfolio;
   isRecommended?: boolean;
@@ -23,6 +40,10 @@ interface PortfolioCardProps {
   isSelected?: boolean;
 }
 
+/**
+ * Composant PortfolioCard - Carte présentant un portefeuille d'investissement
+ * Affiche les détails du portefeuille, sa composition et permet sa sélection
+ */
 const PortfolioCard = ({ 
   portfolio, 
   isRecommended = false, 
@@ -31,7 +52,7 @@ const PortfolioCard = ({
 }: PortfolioCardProps) => {
   const { id, name, riskLevel, description, expectedReturn, assets, suitableFor } = portfolio;
   
-  // Define colors based on risk level
+  // Définition des couleurs en fonction du niveau de risque
   const riskColors = {
     "Faible": "bg-green-100 text-green-800",
     "Modéré": "bg-blue-100 text-blue-800",
@@ -48,6 +69,7 @@ const PortfolioCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
+      {/* Bandeau "Recommandé" si applicable */}
       {isRecommended && (
         <div className="bg-primary text-primary-foreground text-center py-1.5 text-sm font-medium">
           Recommandé pour votre profil
@@ -64,11 +86,13 @@ const PortfolioCard = ({
         
         <p className="text-muted-foreground mb-6">{description}</p>
         
+        {/* Section rendement attendu */}
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-2">Rendement attendu</h4>
           <p className="text-xl font-semibold">{expectedReturn}</p>
         </div>
         
+        {/* Section allocation d'actifs avec visualisation graphique */}
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-2">Allocation d'actifs</h4>
           <div className="flex mb-2">
@@ -98,6 +122,7 @@ const PortfolioCard = ({
           </div>
         </div>
         
+        {/* Section profils adaptés */}
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-2">Adapté pour</h4>
           <ul className="text-sm text-muted-foreground">
@@ -112,6 +137,7 @@ const PortfolioCard = ({
           </ul>
         </div>
         
+        {/* Bouton de sélection */}
         <Button 
           className="w-full"
           variant={isSelected ? "default" : "outline"}
@@ -124,17 +150,21 @@ const PortfolioCard = ({
   );
 };
 
-// Helper function to get colors for asset allocation visualization
+/**
+ * Fonction utilitaire pour obtenir une couleur pour la visualisation de l'allocation d'actifs
+ * @param index - Index de l'actif dans le tableau
+ * @returns Une couleur au format hexadécimal
+ */
 const getAssetColor = (index: number): string => {
   const colors = [
-    "#3B82F6", // Blue
-    "#10B981", // Green
-    "#F59E0B", // Amber
+    "#3B82F6", // Bleu
+    "#10B981", // Vert
+    "#F59E0B", // Ambre
     "#6366F1", // Indigo
-    "#EC4899", // Pink
-    "#8B5CF6", // Purple
-    "#14B8A6", // Teal
-    "#F43F5E"  // Rose
+    "#EC4899", // Rose
+    "#8B5CF6", // Violet
+    "#14B8A6", // Turquoise
+    "#F43F5E"  // Rouge rosé
   ];
   
   return colors[index % colors.length];

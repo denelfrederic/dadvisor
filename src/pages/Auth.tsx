@@ -8,32 +8,41 @@ import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
 import { Home } from "lucide-react";
 
+/**
+ * Page Auth - Permet l'authentification des utilisateurs
+ * Propose des options de connexion via Google et LinkedIn
+ */
 const Auth = () => {
+  // État pour suivre le chargement des différentes méthodes d'authentification
   const [isLoading, setIsLoading] = useState({
     google: false,
     linkedin: false
   });
   const navigate = useNavigate();
 
+  /**
+   * Gère le processus de connexion
+   * @param provider - Fournisseur d'authentification ("google" ou "linkedin")
+   */
   const handleLogin = async (provider: "google" | "linkedin") => {
     try {
-      // Set loading state for the specific provider
+      // Définit l'état de chargement pour le fournisseur spécifique
       setIsLoading(prev => ({ ...prev, [provider]: true }));
       
-      // Call the appropriate login function
+      // Appelle la fonction de connexion appropriée
       const loginFn = provider === "google" ? loginWithGoogle : loginWithLinkedIn;
       const user = await loginFn();
       
-      // Store user session
+      // Stocke la session utilisateur
       storeUserSession(user);
       
-      // Show success toast
+      // Affiche une notification de succès
       toast({
         title: "Connexion réussie",
         description: `Bienvenue, ${user.name} !`,
       });
       
-      // Navigate to questionnaire
+      // Navigue vers le questionnaire
       navigate("/questionnaire");
     } catch (error) {
       console.error(`Erreur lors de la connexion avec ${provider}:`, error);
@@ -44,13 +53,14 @@ const Auth = () => {
         description: "Une erreur s'est produite lors de la tentative de connexion.",
       });
     } finally {
-      // Reset loading state
+      // Réinitialise l'état de chargement
       setIsLoading(prev => ({ ...prev, [provider]: false }));
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
+      {/* Bouton de retour à l'accueil */}
       <Button 
         variant="outline" 
         asChild 
@@ -77,6 +87,7 @@ const Auth = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
+              {/* Bouton de connexion avec Google */}
               <Button
                 variant="outline"
                 className="w-full flex items-center justify-center gap-2"
@@ -96,6 +107,7 @@ const Auth = () => {
                 {isLoading.google ? "Connexion en cours..." : "Continuer avec Google"}
               </Button>
               
+              {/* Bouton de connexion avec LinkedIn */}
               <Button
                 variant="outline"
                 className="w-full flex items-center justify-center gap-2"

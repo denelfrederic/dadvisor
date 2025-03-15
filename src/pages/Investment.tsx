@@ -8,33 +8,41 @@ import { toast } from "@/components/ui/use-toast";
 import { getPortfolioById } from "@/utils/portfolios";
 import { Home } from "lucide-react";
 
+/**
+ * Page Investment - Permet de finaliser l'investissement
+ * Affiche un récapitulatif et permet à l'utilisateur de définir le montant à investir
+ */
 const Investment = () => {
+  // États pour suivre le processus d'investissement
   const [isInvesting, setIsInvesting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get portfolio ID and wallet address from location state
+  // Récupération de l'ID du portefeuille et de l'adresse du wallet depuis l'état de navigation
   const portfolioId = location.state?.portfolioId;
   const walletAddress = location.state?.walletAddress;
   
-  // Find the selected portfolio
+  // Recherche du portefeuille sélectionné dans les données
   const portfolio = portfolioId 
     ? getPortfolioById(portfolioId) 
     : null;
   
-  // Handle investing
+  /**
+   * Gère la finalisation de l'investissement
+   * @param amount - Montant à investir
+   */
   const handleInvest = async (amount: number) => {
     if (!portfolio || !walletAddress) return;
     
     setIsInvesting(true);
     
     try {
-      // Simulate API call to process investment
+      // Simulation d'un appel API pour traiter l'investissement
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Show success toast
+      // Affiche une notification de succès
       toast({
         title: "Investissement réussi !",
         description: `Vous avez investi ${amount.toLocaleString("fr-FR")} € dans le portefeuille ${portfolio.name}.`,
@@ -74,6 +82,7 @@ const Investment = () => {
         {portfolio ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+              {/* Récapitulatif de l'investissement */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -113,6 +122,7 @@ const Investment = () => {
                 </div>
               </motion.div>
               
+              {/* Composant pour définir le montant d'investissement */}
               <InvestmentInput
                 portfolioName={portfolio.name}
                 expectedReturn={portfolio.expectedReturn}
@@ -121,6 +131,7 @@ const Investment = () => {
               />
             </div>
             
+            {/* Message de confirmation après investissement réussi */}
             {isComplete && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -142,6 +153,7 @@ const Investment = () => {
             )}
           </>
         ) : (
+          // Message si aucun portefeuille n'est sélectionné
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">
               Aucun portefeuille sélectionné. Veuillez recommencer le processus.

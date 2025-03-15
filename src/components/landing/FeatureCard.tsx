@@ -3,12 +3,22 @@ import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 
+/**
+ * Interface pour les propriétés du composant FeatureCard
+ * @param icon - Icône représentant la fonctionnalité
+ * @param title - Titre de la fonctionnalité
+ * @param description - Description détaillée de la fonctionnalité
+ */
 interface FeatureCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
 }
 
+/**
+ * Composant FeatureCard - Carte présentant une fonctionnalité de l'application
+ * Affiche une icône, un titre et une description avec des animations au défilement
+ */
 const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px 0px" });

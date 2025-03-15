@@ -5,9 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 
+/**
+ * Page 404 - Affichée lorsqu'une route n'existe pas
+ * Enregistre l'erreur dans la console et propose à l'utilisateur de retourner à l'accueil
+ */
 const NotFound = () => {
   const location = useLocation();
 
+  // Enregistre l'erreur de navigation dans la console
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",

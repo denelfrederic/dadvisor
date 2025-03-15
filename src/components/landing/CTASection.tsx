@@ -3,6 +3,11 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
+/**
+ * Composant CTASection - Section d'appel à l'action
+ * Encourage l'utilisateur à commencer le processus d'investissement
+ * Affiche un message incitatif et un bouton pour démarrer
+ */
 const CTASection = () => {
   return (
     <section className="py-24 bg-white">

@@ -8,15 +8,23 @@ import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
-// Lazy load pages for better performance
+/**
+ * Chargement paresseux des pages pour de meilleures performances
+ * Permet de réduire la taille du bundle initial et d'accélérer le chargement initial
+ */
 const Auth = lazy(() => import("./pages/Auth"));
 const Questionnaire = lazy(() => import("./pages/Questionnaire"));
 const Portfolios = lazy(() => import("./pages/Portfolios"));
 const Wallet = lazy(() => import("./pages/Wallet"));
 const Investment = lazy(() => import("./pages/Investment"));
 
+// Client pour React Query - gestion des requêtes et du cache
 const queryClient = new QueryClient();
 
+/**
+ * Composant principal de l'application
+ * Configure les providers et le routage de l'application
+ */
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

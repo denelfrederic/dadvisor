@@ -9,51 +9,61 @@ import { toast } from "@/components/ui/use-toast";
 import { questions, calculateRiskScore } from "@/utils/questionnaire";
 import { Home } from "lucide-react";
 
+/**
+ * Page Questionnaire - Évalue le profil d'investisseur de l'utilisateur
+ * Présente une série de questions pour déterminer la tolérance au risque
+ */
 const Questionnaire = () => {
+  // États pour gérer le questionnaire
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, { optionId: string, value: number }>>({});
   const [isComplete, setIsComplete] = useState(false);
   const [score, setScore] = useState(0);
   const navigate = useNavigate();
   
-  // Function to handle user answers
+  /**
+   * Gère la sélection d'une réponse par l'utilisateur
+   * @param questionId - ID de la question répondue
+   * @param optionId - ID de l'option sélectionnée
+   * @param value - Valeur numérique associée à l'option
+   */
   const handleAnswer = useCallback((questionId: string, optionId: string, value: number) => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: { optionId, value }
     }));
     
-    // Auto-advance to next question after a short delay
+    // Avance automatiquement à la question suivante après un court délai
     setTimeout(() => {
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       } else {
-        // If this was the last question, complete the questionnaire
+        // Si c'était la dernière question, termine le questionnaire
         setIsComplete(true);
       }
     }, 500);
   }, [currentQuestionIndex, questions.length]);
   
-  // Calculate score when questionnaire is complete
+  // Calcule le score lorsque le questionnaire est terminé
   useEffect(() => {
     if (isComplete && Object.keys(answers).length === questions.length) {
       const calculatedScore = calculateRiskScore(answers);
       setScore(calculatedScore);
       
-      // Show completion toast
+      // Affiche une notification de fin
       toast({
         title: "Questionnaire terminé !",
         description: `Votre score de risque est de ${calculatedScore}`,
       });
       
-      // Navigate to portfolios after a delay
+      // Navigue vers la page des portefeuilles après un délai
       setTimeout(() => {
         navigate("/portfolios", { state: { score: calculatedScore } });
       }, 2000);
     }
   }, [isComplete, answers, questions.length, navigate]);
   
-  // Get current question
+  // Récupère la question actuelle
   const currentQuestion = questions[currentQuestionIndex];
   
   return (
@@ -73,6 +83,7 @@ const Questionnaire = () => {
           Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
         </p>
         
+        {/* Barre de progression indiquant l'avancement dans le questionnaire */}
         <ProgressBar 
           currentStep={currentQuestionIndex + 1} 
           totalSteps={questions.length}
@@ -80,6 +91,7 @@ const Questionnaire = () => {
         />
         
         <div className="mb-10">
+          {/* Animation lors du changement de question */}
           <AnimatePresence mode="wait">
             <motion.div
               key={currentQuestionIndex}
@@ -98,6 +110,7 @@ const Questionnaire = () => {
           </AnimatePresence>
         </div>
         
+        {/* Navigation entre les questions */}
         <div className="flex justify-between items-center">
           <Button
             variant="outline"
@@ -125,6 +138,7 @@ const Questionnaire = () => {
           </Button>
         </div>
         
+        {/* Message de complétion du questionnaire */}
         {isComplete && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
