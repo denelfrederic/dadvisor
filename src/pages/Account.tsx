@@ -14,35 +14,26 @@ const Account = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Fonction pour forcer la mise à jour des données utilisateur
+  const refreshUserData = async () => {
+    const currentUser = await getLoggedInUser();
+    if (currentUser) {
+      setUser(currentUser);
+      setEmail(currentUser.email);
+    } else {
+      toast.error("Vous devez être connecté pour accéder à cette page");
+      navigate("/auth");
+    }
+  };
+
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
-    const fetchUserData = async () => {
-      // Vérifier d'abord dans localStorage
-      const storedUser = localStorage.getItem("dadvisor_user");
-      
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        setEmail(userData.email);
-      } else {
-        // Si pas dans localStorage, vérifier via Supabase
-        const currentUser = await getLoggedInUser();
-        if (currentUser) {
-          setUser(currentUser);
-          setEmail(currentUser.email);
-        } else {
-          // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
-          toast.error("Vous devez être connecté pour accéder à cette page");
-          navigate("/auth");
-        }
-      }
-    };
-    
-    fetchUserData();
+    refreshUserData();
   }, [navigate]);
 
   const validateEmail = (email: string): boolean => {
@@ -90,26 +81,32 @@ const Account = () => {
       return;
     }
     
-    setLoading(true);
+    setEmailLoading(true);
     
     try {
       const { error } = await supabase.auth.updateUser({ email });
       
       if (error) throw error;
       
-      toast.success("Demande de mise à jour d'email envoyée. Veuillez vérifier votre boîte mail pour confirmer.");
+      // Forcer la mise à jour des données utilisateur après changement d'email
+      await refreshUserData();
       
-      // Mettre à jour l'utilisateur en local
-      if (user) {
-        const updatedUser = { ...user, email };
-        localStorage.setItem("dadvisor_user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
-      }
+      toast.success("Demande de mise à jour d'email envoyée. Veuillez vérifier votre boîte mail pour confirmer.");
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la mise à jour de l'email");
+      // Si l'erreur est liée à un domaine invalide (comme .air au lieu de .ai)
+      if (error.message && error.message.includes("invalid")) {
+        toast.error("Adresse email invalide. Vérifiez le format et le domaine de votre email.");
+      } else {
+        toast.error(error.message || "Erreur lors de la mise à jour de l'email");
+      }
       console.error(error);
+      
+      // Restaurer l'email d'origine en cas d'échec
+      if (user) {
+        setEmail(user.email);
+      }
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -145,15 +142,17 @@ const Account = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre@email.com"
                 required
+                disabled={emailLoading}
               />
             </div>
-            <Button type="submit" disabled={loading || email === user?.email}>
-              {loading ? "Mise à jour..." : "Mettre à jour l'email"}
+            <Button type="submit" disabled={emailLoading || email === user?.email}>
+              {emailLoading ? "Mise à jour..." : "Mettre à jour l'email"}
             </Button>
           </form>
         </CardContent>
       </Card>
       
+      {/* Reste du composant */}
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>Sécurité</CardTitle>

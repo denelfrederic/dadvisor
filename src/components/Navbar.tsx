@@ -35,16 +35,13 @@ const Navbar = () => {
   // Effet pour vérifier si un utilisateur est connecté
   useEffect(() => {
     const loadUser = async () => {
-      // Récupérer l'utilisateur depuis localStorage
-      const storedUser = localStorage.getItem("dadvisor_user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-      
-      // Vérifier également avec Supabase pour s'assurer que les données sont à jour
+      // Force refresh from Supabase to ensure we have the latest data
       const currentUser = await getLoggedInUser();
       if (currentUser) {
         setUser(currentUser);
+      } else {
+        // Si aucun utilisateur trouvé, nettoyer l'état
+        setUser(null);
       }
     };
     
@@ -75,7 +72,7 @@ const Navbar = () => {
   // Mise à jour quand la route change, pour s'assurer d'avoir les données à jour
   useEffect(() => {
     const checkUserState = async () => {
-      // Vérifier si l'utilisateur est toujours connecté quand on change de page
+      // Forcer la mise à jour des données utilisateur à chaque changement de page
       const currentUser = await getLoggedInUser();
       
       // Si le localStorage a un utilisateur mais pas Supabase, nettoyer le localStorage
@@ -83,6 +80,7 @@ const Navbar = () => {
         localStorage.removeItem("dadvisor_user");
         setUser(null);
       } else if (currentUser) {
+        // Toujours utiliser les données les plus récentes de Supabase
         setUser(currentUser);
       }
     };
@@ -93,6 +91,11 @@ const Navbar = () => {
   const handleAccountManagement = () => {
     navigate("/account");
   };
+
+  // Ne pas afficher la navbar sur la page d'authentification
+  if (location.pathname === '/auth') {
+    return null;
+  }
 
   return (
     <motion.nav

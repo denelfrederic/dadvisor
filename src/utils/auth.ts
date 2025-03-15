@@ -137,6 +137,7 @@ export const updatePassword = async (newPassword: string): Promise<void> => {
  * Vérifie si un utilisateur est connecté via Supabase
  */
 export const getLoggedInUser = async (): Promise<User | null> => {
+  // Forcer l'actualisation de la session depuis Supabase
   const { data } = await supabase.auth.getSession();
   
   if (data && data.session && data.session.user) {
@@ -151,9 +152,11 @@ export const getLoggedInUser = async (): Promise<User | null> => {
     storeUserSession(user);
     
     return user;
+  } else {
+    // S'il n'y a pas de session, s'assurer que le localStorage est nettoyé
+    localStorage.removeItem("dadvisor_user");
+    return null;
   }
-  
-  return null;
 };
 
 /**
