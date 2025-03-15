@@ -20,8 +20,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['SF Pro Display', 'system-ui', 'sans-serif'],
-				mono: ['SF Mono', 'monospace'],
+				sans: ['Open Sans', 'system-ui', 'sans-serif'],
+				heading: ['Roboto', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -66,6 +66,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				dadvisor: {
+					blue: '#216fdb',
+					lightblue: '#eef4ff',
+					navy: '#1e3a8a',
+					gray: '#f8fafc',
+					darkgray: '#64748b',
 				}
 			},
 			borderRadius: {
@@ -143,10 +150,12 @@ export default {
 				'glass': '0 4px 30px rgba(0, 0, 0, 0.05)',
 				'neo': '5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff',
 				'neu-inset': 'inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff',
+				'dadvisor': '0 5px 20px rgba(0, 0, 0, 0.06)',
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 				'gradient-subtle': 'linear-gradient(to right, var(--gradient-subtle-start), var(--gradient-subtle-end))',
+				'dadvisor-gradient': 'linear-gradient(to right, #216fdb, #1e3a8a)',
 			},
 		}
 	},
