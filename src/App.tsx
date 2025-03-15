@@ -1,10 +1,11 @@
+
 import {
   BrowserRouter as Router,
   Route,
   Routes,
 } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
+import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Questionnaire from "./pages/Questionnaire";
 import Portfolios from "./pages/Portfolios";
@@ -17,7 +18,7 @@ function App() {
       <Navbar />
       <div className="pt-20">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/questionnaire" element={<Questionnaire />} />
           <Route path="/portfolios" element={<Portfolios />} />
