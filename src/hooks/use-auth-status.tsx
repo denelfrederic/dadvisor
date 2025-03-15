@@ -5,17 +5,26 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useAuthStatus() {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Effet pour vérifier si un utilisateur est connecté
   useEffect(() => {
     const loadUser = async () => {
-      // Force refresh from Supabase to ensure we have the latest data
-      const currentUser = await getLoggedInUser();
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        // Si aucun utilisateur trouvé, nettoyer l'état
+      try {
+        setLoading(true);
+        // Force refresh from Supabase to ensure we have the latest data
+        const currentUser = await getLoggedInUser();
+        if (currentUser) {
+          setUser(currentUser);
+        } else {
+          // Si aucun utilisateur trouvé, nettoyer l'état
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
     
@@ -23,7 +32,8 @@ export function useAuthStatus() {
 
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
+      async (event, session) => {
+        console.log("Auth state changed:", event, session);
         if (event === "SIGNED_IN" || event === "USER_UPDATED") {
           // Recharger l'utilisateur à chaque changement
           const currentUser = await getLoggedInUser();
@@ -43,5 +53,5 @@ export function useAuthStatus() {
     };
   }, []);
 
-  return { user, setUser };
+  return { user, setUser, loading };
 }

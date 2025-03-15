@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useNavigate, Link, useSearchParams, useLocation } from "react-router-dom";
 import { 
   loginWithGoogle, 
   loginWithLinkedIn, 
@@ -24,6 +24,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuthStatus } from "@/hooks/use-auth-status";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Page Auth - Permet l'authentification des utilisateurs
@@ -42,9 +44,20 @@ const Auth = () => {
   const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
   
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, loading } = useAuthStatus();
+  
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      console.log("User already logged in, redirecting:", user);
+      navigate("/questionnaire");
+    }
+  }, [user, loading, navigate]);
   
   // Vérifier si l'utilisateur arrive depuis un lien de réinitialisation
   useEffect(() => {
@@ -94,16 +107,40 @@ const Auth = () => {
    */
   const handleEmailLogin = async (values: z.infer<typeof loginSchema>) => {
     try {
+      setAuthError(null);
       setIsLoading(prev => ({ ...prev, email: true }));
-      const user = await loginWithEmail(values.email, values.password);
-      storeUserSession(user);
-      toast({
-        title: "Connexion réussie",
-        description: `Bienvenue, ${user.name} !`,
+      
+      console.log("Logging in with email:", values.email);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
       });
-      navigate("/questionnaire");
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.user) {
+        const user = {
+          id: data.user.id,
+          name: data.user.email?.split('@')[0] || '',
+          email: data.user.email || '',
+          authProvider: "email" as const
+        };
+        
+        storeUserSession(user);
+        
+        toast({
+          title: "Connexion réussie",
+          description: `Bienvenue, ${user.name} !`,
+        });
+        
+        console.log("Login successful, redirecting to questionnaire");
+        navigate("/questionnaire");
+      }
     } catch (error: any) {
       console.error("Erreur lors de la connexion avec email:", error);
+      setAuthError(error.message || "Une erreur s'est produite lors de la tentative de connexion.");
       toast({
         variant: "destructive",
         title: "Échec de connexion",
@@ -119,16 +156,40 @@ const Auth = () => {
    */
   const handleEmailSignup = async (values: z.infer<typeof signupSchema>) => {
     try {
+      setAuthError(null);
       setIsLoading(prev => ({ ...prev, email: true }));
-      const user = await signUpWithEmail(values.email, values.password);
-      storeUserSession(user);
-      toast({
-        title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès.",
+      
+      console.log("Signing up with email:", values.email);
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
       });
-      navigate("/questionnaire");
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.user) {
+        const user = {
+          id: data.user.id,
+          name: data.user.email?.split('@')[0] || '',
+          email: data.user.email || '',
+          authProvider: "email" as const
+        };
+        
+        storeUserSession(user);
+        
+        toast({
+          title: "Inscription réussie",
+          description: "Votre compte a été créé avec succès.",
+        });
+        
+        console.log("Signup successful, redirecting to questionnaire");
+        navigate("/questionnaire");
+      }
     } catch (error: any) {
       console.error("Erreur lors de l'inscription:", error);
+      setAuthError(error.message || "Une erreur s'est produite lors de la tentative d'inscription.");
       toast({
         variant: "destructive",
         title: "Échec d'inscription",
@@ -145,31 +206,40 @@ const Auth = () => {
    */
   const handleLogin = async (provider: "google" | "linkedin") => {
     try {
+      setAuthError(null);
       // Définit l'état de chargement pour le fournisseur spécifique
       setIsLoading(prev => ({ ...prev, [provider]: true }));
       
-      // Appelle la fonction de connexion appropriée
-      const loginFn = provider === "google" ? loginWithGoogle : loginWithLinkedIn;
-      const user = await loginFn();
-      
-      // Stocke la session utilisateur
-      storeUserSession(user);
-      
-      // Affiche une notification de succès
-      toast({
-        title: "Connexion réussie",
-        description: `Bienvenue, ${user.name} !`,
-      });
-      
-      // Navigue vers le questionnaire
-      navigate("/questionnaire");
-    } catch (error) {
+      if (provider === "google") {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+        
+        if (error) throw error;
+        // The user will be redirected to Google
+        return;
+      } else if (provider === "linkedin") {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'linkedin_oidc',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+        
+        if (error) throw error;
+        // The user will be redirected to LinkedIn
+        return;
+      }
+    } catch (error: any) {
       console.error(`Erreur lors de la connexion avec ${provider}:`, error);
-      
+      setAuthError(error.message || `Une erreur s'est produite lors de la connexion avec ${provider}`);
       toast({
         variant: "destructive",
         title: "Échec de connexion",
-        description: "Une erreur s'est produite lors de la tentative de connexion.",
+        description: error.message || "Une erreur s'est produite lors de la tentative de connexion.",
       });
     } finally {
       // Réinitialise l'état de chargement
@@ -182,6 +252,7 @@ const Auth = () => {
    */
   const handleResetPassword = async () => {
     try {
+      setAuthError(null);
       await resetPassword(resetEmail);
       toast({
         title: "Demande envoyée",
@@ -189,6 +260,7 @@ const Auth = () => {
       });
       setShowResetForm(false);
     } catch (error: any) {
+      setAuthError(error.message || "Une erreur s'est produite lors de la demande de réinitialisation.");
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -202,6 +274,7 @@ const Auth = () => {
    */
   const handleUpdatePassword = async () => {
     try {
+      setAuthError(null);
       await updatePassword(newPassword);
       toast({
         title: "Mot de passe mis à jour",
@@ -210,6 +283,7 @@ const Auth = () => {
       setShowNewPasswordForm(false);
       navigate("/auth");
     } catch (error: any) {
+      setAuthError(error.message || "Une erreur s'est produite lors de la mise à jour du mot de passe.");
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -217,6 +291,18 @@ const Auth = () => {
       });
     }
   };
+
+  // If still loading auth state, show loading indicator
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-dadvisor-blue border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement de l'authentification...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Formulaire de réinitialisation de mot de passe
   if (showResetForm) {
@@ -245,6 +331,11 @@ const Auth = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {authError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{authError}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="reset-email">Adresse email</Label>
                 <Input 
@@ -286,6 +377,11 @@ const Auth = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {authError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{authError}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="new-password">Nouveau mot de passe</Label>
                 <Input 
@@ -339,6 +435,12 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {authError && (
+              <Alert variant="destructive">
+                <AlertDescription>{authError}</AlertDescription>
+              </Alert>
+            )}
+            
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">Connexion</TabsTrigger>

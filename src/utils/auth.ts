@@ -16,42 +16,6 @@ export interface User {
 }
 
 /**
- * Simule une authentification Google
- * Dans une implémentation réelle, utilisera l'API OAuth de Google
- */
-export const loginWithGoogle = async (): Promise<User> => {
-  // Simule un délai d'API
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Retourne un utilisateur simulé
-  return {
-    id: "google-" + Math.random().toString(36).substring(2, 11),
-    name: "Thomas Dupont",
-    email: "thomas.dupont@example.com",
-    profilePicture: "https://randomuser.me/api/portraits/men/32.jpg",
-    authProvider: "google"
-  };
-};
-
-/**
- * Simule une authentification LinkedIn
- * Dans une implémentation réelle, utilisera l'API OAuth de LinkedIn
- */
-export const loginWithLinkedIn = async (): Promise<User> => {
-  // Simule un délai d'API
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Retourne un utilisateur simulé
-  return {
-    id: "linkedin-" + Math.random().toString(36).substring(2, 11),
-    name: "Sophie Martin",
-    email: "sophie.martin@example.com",
-    profilePicture: "https://randomuser.me/api/portraits/women/44.jpg",
-    authProvider: "linkedin"
-  };
-};
-
-/**
  * S'authentifie avec un email et un mot de passe via Supabase
  */
 export const loginWithEmail = async (email: string, password: string): Promise<User> => {
@@ -62,6 +26,10 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (!data.user) {
+    throw new Error("Aucun utilisateur trouvé");
   }
 
   const user = {
@@ -75,6 +43,42 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
   storeUserSession(user);
 
   return user;
+};
+
+/**
+ * Simule une authentification Google
+ * Dans une implémentation réelle, utilisera l'API OAuth de Google
+ */
+export const loginWithGoogle = async (): Promise<User> => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  });
+  
+  if (error) throw error;
+  
+  // This function will not return a user directly as OAuth redirects the user
+  return {} as User; // This is a placeholder, the real user will be set after redirect
+};
+
+/**
+ * Simule une authentification LinkedIn
+ * Dans une implémentation réelle, utilisera l'API OAuth de LinkedIn
+ */
+export const loginWithLinkedIn = async (): Promise<User> => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'linkedin_oidc',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  });
+  
+  if (error) throw error;
+  
+  // This function will not return a user directly as OAuth redirects the user
+  return {} as User; // This is a placeholder, the real user will be set after redirect
 };
 
 /**
@@ -141,6 +145,7 @@ export const getLoggedInUser = async (): Promise<User | null> => {
   const { data } = await supabase.auth.getSession();
   
   if (data && data.session && data.session.user) {
+    console.log("Session found:", data.session.user);
     const user = {
       id: data.session.user.id,
       name: data.session.user.email?.split('@')[0] || '',
