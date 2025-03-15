@@ -2,9 +2,11 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+
 interface HeroSectionProps {
   parallaxOffset: number;
 }
+
 const HeroSection = ({
   parallaxOffset
 }: HeroSectionProps) => {
@@ -36,7 +38,7 @@ const HeroSection = ({
           }} transition={{
             duration: 0.6
           }} className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-              Solutions Financières Innovantes
+              Toutes les classes d'actifs, une seule plateforme
             </motion.div>
             
             <motion.h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight" initial={{
@@ -102,4 +104,5 @@ const HeroSection = ({
       </div>
     </section>;
 };
+
 export default HeroSection;
