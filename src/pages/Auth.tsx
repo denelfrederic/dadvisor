@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { loginWithGoogle, loginWithLinkedIn, storeUserSession, User } from "@/utils/auth";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
+import { Home } from "lucide-react";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState({
@@ -50,6 +51,17 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
+      <Button 
+        variant="outline" 
+        asChild 
+        className="absolute top-6 left-6 flex items-center gap-2"
+      >
+        <Link to="/">
+          <Home size={18} />
+          Retour à l'accueil
+        </Link>
+      </Button>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

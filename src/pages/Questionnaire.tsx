@@ -1,11 +1,13 @@
+
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/ProgressBar";
 import QuestionCard, { Question } from "@/components/QuestionCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
 import { questions, calculateRiskScore } from "@/utils/questionnaire";
+import { Home } from "lucide-react";
 
 const Questionnaire = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -57,7 +59,16 @@ const Questionnaire = () => {
   return (
     <div className="min-h-screen bg-gradient-radial py-20 px-4">
       <div className="container mx-auto max-w-4xl">
-        <h1 className="text-3xl font-bold text-center mb-2">Évaluation de votre profil d'investisseur</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Évaluation de votre profil d'investisseur</h1>
+          <Button variant="outline" asChild className="flex items-center gap-2">
+            <Link to="/">
+              <Home size={18} />
+              Accueil
+            </Link>
+          </Button>
+        </div>
+        
         <p className="text-muted-foreground text-center mb-10">
           Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
         </p>

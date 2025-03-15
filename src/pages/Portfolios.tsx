@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import PortfolioCard, { Portfolio } from "@/components/PortfolioCard";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
 import { getPortfolios, getRecommendedPortfolio } from "@/utils/portfolios";
+import { Home } from "lucide-react";
 
 const Portfolios = () => {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -100,7 +101,16 @@ const Portfolios = () => {
   return (
     <div className="min-h-screen bg-gradient-radial py-20 px-4">
       <div className="container mx-auto max-w-7xl">
-        <h1 className="text-3xl font-bold text-center mb-2">Choisissez votre portefeuille</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Choisissez votre portefeuille</h1>
+          <Button variant="outline" asChild className="flex items-center gap-2">
+            <Link to="/">
+              <Home size={18} />
+              Accueil
+            </Link>
+          </Button>
+        </div>
+        
         <p className="text-muted-foreground text-center mb-10">
           Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté.
           Vous pouvez toutefois sélectionner celui qui vous convient le mieux.
