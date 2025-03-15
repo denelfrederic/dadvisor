@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -94,25 +93,15 @@ const Index = () => {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="relative mx-auto mt-12 max-w-3xl"
+              className="relative mx-auto mt-12 max-w-sm"
             >
-              <div className="glass-card overflow-hidden rounded-2xl shadow-lg">
+              <div className="glass-card overflow-hidden rounded-2xl shadow-lg flex justify-center p-6">
                 <img 
-                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070" 
-                  alt="Interface DADVISOR" 
-                  className="w-full h-auto object-cover"
+                  src="/lovable-uploads/aaff0458-ba45-4ea9-a72f-7bc031183527.png" 
+                  alt="Logo DADVISOR" 
+                  className="h-24 object-contain"
                   loading="lazy"
                 />
-              </div>
-              
-              <div className="absolute -bottom-6 -right-6 z-10">
-                <div className="neo-card p-4 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="text-sm font-medium">+12.4%</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">Performance annuelle</div>
-                </div>
               </div>
             </motion.div>
           </div>
