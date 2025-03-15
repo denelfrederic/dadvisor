@@ -95,9 +95,7 @@ const HeroSection = ({
           duration: 0.8,
           delay: 0.6
         }} className="relative mx-auto mt-12 max-w-sm">
-            <div className="glass-card overflow-hidden rounded-2xl shadow-lg flex justify-center p-6">
-              
-            </div>
+            
           </motion.div>
         </div>
       </div>
