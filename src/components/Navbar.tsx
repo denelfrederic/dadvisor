@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@/utils/auth";
 
 /**
  * Composant Navbar - Barre de navigation principale de l'application
@@ -11,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const Navbar = () => {
   // État pour suivre si l'utilisateur a fait défiler la page
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const location = useLocation();
 
   // Effet pour détecter le défilement et mettre à jour l'état
@@ -27,6 +30,36 @@ const Navbar = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, [scrolled]);
+
+  // Effet pour vérifier si un utilisateur est connecté
+  useEffect(() => {
+    // Vérifier s'il y a un utilisateur dans le localStorage
+    const storedUser = localStorage.getItem("dadvisor_user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
+    // Écouter les changements d'état d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          // Si un utilisateur se connecte, on met à jour l'état
+          const userData = localStorage.getItem("dadvisor_user");
+          if (userData) {
+            setUser(JSON.parse(userData));
+          }
+        } else if (event === "SIGNED_OUT") {
+          // Si un utilisateur se déconnecte, on réinitialise l'état
+          setUser(null);
+        }
+      }
+    );
+
+    // Nettoyer l'abonnement
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <motion.nav
@@ -55,9 +88,16 @@ const Navbar = () => {
           <NavLink to="/questionnaire" label="Questionnaire" currentPath={location.pathname} />
           <NavLink to="/portfolios" label="Portefeuilles" currentPath={location.pathname} />
           <NavLink to="/wallet" label="Wallet" currentPath={location.pathname} />
-          <Button asChild className="ml-4">
-            <Link to="/auth">Connexion</Link>
-          </Button>
+          
+          {user ? (
+            <Button variant="outline" className="ml-4">
+              Connecté: {user.email}
+            </Button>
+          ) : (
+            <Button asChild className="ml-4">
+              <Link to="/auth">Connexion</Link>
+            </Button>
+          )}
         </div>
         
         {/* Bouton de menu - version mobile */}
