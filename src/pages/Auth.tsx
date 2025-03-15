@@ -1,24 +1,143 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNavigate, Link } from "react-router-dom";
-import { loginWithGoogle, loginWithLinkedIn, storeUserSession, User } from "@/utils/auth";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { 
+  loginWithGoogle, 
+  loginWithLinkedIn, 
+  loginWithEmail, 
+  signUpWithEmail, 
+  resetPassword,
+  updatePassword,
+  storeUserSession, 
+  User 
+} from "@/utils/auth";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
-import { Home } from "lucide-react";
+import { Home, Mail, KeyRound, ArrowLeft } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 /**
  * Page Auth - Permet l'authentification des utilisateurs
- * Propose des options de connexion via Google et LinkedIn
+ * Propose des options de connexion via Google, LinkedIn, et Email/Password
  */
 const Auth = () => {
   // État pour suivre le chargement des différentes méthodes d'authentification
   const [isLoading, setIsLoading] = useState({
     google: false,
-    linkedin: false
+    linkedin: false,
+    email: false
   });
+  
+  // État pour les différents modes d'affichage
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Vérifier si l'utilisateur arrive depuis un lien de réinitialisation
+  useEffect(() => {
+    const reset = searchParams.get('reset');
+    if (reset === 'true') {
+      setShowNewPasswordForm(true);
+    }
+  }, [searchParams]);
+
+  // Schéma de validation pour le formulaire de connexion
+  const loginSchema = z.object({
+    email: z.string().email({ message: "Adresse email invalide" }),
+    password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
+  });
+
+  // Schéma de validation pour le formulaire d'inscription
+  const signupSchema = z.object({
+    email: z.string().email({ message: "Adresse email invalide" }),
+    password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères" }),
+    confirmPassword: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères" }),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  });
+
+  // Formulaire de connexion
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  // Formulaire d'inscription
+  const signupForm = useForm<z.infer<typeof signupSchema>>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  /**
+   * Gère le processus de connexion avec email/mot de passe
+   */
+  const handleEmailLogin = async (values: z.infer<typeof loginSchema>) => {
+    try {
+      setIsLoading(prev => ({ ...prev, email: true }));
+      const user = await loginWithEmail(values.email, values.password);
+      storeUserSession(user);
+      toast({
+        title: "Connexion réussie",
+        description: `Bienvenue, ${user.name} !`,
+      });
+      navigate("/questionnaire");
+    } catch (error: any) {
+      console.error("Erreur lors de la connexion avec email:", error);
+      toast({
+        variant: "destructive",
+        title: "Échec de connexion",
+        description: error.message || "Une erreur s'est produite lors de la tentative de connexion.",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, email: false }));
+    }
+  };
+
+  /**
+   * Gère le processus d'inscription avec email/mot de passe
+   */
+  const handleEmailSignup = async (values: z.infer<typeof signupSchema>) => {
+    try {
+      setIsLoading(prev => ({ ...prev, email: true }));
+      const user = await signUpWithEmail(values.email, values.password);
+      storeUserSession(user);
+      toast({
+        title: "Inscription réussie",
+        description: "Votre compte a été créé avec succès.",
+      });
+      navigate("/questionnaire");
+    } catch (error: any) {
+      console.error("Erreur lors de l'inscription:", error);
+      toast({
+        variant: "destructive",
+        title: "Échec d'inscription",
+        description: error.message || "Une erreur s'est produite lors de la tentative d'inscription.",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, email: false }));
+    }
+  };
 
   /**
    * Gère le processus de connexion
@@ -58,6 +177,138 @@ const Auth = () => {
     }
   };
 
+  /**
+   * Gère la demande de réinitialisation de mot de passe
+   */
+  const handleResetPassword = async () => {
+    try {
+      await resetPassword(resetEmail);
+      toast({
+        title: "Demande envoyée",
+        description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe.",
+      });
+      setShowResetForm(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Une erreur s'est produite lors de la demande de réinitialisation.",
+      });
+    }
+  };
+
+  /**
+   * Gère la mise à jour du mot de passe
+   */
+  const handleUpdatePassword = async () => {
+    try {
+      await updatePassword(newPassword);
+      toast({
+        title: "Mot de passe mis à jour",
+        description: "Votre mot de passe a été modifié avec succès.",
+      });
+      setShowNewPasswordForm(false);
+      navigate("/auth");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Une erreur s'est produite lors de la mise à jour du mot de passe.",
+      });
+    }
+  };
+
+  // Formulaire de réinitialisation de mot de passe
+  if (showResetForm) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
+        <Button 
+          variant="outline" 
+          className="absolute top-6 left-6 flex items-center gap-2"
+          onClick={() => setShowResetForm(false)}
+        >
+          <ArrowLeft size={18} />
+          Retour
+        </Button>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full"
+        >
+          <Card className="glass-card border-none shadow-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-center">Réinitialiser le mot de passe</CardTitle>
+              <CardDescription className="text-center">
+                Entrez votre adresse email pour recevoir les instructions de réinitialisation
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Adresse email</Label>
+                <Input 
+                  id="reset-email"
+                  type="email" 
+                  placeholder="votre.email@exemple.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={handleResetPassword}
+              >
+                Envoyer les instructions
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Formulaire de saisie du nouveau mot de passe
+  if (showNewPasswordForm) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full"
+        >
+          <Card className="glass-card border-none shadow-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-center">Nouveau mot de passe</CardTitle>
+              <CardDescription className="text-center">
+                Veuillez créer un nouveau mot de passe pour votre compte
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nouveau mot de passe</Label>
+                <Input 
+                  id="new-password"
+                  type="password" 
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={handleUpdatePassword}
+              >
+                Mettre à jour le mot de passe
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
       {/* Bouton de retour à l'accueil */}
@@ -86,6 +337,140 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="login">Connexion</TabsTrigger>
+                <TabsTrigger value="signup">Inscription</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(handleEmailLogin)} className="space-y-4">
+                    <FormField
+                      control={loginForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="votre.email@exemple.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mot de passe</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <div className="text-right text-sm">
+                            <button 
+                              type="button" 
+                              className="text-dadvisor-blue hover:underline"
+                              onClick={() => setShowResetForm(true)}
+                            >
+                              Mot de passe oublié?
+                            </button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full flex items-center justify-center gap-2"
+                      disabled={isLoading.email}
+                    >
+                      {isLoading.email ? (
+                        <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <Mail size={18} />
+                      )}
+                      {isLoading.email ? "Connexion en cours..." : "Se connecter avec Email"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <Form {...signupForm}>
+                  <form onSubmit={signupForm.handleSubmit(handleEmailSignup)} className="space-y-4">
+                    <FormField
+                      control={signupForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="votre.email@exemple.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signupForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mot de passe</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signupForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirmer le mot de passe</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full flex items-center justify-center gap-2"
+                      disabled={isLoading.email}
+                    >
+                      {isLoading.email ? (
+                        <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <KeyRound size={18} />
+                      )}
+                      {isLoading.email ? "Inscription en cours..." : "S'inscrire avec Email"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+            </Tabs>
+            
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-muted-foreground/30"></span>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-card px-2 text-muted-foreground">ou continuer avec</span>
+              </div>
+            </div>
+            
             <div className="space-y-2">
               {/* Bouton de connexion avec Google */}
               <Button

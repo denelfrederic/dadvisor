@@ -1,8 +1,10 @@
 
 /**
  * Utilitaires pour l'authentification des utilisateurs
- * Gère les connexions via Google et LinkedIn
+ * Gère les connexions via Google, LinkedIn, et Email/Password
  */
+
+import { supabase } from "@/integrations/supabase/client";
 
 // Type utilisateur
 export interface User {
@@ -10,7 +12,7 @@ export interface User {
   name: string;
   email: string;
   profilePicture?: string;
-  authProvider: "google" | "linkedin";
+  authProvider: "google" | "linkedin" | "email";
 }
 
 /**
@@ -50,17 +52,93 @@ export const loginWithLinkedIn = async (): Promise<User> => {
 };
 
 /**
- * Vérifie si un utilisateur est connecté en consultant le stockage local
+ * S'authentifie avec un email et un mot de passe via Supabase
  */
-export const getLoggedInUser = (): User | null => {
-  try {
-    const userJson = localStorage.getItem("dadvisor_user");
-    if (!userJson) return null;
-    return JSON.parse(userJson) as User;
-  } catch (error) {
-    console.error("Erreur lors de la récupération de l'utilisateur:", error);
-    return null;
+export const loginWithEmail = async (email: string, password: string): Promise<User> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    throw new Error(error.message);
   }
+
+  return {
+    id: data.user.id,
+    name: email.split('@')[0], // Utilise la partie avant @ comme nom
+    email: data.user.email || '',
+    authProvider: "email"
+  };
+};
+
+/**
+ * Crée un nouveau compte avec un email et un mot de passe
+ */
+export const signUpWithEmail = async (email: string, password: string): Promise<User> => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (data.user) {
+    return {
+      id: data.user.id,
+      name: email.split('@')[0], // Utilise la partie avant @ comme nom
+      email: data.user.email || '',
+      authProvider: "email"
+    };
+  } else {
+    throw new Error("Erreur lors de l'inscription");
+  }
+};
+
+/**
+ * Demande une réinitialisation du mot de passe
+ */
+export const resetPassword = async (email: string): Promise<void> => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/auth?reset=true',
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+};
+
+/**
+ * Modifie le mot de passe de l'utilisateur
+ */
+export const updatePassword = async (newPassword: string): Promise<void> => {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+};
+
+/**
+ * Vérifie si un utilisateur est connecté via Supabase
+ */
+export const getLoggedInUser = async (): Promise<User | null> => {
+  const { data } = await supabase.auth.getSession();
+  
+  if (data && data.session && data.session.user) {
+    return {
+      id: data.session.user.id,
+      name: data.session.user.email?.split('@')[0] || '',
+      email: data.session.user.email || '',
+      authProvider: "email"
+    };
+  }
+  
+  return null;
 };
 
 /**
@@ -73,6 +151,7 @@ export const storeUserSession = (user: User): void => {
 /**
  * Déconnecte l'utilisateur en supprimant les données de session
  */
-export const logout = (): void => {
+export const logout = async (): Promise<void> => {
+  await supabase.auth.signOut();
   localStorage.removeItem("dadvisor_user");
 };
