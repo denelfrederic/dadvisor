@@ -2,72 +2,25 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { User, getLoggedInUser } from "@/utils/auth";
+import { useNavbarScroll } from "@/hooks/use-navbar-scroll";
+import { useAuthStatus } from "@/hooks/use-auth-status";
+import { NavLink } from "@/components/navbar/NavLink";
+import { Menu } from "lucide-react";
+import MobileMenu from "@/components/navbar/MobileMenu";
 
 /**
  * Composant Navbar - Barre de navigation principale de l'application
  * Change d'apparence lors du défilement et met en évidence le lien actif
  */
 const Navbar = () => {
-  // État pour suivre si l'utilisateur a fait défiler la page
-  const [scrolled, setScrolled] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const { scrolled } = useNavbarScroll();
+  const { user, setUser } = useAuthStatus();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Effet pour détecter le défilement et mettre à jour l'état
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [scrolled]);
-
-  // Effet pour vérifier si un utilisateur est connecté
-  useEffect(() => {
-    const loadUser = async () => {
-      // Force refresh from Supabase to ensure we have the latest data
-      const currentUser = await getLoggedInUser();
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        // Si aucun utilisateur trouvé, nettoyer l'état
-        setUser(null);
-      }
-    };
-    
-    loadUser();
-
-    // Écouter les changements d'état d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        if (event === "SIGNED_IN" || event === "USER_UPDATED") {
-          // Recharger l'utilisateur à chaque changement
-          const currentUser = await getLoggedInUser();
-          if (currentUser) {
-            setUser(currentUser);
-          }
-        } else if (event === "SIGNED_OUT") {
-          // Si un utilisateur se déconnecte, on réinitialise l'état
-          setUser(null);
-        }
-      }
-    );
-
-    // Nettoyer l'abonnement
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   // Mise à jour quand la route change, pour s'assurer d'avoir les données à jour
   useEffect(() => {
@@ -86,10 +39,14 @@ const Navbar = () => {
     };
     
     checkUserState();
-  }, [location.pathname]);
+  }, [location.pathname, setUser]);
 
   const handleAccountManagement = () => {
     navigate("/account");
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   // Ne pas afficher la navbar sur la page d'authentification
@@ -141,66 +98,25 @@ const Navbar = () => {
         </div>
         
         {/* Bouton de menu - version mobile */}
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="md:hidden"
+          onClick={toggleMobileMenu}
+        >
+          <Menu className="h-6 w-6" />
         </Button>
+
+        {/* Menu mobile */}
+        <MobileMenu 
+          isOpen={isMobileMenuOpen} 
+          onClose={() => setIsMobileMenuOpen(false)}
+          currentPath={location.pathname}
+          user={user}
+          onAccountClick={handleAccountManagement}
+        />
       </div>
     </motion.nav>
-  );
-};
-
-/**
- * Interface pour les propriétés du composant NavLink
- * @param to - URL de destination du lien
- * @param label - Texte à afficher
- * @param currentPath - Chemin actuel pour détecter si le lien est actif
- */
-interface NavLinkProps {
-  to: string;
-  label: string;
-  currentPath: string;
-}
-
-/**
- * Composant NavLink - Lien de navigation avec indication visuelle de l'élément actif
- * Composant interne utilisé par Navbar
- */
-const NavLink = ({ to, label, currentPath }: NavLinkProps) => {
-  const isActive = currentPath === to;
-  
-  return (
-    <Link to={to} className="relative group">
-      <span className={`text-sm font-medium transition-colors ${
-        isActive ? "text-primary" : "text-foreground/80 hover:text-foreground"
-      }`}>
-        {label}
-      </span>
-      <AnimatePresence>
-        {isActive && (
-          <motion.span 
-            className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary rounded-full"
-            initial={{ width: 0, left: "50%", right: "50%" }}
-            animate={{ width: "100%", left: 0, right: 0 }}
-            exit={{ width: 0, left: "50%", right: "50%" }}
-            transition={{ duration: 0.3 }}
-          />
-        )}
-      </AnimatePresence>
-    </Link>
   );
 };
 
