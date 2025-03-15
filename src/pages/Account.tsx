@@ -36,6 +36,7 @@ const Account = () => {
           setEmail(currentUser.email);
         } else {
           // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+          toast.error("Vous devez être connecté pour accéder à cette page");
           navigate("/auth");
         }
       }
