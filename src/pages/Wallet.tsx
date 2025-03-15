@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import WalletCreation from "@/components/WalletCreation";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
-import { getPortfolios } from "@/utils/portfolios";
+import { getPortfolioById } from "@/utils/portfolios";
 
 const Wallet = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -19,7 +19,7 @@ const Wallet = () => {
   
   // Find the selected portfolio
   const portfolio = portfolioId 
-    ? getPortfolios().find(p => p.id === portfolioId) 
+    ? getPortfolioById(portfolioId) 
     : null;
   
   // Handle wallet creation

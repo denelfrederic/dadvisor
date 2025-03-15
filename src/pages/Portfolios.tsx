@@ -77,7 +77,7 @@ const Portfolios = () => {
         if (isRiskier) {
           // Alert user that they selected a riskier portfolio than recommended
           toast({
-            variant: "warning",
+            variant: "destructive",  // Changed from "warning" to "destructive"
             title: "Attention",
             description: "Vous avez sélectionné un portefeuille plus risqué que celui recommandé pour votre profil.",
             action: (

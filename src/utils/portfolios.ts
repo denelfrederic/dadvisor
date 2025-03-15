@@ -67,12 +67,35 @@ export const portfolios: Portfolio[] = [
 ];
 
 /**
+ * Retourne tous les portefeuilles disponibles
+ * @returns La liste des portefeuilles
+ */
+export const getPortfolios = (): Portfolio[] => {
+  return portfolios;
+};
+
+/**
  * Trouve un portefeuille par son ID
  * @param portfolioId L'ID du portefeuille à rechercher
  * @returns Le portefeuille correspondant ou undefined si non trouvé
  */
 export const getPortfolioById = (portfolioId: string): Portfolio | undefined => {
   return portfolios.find(portfolio => portfolio.id === portfolioId);
+};
+
+/**
+ * Détermine le profil d'investissement recommandé basé sur le score de risque
+ * @param riskScore Le score de risque calculé
+ * @returns L'ID du portefeuille recommandé
+ */
+export const getRecommendedPortfolio = (riskScore: number): string => {
+  if (riskScore < 40) {
+    return "conservative";
+  } else if (riskScore < 70) {
+    return "balanced";
+  } else {
+    return "growth";
+  }
 };
 
 /**

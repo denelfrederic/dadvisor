@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,10 +5,9 @@ import ProgressBar from "@/components/ProgressBar";
 import QuestionCard, { Question } from "@/components/QuestionCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
-import { getQuestions, calculateRiskScore } from "@/utils/questionnaire";
+import { questions, calculateRiskScore } from "@/utils/questionnaire";
 
 const Questionnaire = () => {
-  const [questions] = useState<Question[]>(getQuestions());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, { optionId: string, value: number }>>({});
   const [isComplete, setIsComplete] = useState(false);

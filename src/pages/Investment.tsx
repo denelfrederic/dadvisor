@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import InvestmentInput from "@/components/InvestmentInput";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
-import { getPortfolios } from "@/utils/portfolios";
+import { getPortfolioById } from "@/utils/portfolios";
 
 const Investment = () => {
   const [isInvesting, setIsInvesting] = useState(false);
@@ -20,7 +20,7 @@ const Investment = () => {
   
   // Find the selected portfolio
   const portfolio = portfolioId 
-    ? getPortfolios().find(p => p.id === portfolioId) 
+    ? getPortfolioById(portfolioId) 
     : null;
   
   // Handle investing
