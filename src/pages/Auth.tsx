@@ -311,23 +311,25 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
-      {/* Bouton de retour à l'accueil */}
-      <Button 
-        variant="outline" 
-        asChild 
-        className="absolute top-6 left-6 flex items-center gap-2"
-      >
-        <Link to="/">
-          <Home size={18} />
-          Retour à l'accueil
-        </Link>
-      </Button>
+      {/* Bouton de retour à l'accueil - Positionné dans un conteneur fixe avec un z-index élevé */}
+      <div className="fixed top-6 left-6 z-50">
+        <Button 
+          variant="outline" 
+          asChild 
+          className="flex items-center gap-2"
+        >
+          <Link to="/">
+            <Home size={18} />
+            Retour à l'accueil
+          </Link>
+        </Button>
+      </div>
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-md w-full"
+        className="max-w-md w-full mt-20"
       >
         <Card className="glass-card border-none shadow-lg">
           <CardHeader className="space-y-1">
