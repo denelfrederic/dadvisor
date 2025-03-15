@@ -1,10 +1,19 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+
+// Lazy load pages for better performance
+const Auth = lazy(() => import("./pages/Auth"));
+const Questionnaire = lazy(() => import("./pages/Questionnaire"));
+const Portfolios = lazy(() => import("./pages/Portfolios"));
+const Wallet = lazy(() => import("./pages/Wallet"));
+const Investment = lazy(() => import("./pages/Investment"));
 
 const queryClient = new QueryClient();
 
@@ -14,11 +23,21 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/questionnaire" element={<Questionnaire />} />
+            <Route path="/portfolios" element={<Portfolios />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/investment" element={<Investment />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
