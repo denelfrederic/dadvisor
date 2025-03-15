@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ const HeroSection = ({
           }} transition={{
             duration: 0.6
           }} className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-              Innovation Financière
+              Solutions Financières Innovantes
             </motion.div>
             
             <motion.h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight" initial={{
