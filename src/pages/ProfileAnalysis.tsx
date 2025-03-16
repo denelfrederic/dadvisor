@@ -10,7 +10,6 @@ import { InvestorProfileAnalysis, getInvestorProfileAnalysis, analyzeInvestmentS
 import { TEMP_ANSWERS_KEY, TEMP_SCORE_KEY, TEMP_COMPLETE_KEY } from "@/contexts/questionnaire";
 import ProfileContent from "@/components/profile/ProfileContent";
 import ProfileEmptyState from "@/components/profile/ProfileEmptyState";
-import ProfileLoading from "@/components/profile/ProfileLoading";
 import { Json } from "@/integrations/supabase/types";
 
 interface ProfileData {
@@ -19,6 +18,13 @@ interface ProfileData {
   analysis: InvestorProfileAnalysis;
   investmentStyleInsights: string[];
 }
+
+// Composant de chargement intégré directement pour éviter un fichier séparé
+const ProfileLoading = () => (
+  <div className="flex justify-center items-center py-20">
+    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 const ProfileAnalysis = () => {
   const [loading, setLoading] = useState(true);
