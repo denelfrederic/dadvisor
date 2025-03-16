@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import LoadingSpinner from "@/components/wallet/LoadingSpinner";
 import { InvestorProfileAnalysis } from "@/utils/questionnaire";
+import { Json } from "@/integrations/supabase/types";
 
 interface ProfileData {
   score: number;
@@ -66,8 +68,8 @@ const ProfileAnalysis = () => {
           return;
         }
 
-        // Properly type and cast the JSON data
-        const profileDataObj = data.profile_data as {
+        // Use a type assertion to handle the JSON data
+        const profileDataObj = data.profile_data as unknown as {
           analysis: InvestorProfileAnalysis;
           investmentStyleInsights: string[];
           answers: Record<string, { optionId: string; value: number }>;
