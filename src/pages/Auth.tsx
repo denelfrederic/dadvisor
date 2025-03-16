@@ -51,15 +51,15 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading } = useAuthStatus();
+  const { user, isLoading: authLoading, setUser } = useAuthStatus();
   
   // Redirect if user is already logged in
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !authLoading) {
       console.log("User already logged in, redirecting:", user);
       navigate("/questionnaire");
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
   
   // Vérifier si l'utilisateur arrive depuis un lien de réinitialisation
   useEffect(() => {
@@ -274,7 +274,7 @@ const Auth = () => {
   };
 
   // If still loading auth state, show loading indicator
-  if (loading) {
+  if (authLoading) {
     return <AuthLoading />;
   }
 
