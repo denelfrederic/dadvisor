@@ -42,7 +42,7 @@ const HeroSection = ({
               transition={{ duration: 0.6 }} 
               className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
             >
-              Toutes les classes d'actifs, une seule plateforme
+              Investissez en toute autonomie et sécurité
             </motion.div>
             
             {/* Titre principal avec animation */}
@@ -52,8 +52,8 @@ const HeroSection = ({
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              Votre avenir financier,{" "}
-              <span className="text-primary">simplifié</span>
+              Découvrez votre profil d'investisseur,{" "}
+              <span className="text-primary">choisissez en toute liberté</span>
             </motion.h1>
             
             {/* Description avec animation */}
@@ -63,7 +63,7 @@ const HeroSection = ({
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              DADVISOR est un service qui permet aux investisseurs de qualifier leur profil de risque et de choisir en autonomie et en autoconservation des portefeuilles diversifiés.
+              DADVISOR vous aide à découvrir votre profil d'investisseur, évalue votre tolérance au risque et niveau de connaissance, puis vous propose des portefeuilles diversifiés incluant cryptos et actifs traditionnels. Vous gardez toujours le contrôle total de vos fonds - nous n'avons jamais accès à votre argent.
             </motion.p>
             
             {/* Boutons d'action avec animation */}
@@ -74,10 +74,10 @@ const HeroSection = ({
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
               <Button size="lg" asChild>
-                <Link to="/auth">Commencer</Link>
+                <Link to="/auth">Découvrir mon profil</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/questionnaire">Découvrir nos portefeuilles</Link>
+                <Link to="/questionnaire">Explorer les portefeuilles</Link>
               </Button>
             </motion.div>
           </motion.div>

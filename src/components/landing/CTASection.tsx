@@ -21,15 +21,16 @@ const CTASection = () => {
             className="mb-8"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Prêt à construire votre futur financier ?
+              Prêt à découvrir votre profil d'investisseur ?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Commencez dès aujourd'hui et accédez à des portefeuilles d'investissement personnalisés
-              conçus pour atteindre vos objectifs financiers.
+              Commencez dès aujourd'hui et découvrez comment investir dans des portefeuilles diversifiés 
+              incluant cryptomonnaies et actifs traditionnels, en gardant toujours le contrôle total de vos fonds.
+              DADVISOR vous guide, mais c'est vous qui prenez les décisions.
             </p>
             
             <Button size="lg" asChild>
-              <Link to="/auth">Commencer maintenant</Link>
+              <Link to="/auth">Découvrir mon profil</Link>
             </Button>
           </motion.div>
         </div>

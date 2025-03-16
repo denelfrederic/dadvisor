@@ -12,9 +12,9 @@ const HowItWorksSection = () => {
       <div className="container mx-auto px-4">
         {/* En-tête de la section */}
         <SectionHeader 
-          eyebrow="Processus"
-          title="Comment ça fonctionne"
-          description="Un parcours simple en 5 étapes pour commencer votre investissement personnalisé"
+          eyebrow="Notre méthode"
+          title="Comment DADVISOR vous accompagne"
+          description="Un parcours simple pour découvrir votre profil d'investisseur et accéder à des portefeuilles adaptés, le tout en gardant le contrôle total de vos fonds"
         />
         
         <div className="mt-16 max-w-4xl mx-auto">
@@ -26,31 +26,31 @@ const HowItWorksSection = () => {
             <StepItem 
               number="1"
               title="Créez votre compte"
-              description="Connectez-vous facilement avec Google ou LinkedIn pour commencer votre parcours d'investissement."
+              description="Inscrivez-vous facilement pour commencer votre parcours de découverte d'investisseur. Aucune information bancaire n'est demandée."
             />
             
             <StepItem 
               number="2"
-              title="Évaluez votre profil"
-              description="Répondez à notre questionnaire pour déterminer votre tolérance au risque et vos objectifs financiers."
+              title="Complétez le questionnaire"
+              description="Répondez à des questions simples pour évaluer votre tolérance au risque, vos connaissances financières et vos objectifs d'investissement."
             />
             
             <StepItem 
               number="3"
-              title="Explorez les portefeuilles"
-              description="Découvrez nos trois portefeuilles d'investissement adaptés à différents profils de risque."
+              title="Découvrez votre profil"
+              description="Obtenez une analyse détaillée de votre profil d'investisseur et comprenez comment il influence vos décisions financières."
             />
             
             <StepItem 
               number="4"
-              title="Créez votre wallet"
-              description="Générez un wallet décentralisé Ibex pour sécuriser et gérer vos investissements."
+              title="Explorez les portefeuilles"
+              description="Découvrez des portefeuilles d'investissement diversifiés incluant cryptomonnaies et actifs traditionnels, adaptés à votre profil."
             />
             
             <StepItem 
               number="5"
-              title="Investissez"
-              description="Choisissez votre montant d'investissement et finalisez votre placement en quelques clics."
+              title="Investissez en autonomie"
+              description="Choisissez librement votre portefeuille et investissez à votre rythme. DADVISOR ne touche jamais à vos fonds - vous gardez le contrôle total à chaque étape."
               isLast={true}
             />
           </div>
