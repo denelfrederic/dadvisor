@@ -12,8 +12,18 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // Add a timeout to prevent indefinite loading
+        const timeoutId = setTimeout(() => {
+          console.error("Auth callback timeout - redirecting to login");
+          setError("Timeout during authentication. Please try again.");
+          navigate("/auth");
+        }, 10000); // 10 seconds timeout
+        
         // Check the current session to see if the OAuth flow succeeded
         const { data, error } = await supabase.auth.getSession();
+        
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
         
         if (error) {
           throw error;

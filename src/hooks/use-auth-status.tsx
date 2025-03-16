@@ -7,7 +7,7 @@ export function useAuthStatus() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Effet pour vérifier si un utilisateur est connecté
+  // Effect to check if a user is logged in
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -17,37 +17,42 @@ export function useAuthStatus() {
         if (currentUser) {
           setUser(currentUser);
         } else {
-          // Si aucun utilisateur trouvé, nettoyer l'état
+          // If no user found, clean up the state
           setUser(null);
         }
       } catch (error) {
         console.error("Error loading user:", error);
         setUser(null);
       } finally {
+        // Always set loading to false to prevent infinite loading
         setLoading(false);
       }
     };
     
+    // Initial load
     loadUser();
 
-    // Écouter les changements d'état d'authentification
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session);
         if (event === "SIGNED_IN" || event === "USER_UPDATED") {
-          // Recharger l'utilisateur à chaque changement
+          // Reload user on each change
           const currentUser = await getLoggedInUser();
           if (currentUser) {
             setUser(currentUser);
           }
+          // Make sure loading is false even when signed in
+          setLoading(false);
         } else if (event === "SIGNED_OUT") {
-          // Si un utilisateur se déconnecte, on réinitialise l'état
+          // If a user logs out, reset the state
           setUser(null);
+          setLoading(false);
         }
       }
     );
 
-    // Nettoyer l'abonnement
+    // Clean up subscription
     return () => {
       subscription.unsubscribe();
     };
