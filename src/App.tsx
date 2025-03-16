@@ -27,8 +27,8 @@ function App() {
   return (
     <div className="App">
       <AuthProvider>
-        <QuestionnaireProvider>
-          <BrowserRouter>
+        <BrowserRouter>
+          <QuestionnaireProvider>
             <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
@@ -44,8 +44,8 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
-          </BrowserRouter>
-        </QuestionnaireProvider>
+          </QuestionnaireProvider>
+        </BrowserRouter>
       </AuthProvider>
     </div>
   );
