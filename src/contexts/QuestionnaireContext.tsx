@@ -205,7 +205,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       setPreviousScore,
       score,
       isComplete,
-      setIsComplete,
+      setIsComplete, // Make sure setIsComplete is included in the context value
       showAnalysis,
       saving,
       profileAnalysis,

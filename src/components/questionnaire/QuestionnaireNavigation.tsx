@@ -10,7 +10,8 @@ const QuestionnaireNavigation = () => {
     answers, 
     isComplete, 
     score, 
-    setPreviousScore 
+    setPreviousScore,
+    setIsComplete
   } = useQuestionnaire();
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -37,7 +38,8 @@ const QuestionnaireNavigation = () => {
       <Button
         onClick={() => {
           if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
+            // Using a direct value instead of a callback function
+            setCurrentQuestionIndex(currentQuestionIndex + 1);
           } else {
             setIsComplete(true);
           }
