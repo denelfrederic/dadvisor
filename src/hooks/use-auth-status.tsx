@@ -12,16 +12,45 @@ export function useAuthStatus() {
     const loadUser = async () => {
       try {
         setLoading(true);
-        // Force refresh from Supabase to ensure we have the latest data
+        console.log("Checking authentication status...");
+        
+        // Vérifier directement la session Supabase
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          setUser(null);
+          return;
+        }
+        
+        if (!sessionData.session) {
+          console.log("No active session found");
+          setUser(null);
+          return;
+        }
+        
+        console.log("Active session found:", sessionData.session.user);
+        
+        // Ensuite essayer de récupérer les données complètes de l'utilisateur
         const currentUser = await getLoggedInUser();
+        
         if (currentUser) {
+          console.log("User data successfully loaded:", currentUser);
           setUser(currentUser);
         } else {
-          // If no user found, clean up the state
-          setUser(null);
+          // Si getLoggedInUser échoue mais que nous avons une session, créer un utilisateur minimal
+          const sessionUser = sessionData.session.user;
+          const fallbackUser: User = {
+            id: sessionUser.id,
+            email: sessionUser.email || "",
+            name: sessionUser.email?.split('@')[0] || "Utilisateur",
+            authProvider: (sessionUser.app_metadata?.provider as any) || "email"
+          };
+          console.log("Using fallback user data:", fallbackUser);
+          setUser(fallbackUser);
         }
       } catch (error) {
-        console.error("Error loading user:", error);
+        console.error("Critical error loading user:", error);
         setUser(null);
       } finally {
         // Always set loading to false to prevent infinite loading
@@ -37,15 +66,33 @@ export function useAuthStatus() {
       async (event, session) => {
         console.log("Auth state changed:", event, session);
         if (event === "SIGNED_IN" || event === "USER_UPDATED") {
-          // Reload user on each change
-          const currentUser = await getLoggedInUser();
-          if (currentUser) {
-            setUser(currentUser);
+          try {
+            // Reload user on each change
+            if (session) {
+              const currentUser = await getLoggedInUser();
+              if (currentUser) {
+                console.log("User updated after auth change:", currentUser);
+                setUser(currentUser);
+              } else {
+                // Fallback to session data
+                const fallbackUser: User = {
+                  id: session.user.id,
+                  email: session.user.email || "",
+                  name: session.user.email?.split('@')[0] || "Utilisateur",
+                  authProvider: (session.user.app_metadata?.provider as any) || "email"
+                };
+                console.log("Using fallback user data after auth change:", fallbackUser);
+                setUser(fallbackUser);
+              }
+            }
+          } catch (error) {
+            console.error("Error updating user after auth change:", error);
           }
           // Make sure loading is false even when signed in
           setLoading(false);
         } else if (event === "SIGNED_OUT") {
           // If a user logs out, reset the state
+          console.log("User signed out");
           setUser(null);
           setLoading(false);
         }
