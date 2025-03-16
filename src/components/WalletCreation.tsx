@@ -72,10 +72,6 @@ const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
                   description="Vos clés privées ne sont jamais partagées et restent sous votre contrôle exclusif."
                 />
                 <Feature 
-                  title="Compatibilité multi-chaînes" 
-                  description="Compatible avec les principales blockchains et tokens du marché."
-                />
-                <Feature 
                   title="Transactions transparentes" 
                   description="Suivez en temps réel l'état de vos transactions et votre historique."
                 />
