@@ -61,7 +61,7 @@ const Wallet = () => {
     <div className="min-h-screen bg-dadvisor-gray py-20 px-4">
       <div className="dadvisor-container">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold font-heading text-dadvisor-navy">Créer un Wallet Décentralisé</h1>
+          <h1 className="text-3xl font-bold font-heading text-dadvisor-navy">Wallet Ibex</h1>
           <Button variant="outline" asChild className="flex items-center gap-2">
             <Link to="/">
               <Home size={18} />
