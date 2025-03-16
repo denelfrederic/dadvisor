@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster"
 
 // Import pages
@@ -35,6 +35,8 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/profile-analysis" element={<ProfileAnalysis />} />
+              {/* Redirection de /profile vers /profile-analysis */}
+              <Route path="/profile" element={<Navigate to="/profile-analysis" replace />} />
               <Route path="/account" element={<Account />} />
               <Route path="/questionnaire" element={<Questionnaire />} />
               <Route path="/investment" element={<Investment />} />

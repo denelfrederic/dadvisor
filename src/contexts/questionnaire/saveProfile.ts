@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/utils/auth";
 import { InvestorProfileAnalysis } from "@/utils/questionnaire";
@@ -93,8 +92,8 @@ export const saveInvestmentProfileToSupabase = async (
     // Clear localStorage after successful save
     clearQuestionnaireStorage();
 
-    // Redirect to profile page
-    navigate("/profile");
+    // Redirect to profile-analysis page instead of profile
+    navigate("/profile-analysis");
     
   } catch (error: any) {
     console.error("Error saving investment profile:", error);
