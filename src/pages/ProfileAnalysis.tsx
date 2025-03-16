@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,28 +10,18 @@ import { PieChart as RechartsPieChart, Pie, Cell, Tooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import LoadingSpinner from "@/components/wallet/LoadingSpinner";
+import { InvestorProfileAnalysis } from "@/utils/questionnaire";
 
-interface InvestorProfileAnalysis {
-  title: string;
-  description: string;
-  traits: string[];
-  suitableInvestments: string[];
-  risksToConsider: string[];
-  timeHorizon: string;
-  allocation: {
-    label: string;
-    value: number;
-  }[];
+interface ProfileData {
+  score: number;
+  profileType: string;
+  analysis: InvestorProfileAnalysis;
+  investmentStyleInsights: string[];
 }
 
 const ProfileAnalysis = () => {
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState<{
-    score: number;
-    profileType: string;
-    analysis: InvestorProfileAnalysis;
-    investmentStyleInsights: string[];
-  } | null>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   
   const navigate = useNavigate();
   const { user } = useAuthStatus();
@@ -77,11 +66,18 @@ const ProfileAnalysis = () => {
           return;
         }
 
+        // Properly type and cast the JSON data
+        const profileDataObj = data.profile_data as {
+          analysis: InvestorProfileAnalysis;
+          investmentStyleInsights: string[];
+          answers: Record<string, { optionId: string; value: number }>;
+        };
+
         setProfileData({
           score: data.score,
           profileType: data.profile_type,
-          analysis: data.profile_data.analysis,
-          investmentStyleInsights: data.profile_data.investmentStyleInsights
+          analysis: profileDataObj.analysis,
+          investmentStyleInsights: profileDataObj.investmentStyleInsights
         });
       } catch (error) {
         console.error("Error in profile analysis:", error);

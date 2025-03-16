@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,13 @@ import ProgressBar from "@/components/ProgressBar";
 import QuestionCard, { Question } from "@/components/QuestionCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
-import { questions, calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle } from "@/utils/questionnaire";
+import { questions, calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle, InvestorProfileAnalysis } from "@/utils/questionnaire";
 import { Home, PieChart, ArrowRight, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthStatus } from "@/hooks/use-auth-status";
+import { ChartContainer } from "@/components/ui/chart";
+import { PieChart as RechartsPieChart, Pie, Cell, Tooltip } from "recharts";
+import { Json } from "@/integrations/supabase/types";
 
 /**
  * Page Questionnaire - Évalue le profil d'investisseur de l'utilisateur
@@ -119,16 +123,19 @@ const Questionnaire = () => {
       if (score < 40) profileType = "conservative";
       else if (score >= 70) profileType = "growth";
 
+      // Convert complex objects to a format compatible with Supabase's Json type
+      const profileDataForDb: Json = {
+        analysis: profileAnalysis as unknown as Json,
+        investmentStyleInsights: investmentStyleInsights as unknown as Json,
+        answers: answers as unknown as Json
+      };
+
       // Crée l'objet de données pour la sauvegarde
       const profileData = {
         user_id: user.id,
         score: Math.round(score),
         profile_type: profileType,
-        profile_data: {
-          analysis: profileAnalysis,
-          investmentStyleInsights: investmentStyleInsights,
-          answers: answers
-        }
+        profile_data: profileDataForDb
       };
 
       // Vérifie si l'utilisateur a déjà un profil
