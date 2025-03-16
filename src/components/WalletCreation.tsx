@@ -14,33 +14,32 @@ interface WalletCreationProps {
 const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
   const [activeTab, setActiveTab] = useState("create");
   const [isCreating, setIsCreating] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
   const [importSeed, setImportSeed] = useState("");
-  const [walletCreated, setWalletCreated] = useState(false);
-  const [seedPhrase, setSeedPhrase] = useState<string[]>([]);
   
   const handleCreateWallet = async () => {
     setIsCreating(true);
     
-    // Simulate API call to create wallet
     try {
-      // In real implementation, this would be an API call to Ibex
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call to the Ibex API to create a wallet
+      const response = await fetch("https://api-testnet.ibexwallet.org/api/v1/wallets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          network: "ethereum"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create wallet");
+      }
+
+      const data = await response.json();
+      const walletAddress = data.address;
       
-      // Generate mock seed phrase
-      const mockSeedPhrase = [
-        "apple", "banana", "cherry", "diamond", "elephant", 
-        "festival", "guitar", "holiday", "island", "jungle", 
-        "kitchen", "lemon"
-      ];
-      
-      const mockWalletAddress = "0x" + Array.from({ length: 40 }, () => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join("");
-      
-      setSeedPhrase(mockSeedPhrase);
-      setWalletAddress(mockWalletAddress);
-      setWalletCreated(true);
+      // Pass the wallet address to the parent component
+      onWalletCreated(walletAddress);
     } catch (error) {
       console.error("Failed to create wallet:", error);
     } finally {
@@ -51,77 +50,38 @@ const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
   const handleImportWallet = async () => {
     setIsCreating(true);
     
-    // Simulate API call to import wallet
     try {
-      // In real implementation, this would be an API call to Ibex
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!importSeed) {
+        throw new Error("Please enter a valid seed phrase");
+      }
       
-      const mockWalletAddress = "0x" + Array.from({ length: 40 }, () => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join("");
+      // Call to the Ibex API to import a wallet using the seed phrase
+      const response = await fetch("https://api-testnet.ibexwallet.org/api/v1/wallets/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          network: "ethereum",
+          mnemonic: importSeed.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to import wallet");
+      }
+
+      const data = await response.json();
+      const walletAddress = data.address;
       
-      setWalletAddress(mockWalletAddress);
-      onWalletCreated(mockWalletAddress);
+      // Pass the wallet address to the parent component
+      onWalletCreated(walletAddress);
     } catch (error) {
       console.error("Failed to import wallet:", error);
     } finally {
       setIsCreating(false);
     }
   };
-  
-  const handleConfirmSeedPhrase = () => {
-    onWalletCreated(walletAddress);
-  };
-  
-  if (walletCreated) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Votre phrase secrète</CardTitle>
-            <CardDescription>
-              Veuillez noter cette phrase de récupération et la conserver dans un endroit sûr. 
-              Elle est la seule façon de récupérer votre wallet si vous perdez l'accès.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-2 mb-6">
-              {seedPhrase.map((word, index) => (
-                <div key={index} className="p-3 bg-secondary rounded-md border flex items-center">
-                  <span className="text-muted-foreground mr-2 text-xs">{index + 1}.</span>
-                  <span className="font-mono">{word}</span>
-                </div>
-              ))}
-            </div>
-            <div className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 p-4 rounded-md">
-              <div className="flex items-start">
-                <svg className="w-5 h-5 text-amber-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
-                <div className="text-amber-800">
-                  <p className="font-medium mb-1">Attention !</p>
-                  <ul className="list-disc pl-5 text-xs space-y-1">
-                    <li>Ne partagez jamais cette phrase avec qui que ce soit</li>
-                    <li>Ne la stockez pas dans un fichier numérique non-protégé</li>
-                    <li>Notez-la sur papier et conservez-la en lieu sûr</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button className="w-full" onClick={handleConfirmSeedPhrase}>
-              J'ai sauvegardé ma phrase secrète
-            </Button>
-          </CardFooter>
-        </Card>
-      </motion.div>
-    );
-  }
   
   return (
     <motion.div
