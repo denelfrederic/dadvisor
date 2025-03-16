@@ -52,26 +52,6 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
       return;
     }
     
-    // Vérifie spécifiquement pour le cas frederic.denel@dadvisor.air
-    if (user?.email === "frederic.denel@dadvisor.air" && email === "frederic.denel@dadvisor.ai") {
-      // Option spéciale pour la migration de .air vers .ai directement
-      setEmailLoading(true);
-      
-      try {
-        toast.success("Redirection vers la page de connexion pour finaliser la mise à jour de votre email.");
-        setTimeout(() => {
-          // Déconnexion et redirection
-          supabase.auth.signOut().then(() => {
-            window.location.href = "/auth?message=email_updated";
-          });
-        }, 1500);
-        return;
-      } catch (error) {
-        console.error("Error during special case handling:", error);
-        setEmailLoading(false);
-      }
-    }
-    
     setEmailLoading(true);
     
     try {
@@ -89,7 +69,7 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
       
       // Handle various error cases
       if (error.message && error.message.includes("invalid")) {
-        setEmailError("Email invalide. Vérifiez le format et le domaine de votre email (.air n'est pas un domaine valide).");
+        setEmailError("Email invalide. Vérifiez le format et le domaine de votre email.");
         toast.error("Format d'email invalide");
       } else if (error.message && error.message.includes("already")) {
         setEmailError("Cet email est déjà utilisé par un autre compte.");
@@ -115,19 +95,6 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
         <CardDescription>Mettez à jour votre adresse email</CardDescription>
       </CardHeader>
       <CardContent>
-        {user?.email === "frederic.denel@dadvisor.air" && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-md mb-4 text-left">
-            <p className="font-medium mb-1">Domaine email non valide détecté</p>
-            <p className="text-sm mb-2">
-              Votre email actuel utilise le domaine <strong>".air"</strong> qui n'est pas reconnu comme un domaine valide.
-              Nous avons mis à jour votre email dans la base de données vers <strong>"frederic.denel@dadvisor.ai"</strong>.
-            </p>
-            <p className="text-sm">
-              Veuillez vous déconnecter et vous reconnecter avec <strong>frederic.denel@dadvisor.ai</strong> pour résoudre les problèmes d'affichage.
-            </p>
-          </div>
-        )}
-        
         <form onSubmit={handleEmailUpdate} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Adresse email</Label>
@@ -156,24 +123,6 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
               Assurez-vous d'utiliser un domaine valide comme .com, .fr, .ai, etc.
             </p>
           </div>
-          
-          {user?.email === "frederic.denel@dadvisor.air" && (
-            <Button 
-              type="button" 
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                supabase.auth.signOut().then(() => {
-                  toast.success("Déconnexion en cours, veuillez vous reconnecter avec frederic.denel@dadvisor.ai");
-                  setTimeout(() => {
-                    window.location.href = "/auth?message=email_updated";
-                  }, 1500);
-                });
-              }}
-            >
-              Se déconnecter et utiliser frederic.denel@dadvisor.ai
-            </Button>
-          )}
           
           <Button type="submit" disabled={emailLoading || email === user?.email}>
             {emailLoading ? "Mise à jour..." : "Mettre à jour l'email"}
