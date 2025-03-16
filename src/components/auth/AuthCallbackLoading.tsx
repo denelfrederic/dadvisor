@@ -6,6 +6,10 @@ interface AuthCallbackLoadingProps {
 }
 
 export const AuthCallbackLoading = ({ error }: AuthCallbackLoadingProps) => {
+  // Check if the error is related to an invalid email domain
+  const isInvalidDomainError = error?.toLowerCase().includes('invalid') && 
+                               (error?.includes('.air') || error?.includes('email'));
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-radial p-4">
       <div className="text-center max-w-md">
@@ -22,9 +26,22 @@ export const AuthCallbackLoading = ({ error }: AuthCallbackLoadingProps) => {
               <span className="font-medium">Problème d'authentification</span>
             </div>
             <p className="mb-4">{error}</p>
+            
+            {isInvalidDomainError && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-md mb-4 text-left">
+                <p className="font-medium mb-1">Problème de domaine email</p>
+                <p className="text-sm mb-2">
+                  Certains domaines comme <strong>".air"</strong> ne sont pas reconnus comme des domaines valides.
+                  Veuillez utiliser un email avec un domaine standard comme .com, .fr, .org, .ai, etc.
+                </p>
+                <p className="text-xs">
+                  Par exemple: utilisez <strong>nom@exemple.com</strong> au lieu de <strong>nom@exemple.air</strong>
+                </p>
+              </div>
+            )}
+            
             <p className="text-sm text-muted-foreground">
               Si l'erreur persiste, vérifiez que votre adresse email est valide et réessayez.
-              Certains domaines comme ".air" peuvent ne pas être reconnus comme valides.
             </p>
             <a 
               href="/auth"

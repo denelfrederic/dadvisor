@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { User } from "@/utils/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { AlertCircle } from "lucide-react";
 
 interface EmailUpdateFormProps {
   user: User | null;
@@ -16,6 +17,7 @@ interface EmailUpdateFormProps {
 const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [email, setEmail] = useState(user?.email || "");
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,12 +27,22 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
   const handleEmailUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear previous errors
+    setEmailError(null);
+    
     if (!email || email === user?.email) {
       return;
     }
     
     if (!validateEmail(email)) {
-      toast.error("Adresse email invalide");
+      setEmailError("Format d'email invalide. Exemple valide: nom@exemple.com");
+      return;
+    }
+    
+    // Check for uncommon TLD (Top Level Domains)
+    const tld = email.split('.').pop()?.toLowerCase();
+    if (tld && ['air', 'local', 'test', 'invalid', 'example'].includes(tld)) {
+      setEmailError(`Attention: .${tld} n'est généralement pas reconnu comme un domaine valide. Vérifiez votre email.`);
       return;
     }
     
@@ -41,20 +53,27 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
       
       if (error) throw error;
       
-      // Forcer la mise à jour des données utilisateur après changement d'email
+      // Force user data refresh after email change
       await refreshUserData();
       
       toast.success("Demande de mise à jour d'email envoyée. Veuillez vérifier votre boîte mail pour confirmer.");
+      setEmailError(null);
     } catch (error: any) {
-      // Si l'erreur est liée à un domaine invalide (comme .air au lieu de .ai)
-      if (error.message && error.message.includes("invalid")) {
-        toast.error("Adresse email invalide. Vérifiez le format et le domaine de votre email.");
-      } else {
-        toast.error(error.message || "Erreur lors de la mise à jour de l'email");
-      }
-      console.error(error);
+      console.error("Email update error:", error);
       
-      // Restaurer l'email d'origine en cas d'échec
+      // Handle various error cases
+      if (error.message && error.message.includes("invalid")) {
+        setEmailError("Email invalide. Vérifiez le format et le domaine de votre email (.air n'est pas un domaine valide).");
+        toast.error("Format d'email invalide");
+      } else if (error.message && error.message.includes("already")) {
+        setEmailError("Cet email est déjà utilisé par un autre compte.");
+        toast.error("Email déjà utilisé");
+      } else {
+        setEmailError(error.message || "Erreur lors de la mise à jour de l'email");
+        toast.error("Erreur de mise à jour");
+      }
+      
+      // Restore original email on failure
       if (user) {
         setEmail(user.email);
       }
@@ -77,11 +96,26 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError(null); // Clear errors when user types
+              }}
               placeholder="votre@email.com"
               required
               disabled={emailLoading}
+              className={emailError ? "border-red-300" : ""}
             />
+            
+            {emailError && (
+              <div className="text-sm flex items-start gap-2 text-destructive mt-1">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{emailError}</span>
+              </div>
+            )}
+            
+            <p className="text-xs text-muted-foreground mt-1">
+              Assurez-vous d'utiliser un domaine valide comme .com, .fr, .ai, etc.
+            </p>
           </div>
           <Button type="submit" disabled={emailLoading || email === user?.email}>
             {emailLoading ? "Mise à jour..." : "Mettre à jour l'email"}
