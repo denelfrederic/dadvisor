@@ -11,6 +11,7 @@ import { TEMP_ANSWERS_KEY, TEMP_SCORE_KEY, TEMP_COMPLETE_KEY } from "@/contexts/
 import ProfileContent from "@/components/profile/ProfileContent";
 import ProfileEmptyState from "@/components/profile/ProfileEmptyState";
 import ProfileLoading from "@/components/profile/ProfileLoading";
+import { Json } from "@/integrations/supabase/types";
 
 interface ProfileData {
   score: number;
@@ -180,11 +181,11 @@ const ProfileAnalysis = () => {
 
       const answers = JSON.parse(savedAnswers);
       
-      // Prepare data for Supabase (with correct typing)
-      const profileDataForDb = {
-        analysis: profileData.analysis,
-        investmentStyleInsights: profileData.investmentStyleInsights,
-        answers: answers
+      // Cast the complex objects to Json type for Supabase
+      const profileDataForDb: Json = {
+        analysis: profileData.analysis as unknown as Json,
+        investmentStyleInsights: profileData.investmentStyleInsights as unknown as Json,
+        answers: answers as unknown as Json
       };
 
       // Create data object for saving
