@@ -71,7 +71,7 @@ const Wallet = () => {
         </div>
         
         <p className="text-dadvisor-darkgray text-center mb-10 max-w-2xl mx-auto">
-          Un wallet décentralisé vous donne le contrôle total sur vos actifs numériques
+          Un wallet décentralisé vous donne le contrôle total sur vos actifs numériques, vos clés sont cryptées et sécurisées par biométrie.
         </p>
         
         <div className="mb-8">
@@ -117,7 +117,7 @@ const Wallet = () => {
                   </svg>
                   <div className="text-amber-800">
                     <p className="font-medium mb-1">Important</p>
-                    <p className="text-xs">Votre wallet est désormais créé et vous seul en avez le contrôle. DADVISOR n'a aucun accès à vos fonds ni à vos clés privées.</p>
+                    <p className="text-xs">Votre wallet est désormais créé et vous seul en avez le contrôle. DADVISOR n'a aucun accès à vos fonds ni à vos clés privées, qui sont cryptées et sécurisées par biométrie.</p>
                   </div>
                 </div>
               </div>

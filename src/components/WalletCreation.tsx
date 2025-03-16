@@ -2,9 +2,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 
 interface WalletCreationProps {
@@ -12,9 +9,7 @@ interface WalletCreationProps {
 }
 
 const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
-  const [activeTab, setActiveTab] = useState("create");
   const [isCreating, setIsCreating] = useState(false);
-  const [importSeed, setImportSeed] = useState("");
   
   const handleCreateWallet = async () => {
     setIsCreating(true);
@@ -47,42 +42,6 @@ const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
     }
   };
   
-  const handleImportWallet = async () => {
-    setIsCreating(true);
-    
-    try {
-      if (!importSeed) {
-        throw new Error("Please enter a valid seed phrase");
-      }
-      
-      // Call to the Ibex API to import a wallet using the seed phrase
-      const response = await fetch("https://api-testnet.ibexwallet.org/api/v1/wallets/import", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          network: "ethereum",
-          mnemonic: importSeed.trim()
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to import wallet");
-      }
-
-      const data = await response.json();
-      const walletAddress = data.address;
-      
-      // Pass the wallet address to the parent component
-      onWalletCreated(walletAddress);
-    } catch (error) {
-      console.error("Failed to import wallet:", error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -93,65 +52,42 @@ const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
         <CardHeader>
           <CardTitle>Wallet Ibex</CardTitle>
           <CardDescription>
-            Créez ou importez un wallet décentralisé pour gérer vos investissements en toute sécurité.
+            Créez un wallet décentralisé pour gérer vos investissements en toute sécurité.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="create" onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 mb-6">
-              <TabsTrigger value="create">Créer un wallet</TabsTrigger>
-              <TabsTrigger value="import">Importer un wallet</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="create">
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  <p className="mb-4">
-                    Un wallet décentralisé vous donne un contrôle total sur vos actifs numériques.
-                    Aucune autorité centrale ne peut bloquer votre accès ou saisir vos fonds.
-                  </p>
-                  <div className="space-y-3">
-                    <Feature 
-                      title="Sécurité maximale" 
-                      description="Vos clés privées ne sont jamais partagées et restent sous votre contrôle exclusif."
-                    />
-                    <Feature 
-                      title="Compatibilité multi-chaînes" 
-                      description="Compatible avec les principales blockchains et tokens du marché."
-                    />
-                    <Feature 
-                      title="Transactions transparentes" 
-                      description="Suivez en temps réel l'état de vos transactions et votre historique."
-                    />
-                  </div>
-                </div>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              <p className="mb-4">
+                Un wallet décentralisé vous donne un contrôle total sur vos actifs numériques.
+                Aucune autorité centrale ne peut bloquer votre accès ou saisir vos fonds.
+              </p>
+              <p className="mb-4">
+                Vos clés privées sont cryptées et sécurisées par biométrie selon les 
+                standards les plus élevés de l'industrie.
+              </p>
+              <div className="space-y-3">
+                <Feature 
+                  title="Sécurité maximale" 
+                  description="Vos clés privées ne sont jamais partagées et restent sous votre contrôle exclusif."
+                />
+                <Feature 
+                  title="Compatibilité multi-chaînes" 
+                  description="Compatible avec les principales blockchains et tokens du marché."
+                />
+                <Feature 
+                  title="Transactions transparentes" 
+                  description="Suivez en temps réel l'état de vos transactions et votre historique."
+                />
               </div>
-            </TabsContent>
-            
-            <TabsContent value="import">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="seedPhrase">Phrase de récupération</Label>
-                  <textarea 
-                    id="seedPhrase"
-                    className="w-full min-h-[120px] p-3 rounded-md border border-input bg-transparent text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Entrez les 12 mots de votre phrase secrète, séparés par des espaces"
-                    value={importSeed}
-                    onChange={(e) => setImportSeed(e.target.value)}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Entrez votre phrase de récupération de 12 mots pour restaurer l'accès à votre wallet existant.
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </CardContent>
         <CardFooter>
           <Button 
             className="w-full" 
-            onClick={activeTab === "create" ? handleCreateWallet : handleImportWallet}
-            disabled={isCreating || (activeTab === "import" && !importSeed)}
+            onClick={handleCreateWallet}
+            disabled={isCreating}
           >
             {isCreating ? (
               <>
@@ -161,10 +97,10 @@ const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 </span>
-                {activeTab === "create" ? "Création en cours..." : "Importation en cours..."}
+                Création en cours...
               </>
             ) : (
-              activeTab === "create" ? "Créer un wallet" : "Importer un wallet"
+              "Créer un wallet"
             )}
           </Button>
         </CardFooter>
