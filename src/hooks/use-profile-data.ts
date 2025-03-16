@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/utils/auth";
@@ -19,6 +19,8 @@ export function useProfileData(user: User | null) {
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const userIdParam = searchParams.get('userId');
   
   // Function to check for temporary data
   const checkForTemporaryData = () => {
@@ -63,7 +65,10 @@ export function useProfileData(user: User | null) {
 
   // Function to fetch the profile data from Supabase
   const fetchProfileData = async () => {
-    if (!user) {
+    // Special case: admin viewing a specific user's profile
+    const targetUserId = userIdParam || (user?.id);
+    
+    if (!targetUserId) {
       if (checkForTemporaryData()) {
         setLoading(false);
         return;
@@ -83,15 +88,15 @@ export function useProfileData(user: User | null) {
       const { data, error } = await supabase
         .from('investment_profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .single();
 
       if (error) {
         console.error("Error fetching profile:", error);
         if (error.code === 'PGRST116') {
           // If no profile is found in the database, 
-          // check if temporary data exists
-          if (checkForTemporaryData()) {
+          // check if temporary data exists (only for current user, not admin view)
+          if (!userIdParam && checkForTemporaryData()) {
             setLoading(false);
             return;
           }
@@ -101,7 +106,10 @@ export function useProfileData(user: User | null) {
             title: "Profil non trouvé",
             description: "Vous n'avez pas encore créé de profil d'investissement."
           });
-          navigate("/questionnaire");
+          
+          if (!userIdParam) {
+            navigate("/questionnaire");
+          }
         } else {
           toast({
             variant: "destructive",
@@ -210,7 +218,7 @@ export function useProfileData(user: User | null) {
   // Load profile data when the component mounts
   useEffect(() => {
     fetchProfileData();
-  }, [user, navigate]);
+  }, [user, navigate, userIdParam]);
 
   const hasTempData = Boolean(localStorage.getItem(TEMP_ANSWERS_KEY));
 
