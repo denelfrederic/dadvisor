@@ -27,72 +27,53 @@ const HeroSection = ({
     }}></div>
       
       <div className="container mx-auto px-4 pt-20 md:pt-0">
-        <div className="max-w-4xl mx-auto">
-          {/* Conteneur principal avec animation d'entrée */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.6,
-          delay: 0.2
-        }} className="text-center mb-8">
+        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+          {/* Conteneur principal avec animation d'entrée - Côté texte */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.6, delay: 0.2 }} 
+            className="text-center lg:text-left mb-8 lg:mb-0 lg:w-1/2"
+          >
             {/* Badge supérieur avec animation */}
-            <motion.div initial={{
-            opacity: 0,
-            y: 10
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.6
-          }} className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.6 }} 
+              className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
+            >
               Toutes les classes d'actifs, une seule plateforme
             </motion.div>
             
             {/* Titre principal avec animation */}
-            <motion.h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight" initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.6,
-            delay: 0.3
-          }}>
+            <motion.h1 
+              className="text-4xl md:text-6xl font-bold mb-6 leading-tight" 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
               Votre avenir financier,{" "}
               <span className="text-primary">simplifié</span>
             </motion.h1>
             
             {/* Description avec animation */}
-            <motion.p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed" initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.6,
-            delay: 0.4
-          }}>
+            <motion.p 
+              className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed" 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
               DADVISOR vous accompagne dans la construction de votre portefeuille d'investissement 
               personnalisé, adapté à votre profil de risque et vos objectifs.
             </motion.p>
             
             {/* Boutons d'action avec animation */}
-            <motion.div initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.6,
-            delay: 0.5
-          }} className="flex flex-col sm:flex-row gap-4 justify-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.6, delay: 0.5 }} 
+              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+            >
               <Button size="lg" asChild>
                 <Link to="/auth">Commencer</Link>
               </Button>
@@ -102,18 +83,21 @@ const HeroSection = ({
             </motion.div>
           </motion.div>
           
-          {/* Conteneur pour une image ou élément supplémentaire avec animation */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 40
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8,
-          delay: 0.6
-        }} className="relative mx-auto mt-12 max-w-sm">
-            
+          {/* Image illustrative avec animation */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            transition={{ duration: 0.8, delay: 0.6 }} 
+            className="lg:w-1/2"
+          >
+            <div className="relative rounded-2xl overflow-hidden shadow-dadvisor">
+              <img 
+                src="/lovable-uploads/ff203da3-ea3b-4d92-865d-0899d2e0ebcd.png" 
+                alt="Conseiller financier professionnel expliquant un plan d'investissement à des clients" 
+                className="w-full h-auto rounded-2xl object-cover"
+              />
+              <div className="absolute inset-0 bg-dadvisor-blue/10 mix-blend-overlay"></div>
+            </div>
           </motion.div>
         </div>
       </div>
