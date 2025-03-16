@@ -65,8 +65,15 @@ export function useProfileData(user: User | null) {
 
   // Function to fetch the profile data from Supabase
   const fetchProfileData = async () => {
+    // Get user session directly from Supabase to double-check authentication
+    const { data: sessionData } = await supabase.auth.getSession();
+    const isAuthenticated = !!sessionData.session;
+    
     // Special case: admin viewing a specific user's profile
-    const targetUserId = userIdParam || (user?.id);
+    const targetUserId = userIdParam || (user?.id || (isAuthenticated ? sessionData.session?.user.id : null));
+    
+    console.log("Target user ID:", targetUserId);
+    console.log("Current session:", sessionData.session);
     
     if (!targetUserId) {
       if (checkForTemporaryData()) {
@@ -148,13 +155,19 @@ export function useProfileData(user: User | null) {
   // Function to save the profile data to Supabase
   const saveProfile = async () => {
     if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Connexion requise",
-        description: "Vous devez être connecté pour sauvegarder votre profil."
-      });
-      navigate("/auth");
-      return;
+      // Double-check authentication
+      const { data: sessionData } = await supabase.auth.getSession();
+      const isAuthenticated = !!sessionData.session;
+      
+      if (!isAuthenticated) {
+        toast({
+          variant: "destructive",
+          title: "Connexion requise",
+          description: "Vous devez être connecté pour sauvegarder votre profil."
+        });
+        navigate("/auth");
+        return;
+      }
     }
 
     if (!profileData) return;
@@ -172,6 +185,20 @@ export function useProfileData(user: User | null) {
 
       const answers = JSON.parse(savedAnswers);
       
+      // Get the latest user ID from session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = user?.id || sessionData.session?.user.id;
+      
+      if (!userId) {
+        toast({
+          variant: "destructive",
+          title: "Connexion requise",
+          description: "Impossible d'identifier votre compte. Veuillez vous reconnecter."
+        });
+        navigate("/auth");
+        return;
+      }
+      
       // Cast the complex objects to Json type for Supabase
       const profileDataForDb: Json = {
         analysis: profileData.analysis as unknown as Json,
@@ -181,7 +208,7 @@ export function useProfileData(user: User | null) {
 
       // Create data object for saving
       const profileDataToSave = {
-        user_id: user.id,
+        user_id: userId,
         score: Math.round(profileData.score),
         profile_type: profileData.profileType,
         profile_data: profileDataForDb

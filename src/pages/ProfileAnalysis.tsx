@@ -7,9 +7,35 @@ import ProfileContent from "@/components/profile/ProfileContent";
 import ProfileEmptyState from "@/components/profile/ProfileEmptyState";
 import ProfileLoading from "@/components/profile/ProfileLoading";
 import { useProfileData } from "@/hooks/use-profile-data";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@/utils/auth";
 
 const ProfileAnalysis = () => {
-  const { user } = useAuthStatus();
+  const { user: authUser } = useAuthStatus();
+  const [directSessionUser, setDirectSessionUser] = useState<User | null>(null);
+  
+  // Double-check authentication directly with Supabase
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        const sessionUser = data.session.user;
+        setDirectSessionUser({
+          id: sessionUser.id,
+          email: sessionUser.email || "",
+          name: sessionUser.email?.split('@')[0] || "",
+          authProvider: "email" 
+        });
+      }
+    };
+    
+    checkSession();
+  }, []);
+  
+  // Use either the auth context user or the direct session user
+  const user = authUser || directSessionUser;
+  
   const { 
     loading, 
     profileData, 
@@ -39,7 +65,7 @@ const ProfileAnalysis = () => {
             hasTempProfile={hasTempData}
             handleRetakeQuestionnaire={handleRetakeQuestionnaire}
             handleSaveProfile={saveProfile}
-            navigate={user => window.location.href = user}
+            navigate={path => window.location.href = path}
             isLoggedIn={!!user}
           />
         ) : (
