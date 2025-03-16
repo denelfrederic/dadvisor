@@ -9,6 +9,8 @@ import EmailUpdateForm from "@/components/account/EmailUpdateForm";
 import PasswordUpdateForm from "@/components/account/PasswordUpdateForm";
 import LogoutButton from "@/components/account/LogoutButton";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { UserRound, BarChartBig } from "lucide-react";
 
 const Account = () => {
   const navigate = useNavigate();
@@ -73,6 +75,10 @@ const Account = () => {
     refreshUserData();
   }, [navigate]);
 
+  const handleViewProfile = () => {
+    navigate("/profile");
+  };
+
   return (
     <div className="container mx-auto px-4 pt-32 pb-16 max-w-3xl">
       <h1 className="text-3xl font-bold text-dadvisor-navy mb-8">Gestion de compte</h1>
@@ -112,6 +118,23 @@ const Account = () => {
                 </p>
               </div>
             </div>
+          </div>
+          
+          {/* Nouveau bouton pour accéder au profil d'investisseur */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold text-dadvisor-navy mb-4 flex items-center gap-2">
+              <BarChartBig className="h-5 w-5" />
+              Mon profil d'investisseur
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              Consultez votre profil d'investisseur basé sur vos réponses au questionnaire.
+            </p>
+            <Button 
+              onClick={handleViewProfile}
+              className="w-full md:w-auto"
+            >
+              Voir mon profil d'investisseur
+            </Button>
           </div>
           
           <EmailUpdateForm user={user} refreshUserData={refreshUserData} />
