@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,13 @@ import { PieChart as RechartsPieChart, Pie, Cell, Tooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import LoadingSpinner from "@/components/wallet/LoadingSpinner";
-import { InvestorProfileAnalysis } from "@/utils/questionnaire";
+import { InvestorProfileAnalysis, getInvestorProfileAnalysis, analyzeInvestmentStyle, calculateRiskScore } from "@/utils/questionnaire";
 import { Json } from "@/integrations/supabase/types";
+
+// Clés pour le localStorage
+const TEMP_ANSWERS_KEY = "dadvisor_temp_answers";
+const TEMP_SCORE_KEY = "dadvisor_temp_score";
+const TEMP_COMPLETE_KEY = "dadvisor_temp_complete";
 
 interface ProfileData {
   score: number;
@@ -29,9 +33,55 @@ const ProfileAnalysis = () => {
   const { user } = useAuthStatus();
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+  // Fonction pour vérifier si des données temporaires existent
+  const checkForTemporaryData = () => {
+    const savedAnswers = localStorage.getItem(TEMP_ANSWERS_KEY);
+    const savedScore = localStorage.getItem(TEMP_SCORE_KEY);
+    const savedComplete = localStorage.getItem(TEMP_COMPLETE_KEY);
+    
+    if (savedAnswers && savedScore && savedComplete) {
+      try {
+        const answers = JSON.parse(savedAnswers);
+        const score = JSON.parse(savedScore);
+        const isComplete = JSON.parse(savedComplete);
+        
+        if (isComplete && Object.keys(answers).length > 0) {
+          const analysis = getInvestorProfileAnalysis(score, answers);
+          const insights = analyzeInvestmentStyle(answers);
+          
+          let profileType = "balanced";
+          if (score < 40) profileType = "conservative";
+          else if (score >= 70) profileType = "growth";
+          
+          setProfileData({
+            score,
+            profileType,
+            analysis,
+            investmentStyleInsights: insights
+          });
+          
+          toast({
+            title: "Profil temporaire chargé",
+            description: "Votre profil n'est pas encore sauvegardé. Vous pouvez le faire depuis cette page."
+          });
+          
+          return true;
+        }
+      } catch (e) {
+        console.error("Error parsing temp data:", e);
+      }
+    }
+    return false;
+  };
+
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user) {
+        if (checkForTemporaryData()) {
+          setLoading(false);
+          return;
+        }
+        
         toast({
           variant: "destructive",
           title: "Accès refusé",
@@ -52,6 +102,13 @@ const ProfileAnalysis = () => {
         if (error) {
           console.error("Error fetching profile:", error);
           if (error.code === 'PGRST116') {
+            // Si aucun profil n'est trouvé dans la base de données, 
+            // vérifier si des données temporaires existent
+            if (checkForTemporaryData()) {
+              setLoading(false);
+              return;
+            }
+            
             toast({
               variant: "destructive",
               title: "Profil non trouvé",
@@ -97,7 +154,80 @@ const ProfileAnalysis = () => {
   }, [user, navigate]);
 
   const handleRetakeQuestionnaire = () => {
+    // Nettoyer le localStorage avant de recommencer
+    localStorage.removeItem(TEMP_ANSWERS_KEY);
+    localStorage.removeItem(TEMP_SCORE_KEY);
+    localStorage.removeItem(TEMP_COMPLETE_KEY);
     navigate("/questionnaire");
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Connexion requise",
+        description: "Vous devez être connecté pour sauvegarder votre profil."
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!profileData) return;
+
+    try {
+      const savedAnswers = localStorage.getItem(TEMP_ANSWERS_KEY);
+      if (!savedAnswers) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Données du questionnaire non trouvées."
+        });
+        return;
+      }
+
+      const answers = JSON.parse(savedAnswers);
+      
+      // Prepare data for Supabase (with correct typing)
+      const profileDataForDb: Json = {
+        analysis: profileData.analysis as unknown as Json,
+        investmentStyleInsights: profileData.investmentStyleInsights as unknown as Json,
+        answers: answers as unknown as Json
+      };
+
+      // Crée l'objet de données pour la sauvegarde
+      const profileDataToSave = {
+        user_id: user.id,
+        score: Math.round(profileData.score),
+        profile_type: profileData.profileType,
+        profile_data: profileDataForDb
+      };
+
+      const { error } = await supabase
+        .from('investment_profiles')
+        .insert(profileDataToSave);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profil sauvegardé",
+        description: "Votre profil d'investisseur a été sauvegardé avec succès."
+      });
+
+      // Nettoyer le localStorage après sauvegarde réussie
+      localStorage.removeItem(TEMP_ANSWERS_KEY);
+      localStorage.removeItem(TEMP_SCORE_KEY);
+      localStorage.removeItem(TEMP_COMPLETE_KEY);
+
+      // Recharger la page pour afficher les données sauvegardées
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur de sauvegarde",
+        description: error.message || "Une erreur est survenue lors de la sauvegarde de votre profil."
+      });
+    }
   };
 
   return (
@@ -128,6 +258,14 @@ const ProfileAnalysis = () => {
                 <PieChart className="h-6 w-6 text-primary" />
                 <h2 className="text-2xl font-bold">Analyse de votre profil d'investisseur</h2>
               </div>
+              
+              {/* Afficher un message si le profil est temporaire */}
+              {localStorage.getItem(TEMP_ANSWERS_KEY) && (
+                <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 rounded-lg text-yellow-800">
+                  <p className="font-medium">Ce profil n'est pas encore sauvegardé dans votre compte.</p>
+                  <p>Cliquez sur "Sauvegarder mon profil" ci-dessous pour le conserver.</p>
+                </div>
+              )}
               
               <div className="mb-8">
                 <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -237,6 +375,16 @@ const ProfileAnalysis = () => {
                     <RefreshCw size={16} />
                     Recommencer le questionnaire
                   </Button>
+                  
+                  {/* Afficher le bouton de sauvegarde seulement si des données temporaires existent */}
+                  {localStorage.getItem(TEMP_ANSWERS_KEY) && user && (
+                    <Button 
+                      onClick={handleSaveProfile}
+                      className="flex items-center gap-2"
+                    >
+                      Sauvegarder mon profil
+                    </Button>
+                  )}
                   
                   <Button 
                     onClick={() => navigate("/wallet")}

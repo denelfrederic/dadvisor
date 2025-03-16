@@ -30,6 +30,11 @@ interface QuestionnaireContextType {
 
 const QuestionnaireContext = createContext<QuestionnaireContextType | undefined>(undefined);
 
+// Clés pour le localStorage
+const TEMP_ANSWERS_KEY = "dadvisor_temp_answers";
+const TEMP_SCORE_KEY = "dadvisor_temp_score";
+const TEMP_COMPLETE_KEY = "dadvisor_temp_complete";
+
 export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<QuestionnaireResponses>({});
@@ -44,6 +49,56 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   // Compute derived state
   const profileAnalysis = isComplete ? getInvestorProfileAnalysis(score, answers) : null;
   const investmentStyleInsights = isComplete ? analyzeInvestmentStyle(answers) : [];
+
+  // Restaurer les données depuis localStorage au chargement
+  useEffect(() => {
+    const savedAnswers = localStorage.getItem(TEMP_ANSWERS_KEY);
+    const savedScore = localStorage.getItem(TEMP_SCORE_KEY);
+    const savedComplete = localStorage.getItem(TEMP_COMPLETE_KEY);
+    
+    if (savedAnswers) {
+      try {
+        const parsedAnswers = JSON.parse(savedAnswers) as QuestionnaireResponses;
+        setAnswers(parsedAnswers);
+      } catch (e) {
+        console.error("Error parsing saved answers:", e);
+      }
+    }
+    
+    if (savedScore) {
+      try {
+        const parsedScore = JSON.parse(savedScore) as number;
+        setScore(parsedScore);
+      } catch (e) {
+        console.error("Error parsing saved score:", e);
+      }
+    }
+    
+    if (savedComplete) {
+      try {
+        const parsedComplete = JSON.parse(savedComplete) as boolean;
+        setIsComplete(parsedComplete);
+        if (parsedComplete) {
+          setShowAnalysis(true);
+        }
+      } catch (e) {
+        console.error("Error parsing saved complete status:", e);
+      }
+    }
+  }, []);
+
+  // Sauvegarder dans localStorage quand les réponses changent
+  useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      localStorage.setItem(TEMP_ANSWERS_KEY, JSON.stringify(answers));
+    }
+  }, [answers]);
+
+  // Sauvegarder score et statut complet dans localStorage
+  useEffect(() => {
+    localStorage.setItem(TEMP_SCORE_KEY, JSON.stringify(score));
+    localStorage.setItem(TEMP_COMPLETE_KEY, JSON.stringify(isComplete));
+  }, [score, isComplete]);
 
   // Calculate score when answers change
   useEffect(() => {
@@ -101,10 +156,20 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     setAnswers({});
     setScore(0);
     setPreviousScore(0);
+    
+    // Nettoyer localStorage
+    localStorage.removeItem(TEMP_ANSWERS_KEY);
+    localStorage.removeItem(TEMP_SCORE_KEY);
+    localStorage.removeItem(TEMP_COMPLETE_KEY);
   }, []);
 
   const saveInvestmentProfile = async () => {
     if (!user) {
+      // Sauvegarder l'état actuel dans localStorage avant la redirection
+      localStorage.setItem(TEMP_ANSWERS_KEY, JSON.stringify(answers));
+      localStorage.setItem(TEMP_SCORE_KEY, JSON.stringify(score));
+      localStorage.setItem(TEMP_COMPLETE_KEY, JSON.stringify(isComplete));
+      
       toast({
         variant: "destructive",
         title: "Connexion requise",
@@ -177,6 +242,11 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
         description: "Votre profil d'investisseur a été sauvegardé avec succès."
       });
 
+      // Nettoyer le localStorage après sauvegarde réussie
+      localStorage.removeItem(TEMP_ANSWERS_KEY);
+      localStorage.removeItem(TEMP_SCORE_KEY);
+      localStorage.removeItem(TEMP_COMPLETE_KEY);
+
       // Redirige vers la page d'analyse du profil
       navigate("/profile");
       
@@ -205,7 +275,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       setPreviousScore,
       score,
       isComplete,
-      setIsComplete, // Make sure setIsComplete is included in the context value
+      setIsComplete,
       showAnalysis,
       saving,
       profileAnalysis,
