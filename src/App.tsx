@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster"
@@ -25,22 +26,27 @@ import ScrollToTop from './components/ScrollToTop';
 function App() {
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/profile-analysis" element={<ProfileAnalysis />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/questionnaire" element={<Questionnaire />} />
-          <Route path="/investment" element={<Investment />} />
-          <Route path="/portfolios" element={<Portfolios />} />
-          <Route path="/wallet" element={<Wallet />} />
-          <Route path="/admin-check" element={<AdminCheck />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </BrowserRouter>
+      <AuthProvider>
+        <QuestionnaireProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/profile-analysis" element={<ProfileAnalysis />} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/questionnaire" element={<Questionnaire />} />
+              <Route path="/investment" element={<Investment />} />
+              <Route path="/portfolios" element={<Portfolios />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/admin-check" element={<AdminCheck />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </BrowserRouter>
+        </QuestionnaireProvider>
+      </AuthProvider>
     </div>
   );
 }
