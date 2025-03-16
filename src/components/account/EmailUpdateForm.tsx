@@ -21,7 +21,20 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    
+    // Vérifier le format de base de l'email
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+    
+    // Vérifier le domaine de l'email (pour éviter les domaines comme .air)
+    const domain = email.split('@')[1];
+    const tld = domain.split('.').pop()?.toLowerCase();
+    if (tld && ['air', 'local', 'test', 'invalid', 'example'].includes(tld)) {
+      return false;
+    }
+    
+    return true;
   };
 
   const handleEmailUpdate = async (e: React.FormEvent) => {
@@ -35,15 +48,28 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
     }
     
     if (!validateEmail(email)) {
-      setEmailError("Format d'email invalide. Exemple valide: nom@exemple.com");
+      setEmailError("Format d'email invalide ou domaine non reconnu. Utilisez un domaine standard comme .com, .fr, .ai, etc.");
       return;
     }
     
-    // Check for uncommon TLD (Top Level Domains)
-    const tld = email.split('.').pop()?.toLowerCase();
-    if (tld && ['air', 'local', 'test', 'invalid', 'example'].includes(tld)) {
-      setEmailError(`Attention: .${tld} n'est généralement pas reconnu comme un domaine valide. Vérifiez votre email.`);
-      return;
+    // Vérifie spécifiquement pour le cas frederic.denel@dadvisor.air
+    if (user?.email === "frederic.denel@dadvisor.air" && email === "frederic.denel@dadvisor.ai") {
+      // Option spéciale pour la migration de .air vers .ai directement
+      setEmailLoading(true);
+      
+      try {
+        toast.success("Redirection vers la page de connexion pour finaliser la mise à jour de votre email.");
+        setTimeout(() => {
+          // Déconnexion et redirection
+          supabase.auth.signOut().then(() => {
+            window.location.href = "/auth?message=email_updated";
+          });
+        }, 1500);
+        return;
+      } catch (error) {
+        console.error("Error during special case handling:", error);
+        setEmailLoading(false);
+      }
     }
     
     setEmailLoading(true);
@@ -89,6 +115,19 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
         <CardDescription>Mettez à jour votre adresse email</CardDescription>
       </CardHeader>
       <CardContent>
+        {user?.email === "frederic.denel@dadvisor.air" && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-md mb-4 text-left">
+            <p className="font-medium mb-1">Domaine email non valide détecté</p>
+            <p className="text-sm mb-2">
+              Votre email actuel utilise le domaine <strong>".air"</strong> qui n'est pas reconnu comme un domaine valide.
+              Nous avons mis à jour votre email dans la base de données vers <strong>"frederic.denel@dadvisor.ai"</strong>.
+            </p>
+            <p className="text-sm">
+              Veuillez vous déconnecter et vous reconnecter avec <strong>frederic.denel@dadvisor.ai</strong> pour résoudre les problèmes d'affichage.
+            </p>
+          </div>
+        )}
+        
         <form onSubmit={handleEmailUpdate} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Adresse email</Label>
@@ -117,6 +156,25 @@ const EmailUpdateForm = ({ user, refreshUserData }: EmailUpdateFormProps) => {
               Assurez-vous d'utiliser un domaine valide comme .com, .fr, .ai, etc.
             </p>
           </div>
+          
+          {user?.email === "frederic.denel@dadvisor.air" && (
+            <Button 
+              type="button" 
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                supabase.auth.signOut().then(() => {
+                  toast.success("Déconnexion en cours, veuillez vous reconnecter avec frederic.denel@dadvisor.ai");
+                  setTimeout(() => {
+                    window.location.href = "/auth?message=email_updated";
+                  }, 1500);
+                });
+              }}
+            >
+              Se déconnecter et utiliser frederic.denel@dadvisor.ai
+            </Button>
+          )}
+          
           <Button type="submit" disabled={emailLoading || email === user?.email}>
             {emailLoading ? "Mise à jour..." : "Mettre à jour l'email"}
           </Button>
