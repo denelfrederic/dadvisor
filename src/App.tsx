@@ -12,6 +12,7 @@ import Questionnaire from "./pages/Questionnaire";
 import Portfolios from "./pages/Portfolios";
 import Wallet from "./pages/Wallet";
 import Account from "./pages/Account";
+import ProfileAnalysis from "./pages/ProfileAnalysis";
 import { Toaster } from "@/components/ui/toaster";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +59,7 @@ function App() {
           <Route path="/portfolios" element={<Portfolios />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/profile" element={<ProfileAnalysis />} />
         </Routes>
       </div>
       <Toaster />

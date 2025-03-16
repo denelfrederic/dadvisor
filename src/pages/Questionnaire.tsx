@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,8 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
 import { questions, calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle } from "@/utils/questionnaire";
 import { Home, PieChart, ArrowRight, RefreshCw } from "lucide-react";
-import { ChartContainer } from "@/components/ui/chart";
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 
 /**
  * Page Questionnaire - Évalue le profil d'investisseur de l'utilisateur
@@ -23,7 +22,9 @@ const Questionnaire = () => {
   const [score, setScore] = useState(0);
   const [previousScore, setPreviousScore] = useState(0);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuthStatus();
   
   /**
    * Gère la sélection d'une réponse par l'utilisateur
@@ -88,6 +89,93 @@ const Questionnaire = () => {
   // Obtient l'analyse du profil d'investisseur
   const profileAnalysis = isComplete ? getInvestorProfileAnalysis(score, answers) : null;
   const investmentStyleInsights = isComplete ? analyzeInvestmentStyle(answers) : [];
+
+  // Fonction pour sauvegarder le profil d'investisseur dans la base de données
+  const saveInvestmentProfile = async () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Connexion requise",
+        description: "Vous devez être connecté pour sauvegarder votre profil d'investisseur."
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!profileAnalysis) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de sauvegarder le profil, analyse non disponible."
+      });
+      return;
+    }
+
+    setSaving(true);
+    
+    try {
+      // Détermine le type de profil
+      let profileType = "balanced";
+      if (score < 40) profileType = "conservative";
+      else if (score >= 70) profileType = "growth";
+
+      // Crée l'objet de données pour la sauvegarde
+      const profileData = {
+        user_id: user.id,
+        score: Math.round(score),
+        profile_type: profileType,
+        profile_data: {
+          analysis: profileAnalysis,
+          investmentStyleInsights: investmentStyleInsights,
+          answers: answers
+        }
+      };
+
+      // Vérifie si l'utilisateur a déjà un profil
+      const { data: existingProfile } = await supabase
+        .from('investment_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      let result;
+      
+      if (existingProfile) {
+        // Met à jour le profil existant
+        result = await supabase
+          .from('investment_profiles')
+          .update(profileData)
+          .eq('user_id', user.id);
+      } else {
+        // Crée un nouveau profil
+        result = await supabase
+          .from('investment_profiles')
+          .insert(profileData);
+      }
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      toast({
+        title: "Profil sauvegardé",
+        description: "Votre profil d'investisseur a été sauvegardé avec succès."
+      });
+
+      // Redirige vers la page d'analyse du profil
+      navigate("/profile");
+      
+    } catch (error: any) {
+      console.error("Error saving investment profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur de sauvegarde",
+        description: error.message || "Une erreur est survenue lors de la sauvegarde de votre profil."
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
   
   // Fonction pour continuer vers les portefeuilles
   const handleContinueToPortfolios = () => {
@@ -196,7 +284,7 @@ const Questionnaire = () => {
             <h2 className="text-xl font-medium mb-2">Questionnaire terminé !</h2>
             <p>Votre score de risque est de {score}</p>
             <p className="text-muted-foreground mt-2">
-              Vous allez être redirigé vers la sélection de portefeuille...
+              Vous allez être redirigé vers l'analyse détaillée...
             </p>
           </motion.div>
         )}
@@ -331,11 +419,32 @@ const Questionnaire = () => {
                   </Button>
                   
                   <Button 
+                    variant="outline"
                     onClick={handleContinueToPortfolios}
                     className="flex items-center gap-2"
                   >
                     Découvrir les portefeuilles recommandés
                     <ArrowRight size={16} />
+                  </Button>
+
+                  <Button 
+                    onClick={saveInvestmentProfile}
+                    className="flex items-center gap-2"
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <>
+                        <span className="mr-2">
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        </span>
+                        Enregistrement en cours...
+                      </>
+                    ) : (
+                      "Enregistrer mon profil d'investisseur"
+                    )}
                   </Button>
                 </div>
               </div>
