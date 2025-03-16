@@ -50,9 +50,9 @@ export function useAuthCallback() {
             description: `Bienvenue, ${user.name} !`,
           });
           
-          // Redirect to questionnaire
-          console.log("Redirecting to questionnaire after OAuth login");
-          navigate("/questionnaire");
+          // Redirect to home page instead of questionnaire
+          console.log("Redirecting to home page after OAuth login");
+          navigate("/");
         } else {
           console.error("OAuth callback: No session found");
           setError("Aucune session trouvée après l'authentification. Veuillez réessayer.");

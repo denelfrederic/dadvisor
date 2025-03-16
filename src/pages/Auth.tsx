@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,8 +55,8 @@ const Auth = () => {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user && !authLoading) {
-      console.log("User already logged in, redirecting:", user);
-      navigate("/questionnaire");
+      console.log("User already logged in, redirecting to home page:", user);
+      navigate("/");
     }
   }, [user, authLoading, navigate]);
   
@@ -102,8 +101,8 @@ const Auth = () => {
           description: `Bienvenue, ${user.name} !`,
         });
         
-        console.log("Login successful, redirecting to questionnaire");
-        navigate("/questionnaire");
+        console.log("Login successful, redirecting to home page");
+        navigate("/");
       }
     } catch (error: any) {
       console.error("Erreur lors de la connexion avec email:", error);
@@ -151,8 +150,8 @@ const Auth = () => {
           description: "Votre compte a été créé avec succès.",
         });
         
-        console.log("Signup successful, redirecting to questionnaire");
-        navigate("/questionnaire");
+        console.log("Signup successful, redirecting to home page");
+        navigate("/");
       }
     } catch (error: any) {
       console.error("Erreur lors de l'inscription:", error);
