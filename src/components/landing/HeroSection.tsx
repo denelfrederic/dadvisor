@@ -63,7 +63,7 @@ const HeroSection = ({
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              DADVISOR est un service qui permet aux investisseurs de qualifier leur profil de risque et de chosir en autonomie et en autoconservation des portefeuilles diversifiés.
+              DADVISOR est un service qui permet aux investisseurs de qualifier leur profil de risque et de choisir en autonomie et en autoconservation des portefeuilles diversifiés.
             </motion.p>
             
             {/* Boutons d'action avec animation */}
