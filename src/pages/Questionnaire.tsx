@@ -19,6 +19,7 @@ const Questionnaire = () => {
   const [answers, setAnswers] = useState<Record<string, { optionId: string, value: number }>>({});
   const [isComplete, setIsComplete] = useState(false);
   const [score, setScore] = useState(0);
+  const [previousScore, setPreviousScore] = useState(0);
   const navigate = useNavigate();
   
   /**
@@ -28,10 +29,22 @@ const Questionnaire = () => {
    * @param value - Valeur numérique associée à l'option
    */
   const handleAnswer = useCallback((questionId: string, optionId: string, value: number) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: { optionId, value }
-    }));
+    // Sauvegarde du score précédent
+    const oldAnswers = { ...answers };
+    setPreviousScore(calculateRiskScore(oldAnswers));
+    
+    // Mise à jour des réponses
+    setAnswers(prev => {
+      const newAnswers = {
+        ...prev,
+        [questionId]: { optionId, value }
+      };
+      
+      // Mise à jour du score actuel
+      setScore(calculateRiskScore(newAnswers));
+      
+      return newAnswers;
+    });
     
     // Avance automatiquement à la question suivante après un court délai
     setTimeout(() => {
@@ -42,10 +55,15 @@ const Questionnaire = () => {
         setIsComplete(true);
       }
     }, 500);
-  }, [currentQuestionIndex, questions.length]);
+  }, [currentQuestionIndex, questions.length, answers]);
   
-  // Calcule le score lorsque le questionnaire est terminé
+  // Calcule le score initial et quand le questionnaire est terminé
   useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      const calculatedScore = calculateRiskScore(answers);
+      setScore(calculatedScore);
+    }
+    
     if (isComplete && Object.keys(answers).length === questions.length) {
       const calculatedScore = calculateRiskScore(answers);
       setScore(calculatedScore);
@@ -105,6 +123,8 @@ const Questionnaire = () => {
                 onAnswer={handleAnswer}
                 isAnswered={!!answers[currentQuestion.id]}
                 selectedOptionId={answers[currentQuestion.id]?.optionId}
+                previousScore={previousScore}
+                currentScore={score}
               />
             </motion.div>
           </AnimatePresence>
@@ -114,7 +134,16 @@ const Questionnaire = () => {
         <div className="flex justify-between items-center">
           <Button
             variant="outline"
-            onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+            onClick={() => {
+              if (currentQuestionIndex > 0) {
+                const previousQuestionIndex = currentQuestionIndex - 1;
+                setCurrentQuestionIndex(previousQuestionIndex);
+                
+                // Calculer le score précédent lorsqu'on revient à une question
+                const oldAnswers = { ...answers };
+                setPreviousScore(calculateRiskScore(oldAnswers));
+              }
+            }}
             disabled={currentQuestionIndex === 0 || isComplete}
           >
             Question précédente
@@ -127,6 +156,8 @@ const Questionnaire = () => {
           <Button
             onClick={() => {
               if (currentQuestionIndex < questions.length - 1) {
+                // Si on saute une question, on garde le score actuel comme précédent
+                setPreviousScore(score);
                 setCurrentQuestionIndex(prev => prev + 1);
               } else {
                 setIsComplete(true);
