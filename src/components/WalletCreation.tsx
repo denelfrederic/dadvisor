@@ -50,7 +50,7 @@ const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
     >
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle>Wallet Ibex</CardTitle>
+          <CardTitle>Wallet</CardTitle>
           <CardDescription>
             Créez un wallet décentralisé pour gérer vos investissements en toute sécurité.
           </CardDescription>
