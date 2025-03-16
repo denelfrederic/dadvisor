@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { useQuestionnaire } from "@/contexts/QuestionnaireContext";
+import { useQuestionnaire } from "@/contexts/questionnaire";
 import { questions } from "@/utils/questionnaire";
 
 const QuestionnaireNavigation = () => {

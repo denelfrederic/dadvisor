@@ -1,6 +1,6 @@
 
 import { questions } from "@/utils/questionnaire";
-import { useQuestionnaire } from "@/contexts/QuestionnaireContext";
+import { useQuestionnaire } from "@/contexts/questionnaire";
 import { motion } from "framer-motion";
 import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";

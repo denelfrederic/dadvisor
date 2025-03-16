@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { PieChart, RefreshCw, ArrowRight } from "lucide-react";
-import { useQuestionnaire } from "@/contexts/QuestionnaireContext";
+import { useQuestionnaire } from "@/contexts/questionnaire";
 import { ChartContainer } from "@/components/ui/chart";
 import { PieChart as RechartsPieChart, Pie, Cell, Tooltip } from "recharts";
 

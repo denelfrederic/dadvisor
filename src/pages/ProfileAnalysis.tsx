@@ -12,11 +12,7 @@ import { useAuthStatus } from "@/hooks/use-auth-status";
 import LoadingSpinner from "@/components/wallet/LoadingSpinner";
 import { InvestorProfileAnalysis, getInvestorProfileAnalysis, analyzeInvestmentStyle, calculateRiskScore } from "@/utils/questionnaire";
 import { Json } from "@/integrations/supabase/types";
-
-// Clés pour le localStorage
-const TEMP_ANSWERS_KEY = "dadvisor_temp_answers";
-const TEMP_SCORE_KEY = "dadvisor_temp_score";
-const TEMP_COMPLETE_KEY = "dadvisor_temp_complete";
+import { TEMP_ANSWERS_KEY, TEMP_SCORE_KEY, TEMP_COMPLETE_KEY } from "@/contexts/questionnaire";
 
 interface ProfileData {
   score: number;

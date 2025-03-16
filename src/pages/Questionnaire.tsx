@@ -1,13 +1,11 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { motion } from "framer-motion";
-import { QuestionnaireProvider } from "@/contexts/QuestionnaireContext";
+import { QuestionnaireProvider, useQuestionnaire } from "@/contexts/questionnaire";
 import QuestionnaireProgress from "@/components/questionnaire/QuestionnaireProgress";
 import QuestionnaireNavigation from "@/components/questionnaire/QuestionnaireNavigation";
 import ProfileAnalysisDisplay from "@/components/questionnaire/ProfileAnalysisDisplay";
-import { useQuestionnaire } from "@/contexts/QuestionnaireContext";
 
 /**
  * Main content component for the questionnaire
