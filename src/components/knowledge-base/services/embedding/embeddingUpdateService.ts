@@ -69,11 +69,11 @@ export const updateEntryEmbeddingBatch = async (
  */
 export const updateDocuments = async (): Promise<{ success: boolean; count: number; error?: string }> => {
   try {
-    // Query for documents without embeddings
+    // Query for documents without embeddings - only use IS NULL condition to avoid syntax errors
     const { data: documents, error } = await supabase
       .from('documents')
       .select('id, content')
-      .or('embedding.is.null,embedding.eq.{}');  // Fix: Use {} instead of empty string
+      .is('embedding', null);  // Use only IS NULL to avoid type issues
 
     if (error) {
       console.error("Error fetching documents:", error);
@@ -155,11 +155,11 @@ export const updateKnowledgeEntries = async (
 
     log("Fetching knowledge entries without embeddings...");
     
-    // Get entries that don't have embeddings - Fix the query to avoid empty string issue
+    // Get entries that don't have embeddings - using only IS NULL condition to avoid syntax errors
     const { data: entries, error } = await supabase
       .from('knowledge_entries')
       .select('*')
-      .or('embedding.is.null,embedding.eq.{}');  // Fix: Use {} instead of empty string
+      .is('embedding', null);  // Use only IS NULL to avoid type issues
 
     if (error) {
       log(`Error fetching entries: ${error.message}`);
