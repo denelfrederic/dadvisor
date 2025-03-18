@@ -9,17 +9,19 @@ import {
   CardHeader
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Plus } from "lucide-react";
+import { Database, Plus, Upload } from "lucide-react";
 
 import KnowledgeHeader from "./KnowledgeHeader";
 import KnowledgeEntryList from "./KnowledgeEntryList";
 import KnowledgeEntryDialog from "./KnowledgeEntryDialog";
+import BatchImportDialog from "./BatchImportDialog";
 
 const KnowledgeManagerContainer = () => {
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [stats, setStats] = useState({ count: 0 });
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
   const [currentEntry, setCurrentEntry] = useState<Partial<KnowledgeEntry>>({
     question: "",
     answer: "",
@@ -103,6 +105,10 @@ const KnowledgeManagerContainer = () => {
     }
   };
 
+  const handleBatchImport = () => {
+    setIsBatchImportOpen(true);
+  };
+
   const filteredEntries = searchTerm 
     ? entries.filter(entry => 
         entry.question.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -122,10 +128,16 @@ const KnowledgeManagerContainer = () => {
           </p>
         </div>
         
-        <Button onClick={handleAddEntry}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle entrée
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleBatchImport}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import par lot
+          </Button>
+          <Button onClick={handleAddEntry}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle entrée
+          </Button>
+        </div>
       </div>
       
       <Card>
@@ -156,6 +168,12 @@ const KnowledgeManagerContainer = () => {
         setCurrentEntry={setCurrentEntry}
         isEditing={isEditing}
         onSave={handleSaveEntry}
+      />
+      
+      <BatchImportDialog
+        isOpen={isBatchImportOpen}
+        onOpenChange={setIsBatchImportOpen}
+        onImportComplete={loadEntries}
       />
     </div>
   );
