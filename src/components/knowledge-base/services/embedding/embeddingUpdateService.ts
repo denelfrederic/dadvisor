@@ -73,7 +73,7 @@ export const updateDocuments = async (): Promise<{ success: boolean; count: numb
     const { data: documents, error } = await supabase
       .from('documents')
       .select('id, content')
-      .is('embedding', null);
+      .or('embedding.is.null,embedding.eq.')  // Get documents with NULL or empty embedding
 
     if (error) {
       console.error("Error fetching documents:", error);
@@ -159,7 +159,7 @@ export const updateKnowledgeEntries = async (
     const { data: entries, error } = await supabase
       .from('knowledge_entries')
       .select('*')
-      .is('embedding', null);
+      .or('embedding.is.null,embedding.eq.');  // Get entries with NULL or empty embedding
 
     if (error) {
       log(`Error fetching entries: ${error.message}`);

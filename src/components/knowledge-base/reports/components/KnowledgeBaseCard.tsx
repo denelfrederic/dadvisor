@@ -10,9 +10,9 @@ interface KnowledgeBaseCardProps {
 }
 
 const KnowledgeBaseCard = ({ knowledgeBaseStats }: KnowledgeBaseCardProps) => {
-  const progressPercentage = knowledgeBaseStats.withEmbeddings && knowledgeBaseStats.count 
-    ? (knowledgeBaseStats.withEmbeddings / knowledgeBaseStats.count) * 100
-    : 0;
+  const withEmbeddings = knowledgeBaseStats.withEmbeddings || 0;
+  const count = knowledgeBaseStats.count || 0;
+  const progressPercentage = count > 0 ? Math.round((withEmbeddings / count) * 100) : 0;
 
   return (
     <Card>
@@ -26,11 +26,11 @@ const KnowledgeBaseCard = ({ knowledgeBaseStats }: KnowledgeBaseCardProps) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <p className="text-sm text-muted-foreground">Entrées totales</p>
-            <p className="text-2xl font-semibold">{knowledgeBaseStats.count}</p>
+            <p className="text-2xl font-semibold">{count}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Avec embeddings</p>
-            <p className="text-2xl font-semibold">{knowledgeBaseStats.withEmbeddings || 0}</p>
+            <p className="text-2xl font-semibold">{withEmbeddings}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Catégories</p>
@@ -38,13 +38,11 @@ const KnowledgeBaseCard = ({ knowledgeBaseStats }: KnowledgeBaseCardProps) => {
           </div>
         </div>
         
-        {knowledgeBaseStats.count > 0 && (
+        {count > 0 && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Progression d'indexation</span>
-              <span>
-                {Math.round(progressPercentage)}%
-              </span>
+              <span>{progressPercentage}%</span>
             </div>
             <Progress 
               value={progressPercentage}

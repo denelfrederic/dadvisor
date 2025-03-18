@@ -10,9 +10,9 @@ interface GlobalSummaryCardProps {
 
 const GlobalSummaryCard = ({ report }: GlobalSummaryCardProps) => {
   const totalSources = report.knowledgeBase.count + report.documents.total;
-  const totalWithEmbeddings = (report.knowledgeBase.withEmbeddings || 0) + report.documents.withEmbeddings;
+  const withEmbeddings = (report.knowledgeBase.withEmbeddings || 0) + report.documents.withEmbeddings;
   const globalPercentage = totalSources > 0 
-    ? Math.round((totalWithEmbeddings / totalSources) * 100)
+    ? Math.round((withEmbeddings / totalSources) * 100)
     : 0;
 
   return (
@@ -28,7 +28,7 @@ const GlobalSummaryCard = ({ report }: GlobalSummaryCardProps) => {
           </div>
           <div className="flex justify-between">
             <span>Sources avec embeddings</span>
-            <span className="font-medium">{totalWithEmbeddings}</span>
+            <span className="font-medium">{withEmbeddings}</span>
           </div>
           <div className="flex justify-between">
             <span>Progression globale d'indexation</span>
