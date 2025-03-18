@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../types";
-import { generateEntryEmbedding } from "../embedding/embeddingService";
+import { generateEntryEmbedding, validateEmbeddingDimensions } from "../embedding/embeddingService";
 import { prepareEmbeddingForStorage, processEntryForEmbedding } from "../embedding/embeddingUtils";
 
 export const createEntry = async (
@@ -125,6 +125,15 @@ export const updateEntryEmbedding = async (entry: KnowledgeEntry): Promise<Knowl
     // Generate embedding from combined question and answer
     const combinedText = processEntryForEmbedding(entry.question, entry.answer);
     const embedding = await generateEntryEmbedding(combinedText);
+    
+    if (!embedding) {
+      throw new Error("Failed to generate embedding");
+    }
+    
+    // Validate embedding dimensions (should be 1536 for OpenAI embeddings)
+    if (!validateEmbeddingDimensions(embedding, 1536)) {
+      throw new Error(`Invalid embedding dimensions: expected 1536, got ${embedding.length}`);
+    }
     
     // Store embedding as a string in Supabase
     const embeddingString = prepareEmbeddingForStorage(embedding);

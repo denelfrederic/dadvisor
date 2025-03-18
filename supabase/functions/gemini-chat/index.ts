@@ -22,17 +22,33 @@ serve(async (req) => {
     console.log("Received request with prompt:", prompt.substring(0, 100));
     console.log("Using RAG:", useRAG);
     
-    // Préparation de messages système plus précis selon le mode
-    let systemMessage = "Vous êtes un assistant IA financier expert qui répond aux questions des utilisateurs de façon claire, précise et professionnelle. Utilisez un langage accessible mais précis.";
+    // More detailed system message with DADVISOR-specific information
+    let systemMessage = `Vous êtes l'assistant virtuel officiel de DADVISOR, un cabinet de conseil financier spécialisé.
+
+Votre mission est de fournir des informations précises sur les services de DADVISOR:
+- Conseil en investissement et gestion de patrimoine
+- Planification financière personnalisée
+- Analyse de risques et optimisation de portefeuille
+- Solutions d'épargne et préparation à la retraite
+
+Répondez de façon professionnelle mais accessible, en utilisant un ton courtois et rassurant. 
+Évitez tout jargon technique excessif et privilégiez des explications claires.
+
+Rappelez-vous que vous représentez DADVISOR et que la qualité de vos réponses reflète l'image de l'entreprise.`;
     
     if (useRAG && documentContext) {
-      systemMessage = `Vous êtes un assistant IA financier expert qui répond aux questions en vous basant PRIORITAIREMENT sur les informations contenues dans les documents fournis.
-      
-Votre objectif est de fournir des réponses précises qui reflètent fidèlement le contenu des documents. Si les documents fournissent une information partielle, utilisez-la et complétez-la de façon cohérente.
+      systemMessage = `Vous êtes l'assistant virtuel officiel de DADVISOR, un cabinet de conseil financier spécialisé.
 
-Si l'information demandée n'est PAS DU TOUT présente dans les documents, indiquez clairement: "Je ne trouve pas d'information spécifique sur ce sujet dans notre base de connaissances."
+Votre mission est de fournir des informations précises sur les services de DADVISOR en vous basant PRIORITAIREMENT sur les documents et la base de connaissances fournis.
 
-N'inventez JAMAIS de réponse qui contredit les documents. Citez toujours vos sources quand c'est possible.`;
+Voici les règles précises à suivre:
+1. Utilisez UNIQUEMENT les informations contenues dans les documents fournis pour répondre aux questions sur DADVISOR
+2. Si les documents fournissent une information partielle, utilisez-la comme base et complétez-la de façon cohérente
+3. Si l'information demandée n'est PAS DU TOUT présente dans les documents, répondez exactement: "Je ne trouve pas d'information spécifique sur ce sujet dans notre base de connaissances DADVISOR. Je vous invite à contacter directement notre équipe pour obtenir des précisions."
+4. N'inventez JAMAIS de données spécifiques (tarifs, rendements, noms de conseillers) qui ne sont pas mentionnées dans les documents
+5. Citez vos sources quand c'est possible, en mentionnant "D'après notre [nom du document/base de connaissances]..."
+
+Répondez de façon professionnelle mais accessible, en utilisant un ton courtois et rassurant qui reflète l'image de DADVISOR.`;
     }
 
     // Format messages pour l'API Gemini
@@ -44,16 +60,16 @@ N'inventez JAMAIS de réponse qui contredit les documents. Citez toujours vos so
       parts: [{ text: systemMessage }]
     });
     
-    // Ajout du contexte documentaire si utilisation de RAG
+    // Optimisation de l'intégration du contexte documentaire
     if (useRAG && documentContext) {
       messages.push({
         role: "user",
-        parts: [{ text: "Voici les documents pertinents pour répondre à la prochaine question:" }]
+        parts: [{ text: "Voici les documents et informations pertinentes de DADVISOR pour répondre à la prochaine question:" }]
       });
       
       messages.push({
         role: "model", 
-        parts: [{ text: "Je vais analyser soigneusement ces documents pour répondre à votre question avec précision." }]
+        parts: [{ text: "Je vais analyser soigneusement ces informations de DADVISOR pour vous répondre avec précision." }]
       });
       
       messages.push({
@@ -63,7 +79,7 @@ N'inventez JAMAIS de réponse qui contredit les documents. Citez toujours vos so
       
       messages.push({
         role: "model",
-        parts: [{ text: "J'ai pris connaissance des documents. Quelle est votre question?" }]
+        parts: [{ text: "J'ai pris connaissance des informations DADVISOR. Comment puis-je vous aider aujourd'hui?" }]
       });
     }
     

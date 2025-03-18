@@ -8,12 +8,18 @@ export const searchEntries = async (query: string, topK: number = 5): Promise<Kn
   try {
     // Generate embedding for the search query
     const queryEmbedding = await generateEntryEmbedding(query);
+    
+    if (!queryEmbedding) {
+      console.error("Could not generate query embedding");
+      return [];
+    }
+    
     const queryEmbeddingString = prepareEmbeddingForStorage(queryEmbedding);
 
     // Perform a similarity search with RPC function
     const { data, error } = await supabase.rpc('match_knowledge_entries', {
       query_embedding: queryEmbeddingString,
-      similarity_threshold: 0.7, // Changed from match_threshold to similarity_threshold
+      similarity_threshold: 0.7, // Correct parameter name
       match_count: topK,
     });
 
@@ -51,31 +57,49 @@ export const updateEntryEmbeddingBatch = async (
 ): Promise<void> => {
   const totalEntries = entries.length;
   let processedEntries = 0;
+  let successCount = 0;
   
   try {
     for (const entry of entries) {
-      // Generate new embedding from combined question and answer
-      const combinedText = `${entry.question}\n${entry.answer}`;
-      const embedding = await generateEntryEmbedding(combinedText);
-      const embeddingString = prepareEmbeddingForStorage(embedding);
-      
-      // Update the entry in the database
-      const { error } = await supabase
-        .from('knowledge_entries')
-        .update({ 
-          embedding: embeddingString,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', entry.id);
-      
-      if (error) throw error;
-      
-      // Update progress
-      processedEntries++;
-      if (progressCallback) {
-        progressCallback((processedEntries / totalEntries) * 100);
+      try {
+        // Generate new embedding from combined question and answer
+        const combinedText = `${entry.question}\n${entry.answer}`;
+        const embedding = await generateEntryEmbedding(combinedText);
+        
+        if (!embedding) {
+          console.error(`Failed to generate embedding for entry ${entry.id}`);
+          continue;
+        }
+        
+        const embeddingString = prepareEmbeddingForStorage(embedding);
+        
+        // Update the entry in the database
+        const { error } = await supabase
+          .from('knowledge_entries')
+          .update({ 
+            embedding: embeddingString,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', entry.id);
+        
+        if (error) {
+          console.error(`Erreur lors de la mise à jour de l'entrée ${entry.id}:`, error);
+          continue;
+        }
+        
+        successCount++;
+      } catch (entryError) {
+        console.error(`Erreur lors de la mise à jour de l'entrée ${entry.id}:`, entryError);
+      } finally {
+        // Update progress regardless of success or failure
+        processedEntries++;
+        if (progressCallback) {
+          progressCallback((processedEntries / totalEntries) * 100);
+        }
       }
     }
+    
+    console.log(`${successCount}/${totalEntries} entrées mises à jour avec succès.`);
   } catch (error) {
     console.error('Error updating entry embeddings in batch:', error);
     throw error;
@@ -110,7 +134,7 @@ export const useSearchService = () => {
         const queryEmbeddingString = prepareEmbeddingForStorage(queryEmbedding);
         const { data, error } = await supabase.rpc('match_knowledge_entries', {
           query_embedding: queryEmbeddingString,
-          similarity_threshold: threshold, // Changed from match_threshold to similarity_threshold
+          similarity_threshold: threshold, // Correct parameter name
           match_count: limit,
         });
 
