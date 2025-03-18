@@ -4,11 +4,13 @@ import { DocumentSearchResult } from '../types';
 // Process and store document in Supabase
 export const processDocument = async (file: File): Promise<boolean> => {
   try {
+    console.log(`Début du traitement du document: ${file.name}`);
+    
     // For PDFs and images, we'll store a placeholder with metadata
     const content = `[Ce document est au format ${file.type}. Taille: ${(file.size / 1024).toFixed(2)} KB]`;
     
     // Insert document into Supabase
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('documents')
       .insert({
         title: file.name,
@@ -16,14 +18,16 @@ export const processDocument = async (file: File): Promise<boolean> => {
         type: file.type,
         size: file.size,
         source: "Upload utilisateur"
-      });
+      })
+      .select()
+      .single();
     
     if (error) {
       console.error("Erreur lors de l'insertion du document:", error);
       return false;
     }
     
-    console.log(`Document ajouté à la base: ${file.name}`);
+    console.log(`Document ajouté avec succès:`, data);
     return true;
   } catch (error) {
     console.error("Erreur lors du traitement du document:", error);
