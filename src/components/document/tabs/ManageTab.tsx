@@ -5,7 +5,7 @@ import { Download, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DocumentStats from "../DocumentStats";
 import DocumentTypesList from "../DocumentTypesList";
-import { clearDocumentDatabase, exportDocuments } from "../../chat/services";
+import { clearDocumentDatabase, exportDocuments } from "../../chat/services/document/documentManagement";
 
 interface ManageTabProps {
   stats: {

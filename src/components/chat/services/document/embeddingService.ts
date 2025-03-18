@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { parseEmbedding, prepareEmbeddingForStorage } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 
 // Fonction pour générer l'embedding à partir du texte
 export const generateEmbedding = async (text: string): Promise<any> => {

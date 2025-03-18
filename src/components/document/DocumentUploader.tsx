@@ -1,8 +1,9 @@
+
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, AlertCircle, Network } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { processDocument } from "../chat/services/documentService";
+import { processDocument } from "../chat/services/document/documentProcessor";
 import { formatFileSize } from "./utils";
 
 interface DocumentUploaderProps {

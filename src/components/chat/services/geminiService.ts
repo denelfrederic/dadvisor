@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Message } from '../types';
-import { searchLocalDocuments } from './documentService';
+import { searchLocalDocuments } from './document/searchService';
 import { formatMessagesForApi } from './messageService';
 
 export const sendMessageToGemini = async (

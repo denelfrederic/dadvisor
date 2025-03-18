@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentSearchResult } from '../../types';
 import { generateEmbedding } from "./embeddingService";
+import { prepareEmbeddingForStorage } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 
 // Recherche de documents avec similarité vectorielle
 export const searchLocalDocuments = async (query: string): Promise<DocumentSearchResult[]> => {

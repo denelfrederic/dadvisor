@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, BarChart, Database as DatabaseIcon } from "lucide-react";
-import { getDocumentStats } from "../chat/services";
+import { getDocumentStats } from "../chat/services/document/documentManagement";
 import DocumentFooter from "./DocumentFooter";
 import UploadTab from "./tabs/UploadTab";
 import ReportTab from "./tabs/ReportTab";

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendMessageToGemini } from "../../../chat/services";
-import { searchLocalDocuments } from "../../../chat/services/documentService";
+import { searchLocalDocuments } from "../../../chat/services/document/searchService";
 
 export const useDocumentSearch = () => {
   const [response, setResponse] = useState("");
