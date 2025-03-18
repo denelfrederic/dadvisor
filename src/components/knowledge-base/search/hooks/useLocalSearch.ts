@@ -26,19 +26,57 @@ export const useLocalSearch = () => {
     setSources([]);
     
     try {
-      // Recherche améliorée dans la base de connaissances locale
-      const searchResults = await kb.searchEntries(query);
-      let usedSources: string[] = [];
+      // Utilisation d'une recherche plus flexible et contextuelle
+      console.log("Recherche dans la base de connaissances pour:", query);
       
-      if (searchResults.length > 0) {
+      // Amélioration de la recherche pour plus de flexibilité
+      const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+      console.log("Termes de recherche:", searchTerms);
+      
+      // Récupérer toutes les entrées et filtrer côté client pour plus de flexibilité
+      const allEntries = await kb.getEntries();
+      console.log(`Nombre total d'entrées récupérées: ${allEntries.length}`);
+      
+      // Algorithme de correspondance amélioré
+      const matchedEntries = allEntries.filter(entry => {
+        const questionLower = entry.question.toLowerCase();
+        const answerLower = entry.answer.toLowerCase();
+        
+        // Vérifier la correspondance exacte d'abord
+        if (questionLower.includes(query.toLowerCase())) {
+          return true;
+        }
+        
+        // Puis vérifier les correspondances partielles
+        let matchScore = 0;
+        for (const term of searchTerms) {
+          if (questionLower.includes(term)) matchScore += 2;
+          if (answerLower.includes(term)) matchScore += 1;
+        }
+        
+        // Critère de correspondance minimum
+        return matchScore >= Math.min(2, searchTerms.length);
+      });
+      
+      console.log(`Entrées correspondantes trouvées: ${matchedEntries.length}`);
+      
+      // Trier les correspondances par pertinence
+      matchedEntries.sort((a, b) => {
+        const aScore = a.question.toLowerCase().includes(query.toLowerCase()) ? 100 : 0;
+        const bScore = b.question.toLowerCase().includes(query.toLowerCase()) ? 100 : 0;
+        return bScore - aScore;
+      });
+      
+      if (matchedEntries.length > 0) {
         // Formatage amélioré du contexte pour Gemini
         const context = "Voici les informations pertinentes de notre base de connaissances :\n\n" +
-          searchResults
+          matchedEntries
+            .slice(0, 5) // Limiter à 5 résultats pour éviter de surcharger le contexte
             .map((entry, index) => 
               `[Source ${index + 1}]\nQuestion: ${entry.question}\nRéponse: ${entry.answer}`)
             .join('\n\n');
         
-        usedSources = searchResults.map(entry => 
+        const usedSources = matchedEntries.slice(0, 5).map(entry => 
           `Base de connaissances: ${entry.question}`
         );
         
