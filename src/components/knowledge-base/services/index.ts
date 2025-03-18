@@ -1,4 +1,12 @@
 
 export { useKnowledgeBaseService } from './knowledgeBaseService';
 export { getKnowledgeBaseStats } from './statsService';
-export type { KnowledgeEntry, KnowledgeBaseOperations, KnowledgeBaseStats } from './types';
+
+// Export services for direct use when needed
+export { useEntryService } from './entry/entryService';
+export { useSearchService } from './search/searchService';
+export { generateEntryEmbedding } from './embedding/embeddingService';
+export { parseEmbedding } from './embedding/embeddingUtils';
+
+// Export types
+export type { KnowledgeEntry, KnowledgeBaseOperations, KnowledgeBaseStats } from '../types';

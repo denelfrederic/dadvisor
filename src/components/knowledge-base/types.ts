@@ -18,6 +18,7 @@ export interface KnowledgeBaseStats {
   withEmbeddings?: number;
 }
 
+// Split operations by concerns
 export interface KnowledgeBaseOperations {
   addEntry: (entry: Omit<KnowledgeEntry, 'id'>) => Promise<KnowledgeEntry | null>;
   updateEntry: (id: string, entry: Partial<KnowledgeEntry>) => Promise<boolean>;
