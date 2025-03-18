@@ -1,10 +1,9 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { DownloadCloud, FileText } from "lucide-react";
+import { DownloadCloud, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIndexationReport } from "../hooks/useIndexationReport";
 import DocumentTypeDistribution from "./DocumentTypeDistribution";
@@ -38,16 +37,11 @@ const DocumentReport = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
-          Rapport d'indexation des documents
-        </h2>
+      <div className="flex justify-end">
         <Button 
           onClick={generateReport} 
           disabled={isLoading}
-          variant="outline" 
-          size="sm"
+          className="px-6"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           {isLoading ? 'Analyse...' : 'Générer le rapport'}
@@ -55,15 +49,15 @@ const DocumentReport = () => {
       </div>
 
       {report ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <ReportStatsCards report={report} />
           <IndexationProgressBar percentage={report.embeddingsPercentage} />
           <DocumentTypeDistribution documentsByType={report.documentsByType} />
 
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-sm font-medium">Documents récents</CardTitle>
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-medium">Documents récents</h3>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -74,8 +68,7 @@ const DocumentReport = () => {
                   Exporter CSV
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent>
+              
               <div className="rounded-md border overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -94,7 +87,7 @@ const DocumentReport = () => {
                         <TableCell>{doc.type}</TableCell>
                         <TableCell>
                           {doc.hasEmbedding ? (
-                            <Badge variant="success">Oui</Badge>
+                            <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Oui</Badge>
                           ) : (
                             <Badge variant="outline" className="bg-yellow-50 text-yellow-800 hover:bg-yellow-50">Non</Badge>
                           )}
@@ -119,8 +112,5 @@ const DocumentReport = () => {
     </div>
   );
 };
-
-// Import RefreshCw icon that was missing in the imports
-import { RefreshCw } from "lucide-react";
 
 export default DocumentReport;

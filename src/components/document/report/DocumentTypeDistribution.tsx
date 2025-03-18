@@ -9,14 +9,14 @@ interface DocumentTypeDistributionProps {
 
 const DocumentTypeDistribution = ({ documentsByType }: DocumentTypeDistributionProps) => {
   return (
-    <Card className="p-4">
-      <h3 className="text-sm font-medium mb-2">Répartition par type</h3>
-      <ScrollArea className="h-24">
-        <div className="space-y-1">
+    <Card className="p-6">
+      <h3 className="font-medium mb-4">Répartition par type</h3>
+      <ScrollArea className="h-32">
+        <div className="space-y-3">
           {Object.entries(documentsByType).map(([type, count]) => (
-            <div key={type} className="flex justify-between text-sm">
+            <div key={type} className="flex justify-between items-center">
               <span>{type || "Inconnu"}</span>
-              <span>{count} document(s)</span>
+              <span className="font-medium">{count} document(s)</span>
             </div>
           ))}
         </div>
