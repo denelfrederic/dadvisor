@@ -1,10 +1,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, Database, Cloud, Plus, Edit, Trash2 } from "lucide-react";
+import { Home, Database, Cloud, Plus, Edit, Trash2, Import, FileText } from "lucide-react";
 import GeminiChat from "@/components/GeminiChat";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,8 @@ interface KnowledgeEntry {
   id: string;
   question: string;
   answer: string;
+  source?: string; // Source du document (nom de fichier)
+  timestamp?: number; // Date d'ajout
 }
 
 // Fonction pour charger la base de connaissances depuis le localStorage
@@ -44,17 +46,20 @@ const loadKnowledgeBase = (): KnowledgeEntry[] => {
     {
       id: '1',
       question: "Quels sont les meilleurs investissements à faible risque?",
-      answer: "Les investissements à faible risque comprennent les livrets d'épargne réglementés, les fonds en euros des assurances-vie, les obligations d'État et les ETF obligataires. Ces placements offrent une sécurité élevée mais généralement un rendement modéré."
+      answer: "Les investissements à faible risque comprennent les livrets d'épargne réglementés, les fonds en euros des assurances-vie, les obligations d'État et les ETF obligataires. Ces placements offrent une sécurité élevée mais généralement un rendement modéré.",
+      timestamp: Date.now()
     },
     {
       id: '2',
       question: "Comment diversifier mon portefeuille?",
-      answer: "Pour diversifier votre portefeuille, répartissez vos investissements entre différentes classes d'actifs (actions, obligations, immobilier), zones géographiques, secteurs et tailles d'entreprises. Utilisez des ETF pour une diversification à moindre coût et ajustez régulièrement votre allocation en fonction de votre profil de risque."
+      answer: "Pour diversifier votre portefeuille, répartissez vos investissements entre différentes classes d'actifs (actions, obligations, immobilier), zones géographiques, secteurs et tailles d'entreprises. Utilisez des ETF pour une diversification à moindre coût et ajustez régulièrement votre allocation en fonction de votre profil de risque.",
+      timestamp: Date.now()
     },
     {
       id: '3',
       question: "Quels sont les avantages fiscaux de l'assurance-vie?",
-      answer: "L'assurance-vie offre des avantages fiscaux significatifs en France: exonération des gains après 8 ans de détention (jusqu'à 4 600€ pour une personne seule, 9 200€ pour un couple), taux forfaitaire de 7,5% au-delà, et transmission facilitée hors succession jusqu'à 152 500€ par bénéficiaire."
+      answer: "L'assurance-vie offre des avantages fiscaux significatifs en France: exonération des gains après 8 ans de détention (jusqu'à 4 600€ pour une personne seule, 9 200€ pour un couple), taux forfaitaire de 7,5% au-delà, et transmission facilitée hors succession jusqu'à 152 500€ par bénéficiaire.",
+      timestamp: Date.now()
     }
   ];
 };
@@ -62,6 +67,49 @@ const loadKnowledgeBase = (): KnowledgeEntry[] => {
 // Fonction pour sauvegarder la base de connaissances dans le localStorage
 const saveKnowledgeBase = (knowledgeBase: KnowledgeEntry[]) => {
   localStorage.setItem('knowledgeBase', JSON.stringify(knowledgeBase));
+};
+
+// Fonction pour extraire des paires question-réponse d'un texte
+const extractQAPairs = (text: string, fileName: string): KnowledgeEntry[] => {
+  const entries: KnowledgeEntry[] = [];
+  
+  // Diviser le texte en paragraphes
+  const paragraphs = text.split(/\n\s*\n/);
+  
+  // Pour chaque paragraphe, essayer de créer une entrée de connaissances
+  paragraphs.forEach((paragraph, index) => {
+    if (paragraph.trim().length < 20) return; // Ignorer les paragraphes trop courts
+    
+    // Créer une "question" basée sur la première ligne ou les premiers mots
+    let question = "";
+    let answer = paragraph.trim();
+    
+    // Essayer d'extraire un titre ou une première phrase comme question
+    const lines = paragraph.split('\n');
+    if (lines[0] && lines[0].trim().length > 0 && lines[0].trim().length < 200) {
+      question = lines[0].trim();
+      answer = paragraph.substring(question.length).trim();
+    } else {
+      // Si pas de titre évident, prendre les premiers mots
+      const words = paragraph.trim().split(' ');
+      question = words.slice(0, Math.min(10, words.length)).join(' ');
+      if (question.length > 100) {
+        question = question.substring(0, 100) + '...';
+      }
+    }
+    
+    if (question && answer) {
+      entries.push({
+        id: Date.now() + '-' + index,
+        question,
+        answer,
+        source: fileName,
+        timestamp: Date.now()
+      });
+    }
+  });
+  
+  return entries;
 };
 
 const GeminiAssistant = () => {
@@ -72,9 +120,13 @@ const GeminiAssistant = () => {
   const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeEntry[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [currentEntry, setCurrentEntry] = useState<KnowledgeEntry | null>(null);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [fileContent, setFileContent] = useState("");
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Charger la base de connaissances au démarrage
@@ -104,11 +156,28 @@ const GeminiAssistant = () => {
     
     // Simulate search delay
     setTimeout(() => {
-      // Simple search based on similarity
-      const bestMatch = knowledgeBase.find(item => 
-        item.question.toLowerCase().includes(query.toLowerCase()) ||
-        query.toLowerCase().includes(item.question.toLowerCase().split(" ").slice(0, 3).join(" "))
-      );
+      // Recherche améliorée pour trouver la meilleure correspondance
+      const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+      
+      // Attribuer un score à chaque entrée en fonction du nombre de termes correspondants
+      const scoredEntries = knowledgeBase.map(entry => {
+        const questionText = entry.question.toLowerCase();
+        const answerText = entry.answer.toLowerCase();
+        
+        let score = 0;
+        searchTerms.forEach(term => {
+          if (questionText.includes(term)) score += 2; // Les correspondances dans la question ont plus de poids
+          if (answerText.includes(term)) score += 1;
+        });
+        
+        return { entry, score };
+      });
+      
+      // Trier par score et prendre la meilleure correspondance
+      scoredEntries.sort((a, b) => b.score - a.score);
+      const bestMatch = scoredEntries.length > 0 && scoredEntries[0].score > 0 
+        ? scoredEntries[0].entry 
+        : null;
       
       if (bestMatch) {
         setLocalResponse(bestMatch.answer);
@@ -132,7 +201,8 @@ const GeminiAssistant = () => {
     const newEntry: KnowledgeEntry = {
       id: Date.now().toString(),
       question: newQuestion,
-      answer: newAnswer
+      answer: newAnswer,
+      timestamp: Date.now()
     };
 
     setKnowledgeBase([...knowledgeBase, newEntry]);
@@ -160,7 +230,12 @@ const GeminiAssistant = () => {
 
     const updatedKnowledgeBase = knowledgeBase.map(entry => 
       entry.id === currentEntry.id 
-        ? { ...entry, question: newQuestion, answer: newAnswer } 
+        ? { 
+            ...entry, 
+            question: newQuestion, 
+            answer: newAnswer,
+            timestamp: Date.now() 
+          } 
         : entry
     );
 
@@ -186,6 +261,75 @@ const GeminiAssistant = () => {
         description: "L'entrée a été supprimée de la base de connaissances.",
       });
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setFileContent(content);
+    };
+    
+    reader.readAsText(file);
+  };
+
+  const handleImport = () => {
+    if (!fileContent || !fileName) {
+      toast({
+        title: "Erreur d'importation",
+        description: "Veuillez d'abord sélectionner un fichier.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const extractedEntries = extractQAPairs(fileContent, fileName);
+    
+    if (extractedEntries.length === 0) {
+      toast({
+        title: "Importation vide",
+        description: "Aucune donnée exploitable n'a pu être extraite du document.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setKnowledgeBase([...knowledgeBase, ...extractedEntries]);
+    setFileContent("");
+    setFileName("");
+    setShowImportDialog(false);
+    
+    toast({
+      title: "Importation réussie",
+      description: `${extractedEntries.length} entrées ont été ajoutées à la base de connaissances.`,
+    });
+    
+    // Réinitialiser le champ de fichier
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const exportKnowledgeBase = () => {
+    const dataStr = JSON.stringify(knowledgeBase, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `knowledge-base-export-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast({
+      title: "Exportation réussie",
+      description: "Votre base de connaissances a été exportée avec succès.",
+    });
   };
 
   return (
@@ -226,18 +370,40 @@ const GeminiAssistant = () => {
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-lg font-medium">Recherche dans la base de connaissances</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center gap-1"
-                    onClick={() => {
-                      setNewQuestion("");
-                      setNewAnswer("");
-                      setShowAddDialog(true);
-                    }}
-                  >
-                    <Plus size={16} /> Ajouter
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      onClick={() => {
+                        setNewQuestion("");
+                        setNewAnswer("");
+                        setShowAddDialog(true);
+                      }}
+                    >
+                      <Plus size={16} /> Ajouter
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      onClick={() => {
+                        setFileContent("");
+                        setFileName("");
+                        setShowImportDialog(true);
+                      }}
+                    >
+                      <Import size={16} /> Importer
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      onClick={exportKnowledgeBase}
+                    >
+                      <FileText size={16} /> Exporter
+                    </Button>
+                  </div>
                 </div>
                 
                 <p className="text-muted-foreground text-sm mb-4">
@@ -271,24 +437,39 @@ const GeminiAssistant = () => {
 
               {/* Section de gestion de la base de connaissances */}
               <div className="mt-8 border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Gérer votre base de connaissances</h3>
+                <h3 className="text-lg font-medium mb-4">
+                  Gérer votre base de connaissances 
+                  <span className="text-sm font-normal text-muted-foreground ml-2">
+                    ({knowledgeBase.length} entrées)
+                  </span>
+                </h3>
                 
                 <div className="grid gap-4 md:grid-cols-2">
                   {knowledgeBase.map(entry => (
                     <Card key={entry.id} className="overflow-hidden">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base">{entry.question}</CardTitle>
+                        {entry.source && (
+                          <CardDescription className="text-xs">
+                            Source: {entry.source}
+                          </CardDescription>
+                        )}
                       </CardHeader>
                       <CardContent className="pb-2">
                         <p className="text-sm text-muted-foreground line-clamp-3">{entry.answer}</p>
                       </CardContent>
-                      <CardFooter className="flex justify-end gap-2 pt-0">
-                        <Button variant="ghost" size="sm" onClick={() => startEditEntry(entry)}>
-                          <Edit size={16} />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => deleteEntry(entry.id)}>
-                          <Trash2 size={16} />
-                        </Button>
+                      <CardFooter className="flex justify-between gap-2 pt-0">
+                        <div className="text-xs text-muted-foreground">
+                          {entry.timestamp && new Date(entry.timestamp).toLocaleDateString()}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => startEditEntry(entry)}>
+                            <Edit size={16} />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => deleteEntry(entry.id)}>
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
                       </CardFooter>
                     </Card>
                   ))}
@@ -385,6 +566,44 @@ const GeminiAssistant = () => {
               <Button variant="outline">Annuler</Button>
             </DialogClose>
             <Button onClick={updateEntry}>Mettre à jour</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialogue pour importer des documents */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importer un document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="import-file" className="text-sm font-medium">Fichier (.txt, .md, .csv, .json)</label>
+              <Input
+                id="import-file"
+                type="file"
+                accept=".txt,.md,.csv,.json"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Le système tentera d'extraire des paires question-réponse du document.
+              </p>
+            </div>
+            {fileName && (
+              <div className="text-sm">
+                <p className="font-medium">Fichier sélectionné : {fileName}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {fileContent ? `${fileContent.length} caractères chargés` : 'Chargement du contenu...'}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Annuler</Button>
+            </DialogClose>
+            <Button onClick={handleImport} disabled={!fileContent}>Importer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
