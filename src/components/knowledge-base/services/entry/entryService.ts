@@ -71,17 +71,20 @@ export const updateEntry = async (
   updates: Partial<KnowledgeEntry>
 ): Promise<KnowledgeEntry | null> => {
   try {
-    // If updates.embedding is a number[], convert it to a string for storage
-    if (updates.embedding && Array.isArray(updates.embedding)) {
-      updates = {
-        ...updates,
-        embedding: prepareEmbeddingForStorage(updates.embedding as number[])
-      };
+    // Create a new updates object with properly formatted data
+    const formattedUpdates: Record<string, any> = { ...updates };
+    
+    // If embedding exists, ensure it's converted to a string
+    if (updates.embedding !== undefined) {
+      // Convert number[] to string if needed
+      formattedUpdates.embedding = typeof updates.embedding === 'string' 
+        ? updates.embedding 
+        : prepareEmbeddingForStorage(updates.embedding as number[]);
     }
 
     const { data, error } = await supabase
       .from('knowledge_entries')
-      .update(updates)
+      .update(formattedUpdates)
       .eq('id', id)
       .select()
       .single();
