@@ -1,13 +1,17 @@
 
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2 } from "lucide-react";
+import { Upload, FileText, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { processDocument } from "../chat/GeminiService";
+import { formatFileSize } from "./utils";
 
 interface DocumentUploaderProps {
   onUploadComplete: () => void;
 }
+
+// Taille maximale recommandée pour localStorage (environ 5 Mo)
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -26,28 +30,57 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
 
     try {
       let successCount = 0;
+      let sizeErrorCount = 0;
       const totalFiles = files.length;
 
       for (let i = 0; i < totalFiles; i++) {
         const file = files[i];
         
-        // Process the document
-        const success = await processDocument(file);
+        // Vérification de la taille du fichier
+        if (file.size > MAX_FILE_SIZE) {
+          console.warn(`Fichier trop volumineux: ${file.name} (${formatFileSize(file.size)})`);
+          sizeErrorCount++;
+          setUploadProgress(Math.round((i + 1) / totalFiles * 100));
+          continue;
+        }
         
-        if (success) {
-          successCount++;
+        // Process the document
+        try {
+          const success = await processDocument(file);
+          if (success) {
+            successCount++;
+          }
+        } catch (fileError) {
+          console.error("Erreur lors du traitement du document:", fileError);
+          // Continuer avec le fichier suivant
         }
         
         // Update progress
         setUploadProgress(Math.round((i + 1) / totalFiles * 100));
       }
 
-      // Show success message
-      toast({
-        title: "Documents ajoutés",
-        description: `${successCount} document(s) ont été ajoutés à la base de données locale.`,
-        variant: successCount > 0 ? "default" : "destructive"
-      });
+      // Show appropriate message
+      if (sizeErrorCount > 0) {
+        toast({
+          title: "Attention aux limites de taille",
+          description: `${sizeErrorCount} fichier(s) n'ont pas pu être traités car ils dépassent la limite de ${formatFileSize(MAX_FILE_SIZE)}.`,
+          variant: "destructive"
+        });
+      }
+      
+      if (successCount > 0) {
+        toast({
+          title: "Documents ajoutés",
+          description: `${successCount} document(s) ont été ajoutés à la base de données locale.`,
+          variant: "default"
+        });
+      } else if (sizeErrorCount === 0) {
+        toast({
+          title: "Échec de l'importation",
+          description: "Aucun document n'a pu être ajouté à la base de données locale.",
+          variant: "destructive"
+        });
+      }
 
       // Notify parent component
       onUploadComplete();
@@ -123,6 +156,17 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
             />
           </div>
         )}
+
+        <div className="bg-amber-50 border border-amber-200 p-3 rounded text-sm flex gap-2 items-start">
+          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div className="text-amber-800">
+            <p className="font-medium">Limitation de taille</p>
+            <p className="text-xs">
+              Les fichiers sont stockés dans le navigateur et limités à {formatFileSize(MAX_FILE_SIZE)} par fichier.
+              Pour de meilleurs résultats, privilégiez les fichiers texte (.txt, .md).
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
