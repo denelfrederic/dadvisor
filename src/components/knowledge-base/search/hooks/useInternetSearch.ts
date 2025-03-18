@@ -33,21 +33,31 @@ export const useInternetSearch = () => {
       
       // Si l'option est activée, inclure tout le contenu local (base de connaissances ET documents)
       if (includeLocalContent) {
-        // Process local content in parallel for better performance
-        const [kbResults, docResults] = await Promise.all([
-          searchKnowledgeBase(kb, query),
-          searchDocuments(query)
-        ]);
-        
-        // Combine results
-        if (kbResults.context) {
-          context += kbResults.context + "\n\n";
-          usedSources = [...usedSources, ...kbResults.sources];
-        }
-        
-        if (docResults.context) {
-          context += docResults.context + "\n\n";
-          usedSources = [...usedSources, ...docResults.sources];
+        try {
+          // Process local content in parallel for better performance
+          const [kbResults, docResults] = await Promise.all([
+            searchKnowledgeBase(kb, query),
+            searchDocuments(query)
+          ]);
+          
+          // Combine results
+          if (kbResults.context) {
+            context += kbResults.context + "\n\n";
+            usedSources = [...usedSources, ...kbResults.sources];
+          }
+          
+          if (docResults.context) {
+            context += docResults.context + "\n\n";
+            usedSources = [...usedSources, ...docResults.sources];
+          }
+        } catch (localError) {
+          console.error("Erreur lors de la recherche locale:", localError);
+          // Continue with internet search even if local search fails
+          toast({
+            title: "Attention",
+            description: "La recherche dans le contenu local a échoué, mais la recherche internet continue.",
+            variant: "warning"
+          });
         }
       }
       
@@ -66,11 +76,12 @@ export const useInternetSearch = () => {
       setSources([...usedSources, "Recherche Internet via Gemini"]);
     } catch (error) {
       console.error("Erreur lors de la recherche:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la recherche. Veuillez réessayer.",
-        variant: "destructive"
-      });
+      // Let error propagate to ErrorBoundary
+      throw new Error(
+        error instanceof Error 
+          ? error.message 
+          : "Une erreur est survenue lors de la recherche Internet. Veuillez réessayer."
+      );
     } finally {
       setIsSearching(false);
     }
