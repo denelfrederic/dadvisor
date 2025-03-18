@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeBaseStats } from "../types";
+import { parseEmbedding } from "./embedding/embeddingUtils";
 
 /**
  * Get statistics about the knowledge base
@@ -27,8 +28,18 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       .select('id, source, embedding');
     
     if (!entriesError && entries) {
-      // Compter les entrées avec embeddings correctement - vérifier si l'embedding n'est pas null
-      withEmbeddings = entries.filter(entry => entry.embedding !== null).length;
+      // Compter les entrées avec embeddings correctement
+      withEmbeddings = entries.filter(entry => {
+        try {
+          // Vérifier si l'embedding existe et est non vide
+          return entry.embedding !== null && 
+                 typeof entry.embedding === 'string' && 
+                 entry.embedding.length > 2; // Au moins "{}" + quelque chose
+        } catch (e) {
+          console.error("Error checking embedding:", e);
+          return false;
+        }
+      }).length;
       
       // Analyser les sources comme catégories
       entries.forEach(entry => {
@@ -75,11 +86,24 @@ export const generateCombinedReport = async (): Promise<{
     }
     
     const docTotal = documents?.length || 0;
-    // Vérifier plus précisément si l'embedding existe (n'est pas null)
-    const docWithEmbeddings = documents?.filter(doc => doc.embedding !== null).length || 0;
+    
+    // Vérifier plus précisément si l'embedding existe
+    const docWithEmbeddings = documents?.filter(doc => {
+      try {
+        // Vérifier si l'embedding existe et est non vide
+        return doc.embedding !== null && 
+               typeof doc.embedding === 'string' && 
+               doc.embedding.length > 2; // Au moins "{}" + quelque chose
+      } catch (e) {
+        console.error("Error checking document embedding:", e);
+        return false;
+      }
+    }).length || 0;
     
     const docWithoutEmbeddings = docTotal - docWithEmbeddings;
-    const docPercentage = docTotal > 0 ? Math.round((docWithEmbeddings / docTotal) * 100) : 0;
+    const docPercentage = docTotal > 0 
+      ? Math.round((docWithEmbeddings / docTotal) * 100) 
+      : 0;
     
     return {
       knowledgeBase: kbStats,

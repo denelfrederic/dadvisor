@@ -1,8 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CombinedReport } from "../../types";
 import { generateCombinedReport } from "../../services/statsService";
 import { useToast } from "@/hooks/use-toast";
+
+const STORAGE_KEY = "previousIndexationReports";
 
 export const useReportData = () => {
   const [report, setReport] = useState<CombinedReport | null>(null);
@@ -13,13 +15,25 @@ export const useReportData = () => {
 
   // Load previous reports from localStorage on mount
   useEffect(() => {
-    const storedReports = localStorage.getItem("previousIndexationReports");
-    if (storedReports) {
-      try {
-        setPreviousReports(JSON.parse(storedReports));
-      } catch (error) {
-        console.error("Erreur lors du chargement des rapports précédents:", error);
+    try {
+      const storedReports = localStorage.getItem(STORAGE_KEY);
+      if (storedReports) {
+        const parsedReports = JSON.parse(storedReports);
+        console.log("Loaded previous reports:", parsedReports);
+        setPreviousReports(parsedReports);
       }
+    } catch (error) {
+      console.error("Erreur lors du chargement des rapports précédents:", error);
+    }
+  }, []);
+
+  // Save reports to localStorage
+  const saveReportsToStorage = useCallback((reports: {date: string, report: CombinedReport}[]) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+      console.log("Reports saved to localStorage:", reports);
+    } catch (error) {
+      console.error("Error saving reports to localStorage:", error);
     }
   }, []);
 
@@ -27,15 +41,19 @@ export const useReportData = () => {
     setIsLoading(true);
     try {
       const data = await generateCombinedReport();
+      console.log("Generated report:", data);
       
-      // Save current report to history
+      // Save current report to history if it exists
       if (report) {
+        const currentDate = new Date().toISOString();
         const updatedReports = [
-          { date: new Date().toISOString(), report: report },
+          { date: currentDate, report: report },
           ...previousReports.slice(0, 4) // Keep only the last 5 reports
         ];
+        
         setPreviousReports(updatedReports);
-        localStorage.setItem("previousIndexationReports", JSON.stringify(updatedReports));
+        saveReportsToStorage(updatedReports);
+        console.log("Updated reports history with current report");
       }
       
       setReport(data);

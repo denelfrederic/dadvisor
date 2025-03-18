@@ -7,7 +7,8 @@ export const parseEmbedding = (embedding: string | number[] | null): number[] | 
   if (!embedding) return null;
   if (Array.isArray(embedding)) return embedding;
   try {
-    return JSON.parse(embedding as string);
+    const parsed = JSON.parse(embedding as string);
+    return Array.isArray(parsed) ? parsed : null;
   } catch (error) {
     console.error("Error parsing embedding:", error);
     return null;
@@ -27,4 +28,29 @@ export const prepareEmbeddingForStorage = (embedding: number[] | null): string |
  */
 export const processEntryForEmbedding = (question: string, answer: string): string => {
   return `${question}\n${answer}`.trim();
+};
+
+/**
+ * Check if an embedding is valid (not null and properly formatted)
+ */
+export const isValidEmbedding = (embedding: any): boolean => {
+  if (embedding === null || embedding === undefined) return false;
+  
+  try {
+    // Si c'est déjà un tableau, vérifier qu'il contient des valeurs
+    if (Array.isArray(embedding)) {
+      return embedding.length > 0;
+    }
+    
+    // Si c'est une chaîne, vérifier qu'elle peut être analysée comme un tableau
+    if (typeof embedding === 'string') {
+      const parsed = JSON.parse(embedding);
+      return Array.isArray(parsed) && parsed.length > 0;
+    }
+    
+    return false;
+  } catch (e) {
+    console.error("Error validating embedding:", e);
+    return false;
+  }
 };
