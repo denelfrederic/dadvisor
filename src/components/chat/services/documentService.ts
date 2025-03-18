@@ -6,10 +6,32 @@ export const processDocument = async (file: File): Promise<boolean> => {
   try {
     console.log(`Début du traitement du document: ${file.name}`);
     
-    // For PDFs and images, we'll store a placeholder with metadata
-    const content = `[Ce document est au format ${file.type}. Taille: ${(file.size / 1024).toFixed(2)} KB]`;
+    // For text files, we'll try to read the content
+    let content = "";
     
-    // Insert document into Supabase
+    if (file.type.includes('text') || 
+        file.name.endsWith('.md') || 
+        file.name.endsWith('.json') || 
+        file.name.endsWith('.csv')) {
+      try {
+        content = await readFileContent(file);
+        console.log(`Contenu lu avec succès: ${content.substring(0, 100)}...`);
+      } catch (readError) {
+        console.error("Erreur lors de la lecture du contenu:", readError);
+        content = `[Erreur de lecture du contenu. Format: ${file.type}]`;
+      }
+    } else {
+      // For PDFs and other files, we'll store a placeholder with metadata
+      content = `[Ce document est au format ${file.type}. Taille: ${(file.size / 1024).toFixed(2)} KB]`;
+    }
+    
+    // Insert document into Supabase with detailed logging
+    console.log("Tentative d'insertion dans Supabase:", {
+      title: file.name,
+      type: file.type,
+      size: file.size
+    });
+
     const { data, error } = await supabase
       .from('documents')
       .insert({
@@ -24,11 +46,12 @@ export const processDocument = async (file: File): Promise<boolean> => {
     
     if (error) {
       console.error("Erreur lors de l'insertion du document:", error);
-      return false;
+      throw new Error(`Erreur Supabase: ${error.message}`);
     }
     
-    console.log(`Document ajouté avec succès:`, data);
+    console.log("Document ajouté avec succès:", data);
     return true;
+
   } catch (error) {
     console.error("Erreur lors du traitement du document:", error);
     return false;
@@ -67,9 +90,12 @@ export const readFileContent = (file: File): Promise<string> => {
 
 // Function to get document stats from Supabase
 export const getDocumentStats = async () => {
+  console.log("Récupération des statistiques des documents...");
+  
   const { data: docs, error } = await supabase
     .from('documents')
-    .select('type, size');
+    .select('type, size')
+    .order('created_at', { ascending: false });
     
   if (error) {
     console.error("Erreur lors de la récupération des statistiques:", error);
@@ -79,6 +105,8 @@ export const getDocumentStats = async () => {
       totalSize: 0
     };
   }
+  
+  console.log("Documents récupérés:", docs);
   
   const types = {};
   let totalSize = 0;
@@ -92,11 +120,14 @@ export const getDocumentStats = async () => {
     }
   });
   
-  return {
+  const stats = {
     count: docs.length,
     types,
     totalSize
   };
+  
+  console.log("Statistiques calculées:", stats);
+  return stats;
 };
 
 // Function to clear all documents
