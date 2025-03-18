@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,9 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
+  
+  // Référence pour l'input de fichier
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -64,6 +67,11 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
     }
   };
 
+  // Fonction pour déclencher le clic sur l'input file caché
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="p-4 border rounded-lg bg-muted/30">
       <div className="flex flex-col items-center gap-3 text-center">
@@ -78,34 +86,33 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
         </div>
         
         <div className="w-full max-w-sm">
-          <label htmlFor="file-upload" className="w-full">
-            <Button
-              variant="outline"
-              className="w-full relative"
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {uploadProgress}% Traitement...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Parcourir...
-                </>
-              )}
-              <input
-                id="file-upload"
-                type="file"
-                multiple
-                accept=".pdf,.docx,.txt,.md,.json,.csv"
-                onChange={handleFileUpload}
-                className="sr-only"
-                disabled={isUploading}
-              />
-            </Button>
-          </label>
+          <Button
+            variant="outline"
+            className="w-full relative"
+            disabled={isUploading}
+            onClick={triggerFileInput}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {uploadProgress}% Traitement...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Parcourir...
+              </>
+            )}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.docx,.txt,.md,.json,.csv"
+            onChange={handleFileUpload}
+            className="hidden"
+            disabled={isUploading}
+          />
         </div>
         
         {isUploading && (
