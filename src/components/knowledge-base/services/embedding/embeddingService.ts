@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { prepareEmbeddingForStorage } from "./embeddingUtils";
+import { prepareEmbeddingForStorage, isValidEmbedding } from "./embeddingUtils";
 
 /**
  * Generate embedding for a knowledge base entry with consistent dimensions
@@ -25,7 +25,19 @@ export const generateEntryEmbedding = async (text: string): Promise<number[] | n
       return null;
     }
     
-    console.log(`Knowledge entry embedding generated successfully: ${data.dimensions} dimensions`);
+    if (!data || !data.embedding || !Array.isArray(data.embedding) || data.embedding.length === 0) {
+      console.error("L'embedding généré est invalide ou vide:", data);
+      return null;
+    }
+    
+    // Vérifier explicitement que l'embedding est valide
+    if (!isValidEmbedding(data.embedding)) {
+      console.error("L'embedding généré n'est pas valide:", 
+                    Array.isArray(data.embedding) ? data.embedding.slice(0, 5) : data.embedding);
+      return null;
+    }
+    
+    console.log(`Knowledge entry embedding generated successfully: ${data.embedding.length} dimensions, model: ${data.modelName || 'unknown'}`);
     return data.embedding;
   } catch (error) {
     console.error("Error generating embedding:", error);

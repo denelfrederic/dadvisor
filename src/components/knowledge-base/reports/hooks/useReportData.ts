@@ -20,15 +20,26 @@ export const useReportData = () => {
       if (storedReports) {
         const parsedReports = JSON.parse(storedReports);
         console.log("Loaded previous reports:", parsedReports);
-        setPreviousReports(parsedReports);
+        if (Array.isArray(parsedReports) && parsedReports.length > 0) {
+          setPreviousReports(parsedReports);
+        } else {
+          console.warn("Stored reports exist but are not a valid array:", parsedReports);
+        }
       }
     } catch (error) {
       console.error("Erreur lors du chargement des rapports précédents:", error);
+      // Réinitialiser le stockage corrompu
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
   // Save reports to localStorage
   const saveReportsToStorage = useCallback((reports: {date: string, report: CombinedReport}[]) => {
+    if (!Array.isArray(reports)) {
+      console.error("Attempted to save non-array reports to localStorage:", reports);
+      return;
+    }
+    
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
       console.log("Reports saved to localStorage:", reports);
@@ -63,6 +74,7 @@ export const useReportData = () => {
         
         // Sauvegarder uniquement si différent du rapport actuel
         if (isDifferent) {
+          console.log("New report is significantly different, saving to history");
           const currentDate = new Date().toISOString();
           const updatedReports = [
             { date: currentDate, report: report },
@@ -71,10 +83,13 @@ export const useReportData = () => {
           
           setPreviousReports(updatedReports);
           saveReportsToStorage(updatedReports);
-          console.log("Updated reports history with current report");
+          console.log("Updated reports history with current report:", updatedReports);
         } else {
           console.log("New report is not significantly different from current, not saving to history");
         }
+      } else if (previousReports.length === 0) {
+        // Si c'est le premier rapport, ajoutez-le à l'historique
+        console.log("This is the first report, no history yet");
       }
       
       setReport(data);

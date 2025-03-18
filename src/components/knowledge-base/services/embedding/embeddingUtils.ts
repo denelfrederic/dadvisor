@@ -1,66 +1,72 @@
 
 /**
- * Helper function to parse embedding string to number array
- * This is needed because Supabase stores embeddings as strings but we need them as arrays in JS
+ * Parse embedding from string or JSON to array
  */
-export const parseEmbedding = (embedding: string | number[] | null): number[] | null => {
+export const parseEmbedding = (embedding: any): number[] | null => {
   if (!embedding) return null;
-  if (Array.isArray(embedding)) return embedding;
+  
   try {
-    const parsed = JSON.parse(embedding as string);
-    return Array.isArray(parsed) ? parsed : null;
+    // Si c'est déjà un tableau, on le retourne directement
+    if (Array.isArray(embedding)) {
+      return embedding.length > 0 ? embedding : null;
+    }
+    
+    // Si c'est une chaîne JSON, on la parse
+    if (typeof embedding === 'string') {
+      // Ignorer les chaînes vides
+      if (embedding.trim() === '') return null;
+      
+      const parsed = JSON.parse(embedding);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    }
+    
+    return null;
   } catch (error) {
-    console.error("Error parsing embedding:", error);
+    console.error("Erreur lors du parsing de l'embedding:", error);
     return null;
   }
 };
 
 /**
- * Safely convert a number[] embedding to a format suitable for database storage
+ * Prepare embedding array for storage in the database
  */
-export const prepareEmbeddingForStorage = (embedding: number[] | null): string | null => {
-  if (!embedding) return null;
+export const prepareEmbeddingForStorage = (embedding: number[]): string => {
   return JSON.stringify(embedding);
 };
 
 /**
- * Process text from knowledge entry to create combined text for embedding
- */
-export const processEntryForEmbedding = (question: string, answer: string): string => {
-  return `${question}\n${answer}`.trim();
-};
-
-/**
- * Check if an embedding is valid (not null and properly formatted)
- * Amélioré pour gérer tous les formats d'embedding possibles et éviter les faux négatifs
+ * Vérifie si un embedding est valide
+ * Un embedding valide est un tableau non vide de nombres
  */
 export const isValidEmbedding = (embedding: any): boolean => {
-  // Cas de base: null, undefined ou vide
-  if (embedding === null || embedding === undefined) return false;
-  
-  // Si c'est déjà un tableau, vérifier qu'il contient des valeurs
-  if (Array.isArray(embedding)) {
-    return embedding.length > 0 && embedding.every(val => typeof val === 'number');
-  }
-  
-  // Si c'est une chaîne JSON
-  if (typeof embedding === 'string') {
-    // Vérifier que la chaîne n'est pas vide
-    if (!embedding.trim() || embedding.trim() === '{}' || embedding.trim() === '[]') {
-      return false;
+  try {
+    // Si l'embedding est null ou undefined
+    if (embedding === null || embedding === undefined) return false;
+    
+    // Si l'embedding est déjà un tableau
+    if (Array.isArray(embedding)) {
+      return embedding.length > 0 && 
+             embedding.every(val => typeof val === 'number' && !isNaN(val));
     }
     
-    try {
-      const parsed = JSON.parse(embedding);
-      // Vérifier que c'est un tableau de nombres non vide
-      return Array.isArray(parsed) && 
-             parsed.length > 0 && 
-             parsed.every(val => typeof val === 'number');
-    } catch (e) {
-      console.log(`String not parseable as JSON: "${embedding.substring(0, 20)}..."`);
-      return false;
+    // Si l'embedding est une chaîne
+    if (typeof embedding === 'string') {
+      // Ignorer les chaînes vides
+      if (embedding.trim() === '') return false;
+      
+      try {
+        const parsed = JSON.parse(embedding);
+        return Array.isArray(parsed) && 
+               parsed.length > 0 && 
+               parsed.every(val => typeof val === 'number' && !isNaN(val));
+      } catch (e) {
+        return false;
+      }
     }
+    
+    return false;
+  } catch (error) {
+    console.error("Erreur lors de la vérification de l'embedding:", error);
+    return false;
   }
-  
-  return false;
 };

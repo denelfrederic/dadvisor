@@ -20,8 +20,14 @@ const GlobalSummaryCard = ({ report }: GlobalSummaryCardProps) => {
     totalSources,
     withEmbeddings,
     globalPercentage,
-    knowledgeBase: report.knowledgeBase,
-    documents: report.documents
+    knowledgeBase: {
+      count: report.knowledgeBase.count,
+      withEmbeddings: report.knowledgeBase.withEmbeddings || 0
+    },
+    documents: {
+      total: report.documents.total,
+      withEmbeddings: report.documents.withEmbeddings
+    }
   });
 
   return (

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { parseEmbedding, prepareEmbeddingForStorage } from "@/components/knowledge-base/services/embedding/embeddingUtils";
+import { parseEmbedding, prepareEmbeddingForStorage, isValidEmbedding } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 
 // Fonction pour générer l'embedding à partir du texte
 export const generateEmbedding = async (text: string, modelType = "document"): Promise<any> => {
@@ -23,7 +23,19 @@ export const generateEmbedding = async (text: string, modelType = "document"): P
       throw new Error("Échec de la génération de l'embedding");
     }
     
-    console.log(`Embedding généré avec succès: ${data.dimensions} dimensions, modèle: ${data.modelName}`);
+    if (!data || !data.embedding || !Array.isArray(data.embedding) || data.embedding.length === 0) {
+      console.error("Embedding généré est invalide:", data);
+      throw new Error("L'embedding généré est invalide ou vide");
+    }
+    
+    console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName}`);
+    
+    // Vérifier que l'embedding est valide
+    if (!isValidEmbedding(data.embedding)) {
+      console.error("Embedding généré n'est pas valide:", data.embedding.slice(0, 5), "...");
+      throw new Error("L'embedding généré n'est pas valide");
+    }
+    
     return data.embedding;
   } catch (error) {
     console.error("Exception lors de la génération de l'embedding:", error);
