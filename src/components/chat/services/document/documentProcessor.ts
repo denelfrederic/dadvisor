@@ -40,13 +40,18 @@ export const processDocument = async (file: File): Promise<boolean> => {
     let embedding = null;
     if (content && content.length > 0) {
       try {
-        embedding = await generateEmbedding(content);
+        embedding = await generateEmbedding(content, "document");
         console.log("Embedding généré avec succès");
       } catch (embeddingError) {
         console.error("Erreur lors de la génération de l'embedding:", embeddingError);
         // Continuer sans embedding si l'erreur se produit
       }
     }
+    
+    // Préparer l'embedding pour le stockage (JSON.stringify si ce n'est pas déjà une chaîne)
+    const embeddingForStorage = embedding ? 
+      (typeof embedding === 'string' ? embedding : JSON.stringify(embedding)) : 
+      null;
     
     // Insérer le document dans Supabase avec journalisation détaillée
     console.log("Tentative d'insertion dans Supabase:", {
@@ -64,7 +69,7 @@ export const processDocument = async (file: File): Promise<boolean> => {
         type: file.type,
         size: file.size,
         source: "Upload utilisateur",
-        embedding: embedding
+        embedding: embeddingForStorage
       })
       .select()
       .single();
@@ -113,12 +118,17 @@ export const updateDocumentEmbeddings = async (): Promise<{ success: boolean, co
       
       try {
         // Générer l'embedding
-        const embedding = await generateEmbedding(doc.content);
+        const embedding = await generateEmbedding(doc.content, "document");
+        
+        // Préparer l'embedding pour le stockage
+        const embeddingForStorage = embedding ? 
+          (typeof embedding === 'string' ? embedding : JSON.stringify(embedding)) : 
+          null;
         
         // Mettre à jour le document
         const { error: updateError } = await supabase
           .from('documents')
-          .update({ embedding })
+          .update({ embedding: embeddingForStorage })
           .eq('id', doc.id);
         
         if (updateError) {

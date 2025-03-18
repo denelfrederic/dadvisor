@@ -36,6 +36,19 @@ export const useReportData = () => {
       console.error("Error saving reports to localStorage:", error);
     }
   }, []);
+  
+  // Une fonction pour déterminer si deux rapports sont significativement différents
+  const areReportsSignificantlyDifferent = (reportA: CombinedReport, reportB: CombinedReport): boolean => {
+    // Vérifier les différences dans la base de connaissances
+    if (reportA.knowledgeBase.count !== reportB.knowledgeBase.count) return true;
+    if (reportA.knowledgeBase.withEmbeddings !== reportB.knowledgeBase.withEmbeddings) return true;
+    
+    // Vérifier les différences dans les documents
+    if (reportA.documents.total !== reportB.documents.total) return true;
+    if (reportA.documents.withEmbeddings !== reportB.documents.withEmbeddings) return true;
+    
+    return false;
+  };
 
   const handleGenerateReport = async () => {
     setIsLoading(true);
@@ -43,23 +56,24 @@ export const useReportData = () => {
       const data = await generateCombinedReport();
       console.log("Generated report:", data);
       
-      // Save current report to history only if it exists and is different from the new one
+      // Sauvegarder le rapport actuel dans l'historique s'il existe et est différent du nouveau
       if (report) {
-        // Convertir en string pour comparaison simple
-        const currentReportStr = JSON.stringify(report);
-        const newReportStr = JSON.stringify(data);
+        // Vérifier si le nouveau rapport est significativement différent
+        const isDifferent = areReportsSignificantlyDifferent(report, data);
         
         // Sauvegarder uniquement si différent du rapport actuel
-        if (currentReportStr !== newReportStr) {
+        if (isDifferent) {
           const currentDate = new Date().toISOString();
           const updatedReports = [
             { date: currentDate, report: report },
-            ...previousReports.slice(0, 4) // Keep only the last 5 reports
+            ...previousReports.slice(0, 4) // Garder seulement les 5 derniers rapports
           ];
           
           setPreviousReports(updatedReports);
           saveReportsToStorage(updatedReports);
           console.log("Updated reports history with current report");
+        } else {
+          console.log("New report is not significantly different from current, not saving to history");
         }
       }
       

@@ -9,6 +9,7 @@ interface GlobalSummaryCardProps {
 }
 
 const GlobalSummaryCard = ({ report }: GlobalSummaryCardProps) => {
+  // Calcul précis des statistiques globales
   const totalSources = report.knowledgeBase.count + report.documents.total;
   const withEmbeddings = (report.knowledgeBase.withEmbeddings || 0) + report.documents.withEmbeddings;
   const globalPercentage = totalSources > 0 

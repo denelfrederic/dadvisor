@@ -28,15 +28,23 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       .select('id, source, embedding');
     
     if (!entriesError && entries) {
-      // Compter les entrées avec embeddings valides
-      withEmbeddings = entries.filter(entry => {
-        return isValidEmbedding(entry.embedding);
-      }).length;
+      console.log(`Analyzing ${entries.length} knowledge entries for embeddings`);
       
-      // Analyser les sources comme catégories
+      // Compter les entrées avec embeddings valides
       entries.forEach(entry => {
-        const category = entry.source || 'Non catégorisé';
-        categories[category] = (categories[category] || 0) + 1;
+        try {
+          const hasValidEmbedding = isValidEmbedding(entry.embedding);
+          if (hasValidEmbedding) {
+            withEmbeddings++;
+            console.log(`Entry ${entry.id} has valid embedding`);
+          }
+          
+          // Analyser les sources comme catégories
+          const category = entry.source || 'Non catégorisé';
+          categories[category] = (categories[category] || 0) + 1;
+        } catch (e) {
+          console.error(`Error checking embedding for entry ${entry.id}:`, e);
+        }
       });
     }
     
@@ -80,11 +88,24 @@ export const generateCombinedReport = async (): Promise<{
     }
     
     const docTotal = documents?.length || 0;
+    let docWithEmbeddings = 0;
     
     // Vérifier plus précisément si l'embedding existe et est valide
-    const docWithEmbeddings = documents?.filter(doc => {
-      return isValidEmbedding(doc.embedding);
-    }).length || 0;
+    if (documents) {
+      console.log(`Analyzing ${documents.length} documents for embeddings`);
+      
+      documents.forEach(doc => {
+        try {
+          const hasValidEmbedding = isValidEmbedding(doc.embedding);
+          if (hasValidEmbedding) {
+            docWithEmbeddings++;
+            console.log(`Document ${doc.id} has valid embedding`);
+          }
+        } catch (e) {
+          console.error(`Error checking embedding for document ${doc.id}:`, e);
+        }
+      });
+    }
     
     const docWithoutEmbeddings = docTotal - docWithEmbeddings;
     const docPercentage = docTotal > 0 

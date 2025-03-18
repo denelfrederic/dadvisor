@@ -32,36 +32,35 @@ export const processEntryForEmbedding = (question: string, answer: string): stri
 
 /**
  * Check if an embedding is valid (not null and properly formatted)
- * Improved version to handle all possible embedding formats
+ * Amélioré pour gérer tous les formats d'embedding possibles et éviter les faux négatifs
  */
 export const isValidEmbedding = (embedding: any): boolean => {
+  // Cas de base: null, undefined ou vide
   if (embedding === null || embedding === undefined) return false;
   
-  try {
-    // Si c'est déjà un tableau, vérifier qu'il contient des valeurs
-    if (Array.isArray(embedding)) {
-      return embedding.length > 0;
-    }
-    
-    // Si c'est une chaîne, vérifier qu'elle contient un tableau valide
-    if (typeof embedding === 'string') {
-      // Si la chaîne est vide ou juste "{}" ou "[]", elle n'est pas valide
-      if (embedding.trim() === '{}' || embedding.trim() === '[]' || embedding.trim() === '') {
-        return false;
-      }
-      
-      try {
-        const parsed = JSON.parse(embedding);
-        return Array.isArray(parsed) && parsed.length > 0;
-      } catch (e) {
-        // Si on ne peut pas parser la chaîne, elle n'est pas valide
-        return false;
-      }
-    }
-    
-    return false;
-  } catch (e) {
-    console.error("Error validating embedding:", e);
-    return false;
+  // Si c'est déjà un tableau, vérifier qu'il contient des valeurs
+  if (Array.isArray(embedding)) {
+    return embedding.length > 0 && embedding.every(val => typeof val === 'number');
   }
+  
+  // Si c'est une chaîne JSON
+  if (typeof embedding === 'string') {
+    // Vérifier que la chaîne n'est pas vide
+    if (!embedding.trim() || embedding.trim() === '{}' || embedding.trim() === '[]') {
+      return false;
+    }
+    
+    try {
+      const parsed = JSON.parse(embedding);
+      // Vérifier que c'est un tableau de nombres non vide
+      return Array.isArray(parsed) && 
+             parsed.length > 0 && 
+             parsed.every(val => typeof val === 'number');
+    } catch (e) {
+      console.log(`String not parseable as JSON: "${embedding.substring(0, 20)}..."`);
+      return false;
+    }
+  }
+  
+  return false;
 };

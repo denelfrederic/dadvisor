@@ -9,6 +9,8 @@ export const generateEntryEmbedding = async (text: string): Promise<number[] | n
   try {
     const combinedText = text.trim();
     if (!combinedText) return null;
+    
+    console.log(`Generating knowledge entry embedding for text of length: ${combinedText.length}`);
 
     // Appel à notre fonction edge pour générer l'embedding
     const { data, error } = await supabase.functions.invoke("generate-embeddings", {
@@ -23,6 +25,7 @@ export const generateEntryEmbedding = async (text: string): Promise<number[] | n
       return null;
     }
     
+    console.log(`Knowledge entry embedding generated successfully: ${data.dimensions} dimensions`);
     return data.embedding;
   } catch (error) {
     console.error("Error generating embedding:", error);
@@ -39,8 +42,7 @@ export const processEntryForEmbedding = (question: string, answer: string): stri
 
 /**
  * Check if embedding dimensions match expected dimensions for knowledge entries
- * Updated to match the expected dimensions from the database (1536)
  */
-export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 1536): boolean => {
+export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 384): boolean => {
   return embedding && Array.isArray(embedding) && embedding.length === expectedDimension;
 };

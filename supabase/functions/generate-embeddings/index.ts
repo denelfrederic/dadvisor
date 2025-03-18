@@ -4,8 +4,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const HUGGINGFACE_API_KEY = Deno.env.get('HUGGINGFACE_API_KEY');
 
-// Modèle utilisé pour tous les types d'embedding (document et knowledge-entry)
-const MODEL_NAME = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'; // 384 dimensions
+// Modèles spécifiques pour les différents types d'embedding avec les dimensions correctes
+const DOCUMENT_MODEL = 'sentence-transformers/all-mpnet-base-v2'; // 768 dimensions
+const KNOWLEDGE_ENTRY_MODEL = 'sentence-transformers/all-MiniLM-L12-v2'; // 384 dimensions
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,8 +28,13 @@ serve(async (req) => {
 
     console.log(`Generating embedding for ${modelType} text: ${text.substring(0, 100)}...`);
 
-    // Utiliser Hugging Face pour tous les types d'embedding
-    const response = await fetch(`https://api-inference.huggingface.co/pipeline/feature-extraction/${MODEL_NAME}`, {
+    // Sélection du modèle en fonction du type
+    const modelName = modelType === "knowledge-entry" 
+      ? KNOWLEDGE_ENTRY_MODEL 
+      : DOCUMENT_MODEL;
+
+    // Utiliser Hugging Face avec le modèle approprié
+    const response = await fetch(`https://api-inference.huggingface.co/pipeline/feature-extraction/${modelName}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
@@ -50,12 +56,13 @@ serve(async (req) => {
     }
 
     const embedding = await response.json();
-    console.log(`Embedding generated successfully: ${embedding.length} dimensions`);
+    console.log(`Embedding generated successfully: ${embedding.length} dimensions for ${modelType} using ${modelName}`);
 
     return new Response(JSON.stringify({ 
       embedding,
       dimensions: embedding.length,
-      modelType 
+      modelType,
+      modelName
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

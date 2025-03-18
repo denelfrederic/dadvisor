@@ -8,6 +8,8 @@ export const generateEmbedding = async (text: string, modelType = "document"): P
     // Tronquer le texte si nécessaire (les API d'embedding ont souvent des limites de caractères)
     const truncatedText = text.slice(0, 10000);
     
+    console.log(`Générant embedding pour ${modelType}, longueur texte: ${truncatedText.length} caractères`);
+    
     // Appel à notre fonction edge pour générer l'embedding
     const { data, error } = await supabase.functions.invoke("generate-embeddings", {
       body: { 
@@ -21,6 +23,7 @@ export const generateEmbedding = async (text: string, modelType = "document"): P
       throw new Error("Échec de la génération de l'embedding");
     }
     
+    console.log(`Embedding généré avec succès: ${data.dimensions} dimensions, modèle: ${data.modelName}`);
     return data.embedding;
   } catch (error) {
     console.error("Exception lors de la génération de l'embedding:", error);
