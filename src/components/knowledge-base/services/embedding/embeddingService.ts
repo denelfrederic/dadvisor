@@ -39,6 +39,7 @@ export const processEntryForEmbedding = (question: string, answer: string): stri
 
 /**
  * Check if embedding dimensions match expected dimensions for knowledge entries
+ * Updated to match the 384 dimensions from the Hugging Face model
  */
 export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 384): boolean => {
   return embedding && Array.isArray(embedding) && embedding.length === expectedDimension;

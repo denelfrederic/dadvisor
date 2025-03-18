@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateDocumentEmbeddings } from "@/components/chat/services/document/documentProcessor";
 import { generateEmbedding } from "@/components/chat/services/document/embeddingService";
 import { prepareEmbeddingForStorage } from "./embeddingUtils";
+import { validateEmbeddingDimensions } from "./embeddingService";
 
 /**
  * Updates document embeddings and returns the results
@@ -69,6 +70,12 @@ export const updateKnowledgeEntries = async (
         
         if (!embedding) {
           onLog?.(`Échec de génération d'embedding pour l'entrée ${entry.id}`);
+          continue;
+        }
+
+        // Valider les dimensions (384 pour le modèle Hugging Face utilisé)
+        if (!validateEmbeddingDimensions(embedding, 384)) {
+          onLog?.(`Erreur de dimension pour l'entrée ${entry.id}: reçu ${embedding.length} dimensions, attendu 384`);
           continue;
         }
         
