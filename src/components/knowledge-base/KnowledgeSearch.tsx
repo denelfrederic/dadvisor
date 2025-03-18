@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry } from "./types";
-import { useKnowledgeBaseService } from "./knowledgeBaseService";
+import { useKnowledgeBaseService } from "./services";
 import { sendMessageToGemini } from "../chat/services";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";

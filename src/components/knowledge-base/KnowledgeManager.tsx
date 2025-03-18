@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry } from "./types";
-import { useKnowledgeBaseService, getKnowledgeBaseStats } from "./knowledgeBaseService";
+import { useKnowledgeBaseService, getKnowledgeBaseStats } from "./services";
 import { 
   Dialog, 
   DialogContent, 
