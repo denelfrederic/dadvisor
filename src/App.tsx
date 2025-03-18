@@ -15,6 +15,7 @@ import Portfolios from './pages/Portfolios';
 import Wallet from './pages/Wallet';
 import NotFound from './pages/NotFound';
 import AdminCheck from './pages/AdminCheck';
+import GeminiAssistant from './pages/GeminiAssistant';
 
 // Import contexts
 import { AuthProvider } from './contexts/auth';
@@ -43,6 +44,7 @@ function App() {
               <Route path="/portfolios" element={<Portfolios />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/admin-check" element={<AdminCheck />} />
+              <Route path="/assistant" element={<GeminiAssistant />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
