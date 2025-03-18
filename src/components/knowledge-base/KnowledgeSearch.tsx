@@ -18,7 +18,8 @@ const KnowledgeSearch = () => {
     setActiveTab,
     includeLocalContent,
     setIncludeLocalContent,
-    handleSearch
+    handleSearch,
+    debugLogs
   } = useKnowledgeSearch();
 
   return (
@@ -54,8 +55,11 @@ const KnowledgeSearch = () => {
         )}
       >
         <SearchResults 
+          query={query}
           response={response} 
-          sources={sources} 
+          sources={sources}
+          isLoading={isSearching}
+          debugLogs={debugLogs}
         />
       </ErrorBoundary>
     </div>
