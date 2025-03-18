@@ -52,7 +52,7 @@ const HeroSection = ({
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              Découvrez vrai votre profil d'investisseur,{" "}
+              Découvrez votre profil d'investisseur,{" "}
               <span className="text-primary">choisissez en toute liberté</span>
             </motion.h1>
             
