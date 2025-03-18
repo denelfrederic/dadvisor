@@ -4,6 +4,18 @@ import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry, KnowledgeBaseOperations } from "../types";
 import { generateEmbedding } from "@/components/chat/services/document/embeddingService";
 
+// Helper function to parse embedding string to number array if needed
+const parseEmbedding = (embedding: string | number[] | null): number[] | null => {
+  if (!embedding) return null;
+  if (Array.isArray(embedding)) return embedding;
+  try {
+    return JSON.parse(embedding);
+  } catch (error) {
+    console.error("Error parsing embedding:", error);
+    return null;
+  }
+};
+
 /**
  * Service for managing the knowledge base using Supabase
  */
@@ -64,6 +76,12 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
       }
       
       console.log("Knowledge entry added successfully:", data);
+      
+      // Ensure embedding is properly parsed
+      if (data.embedding) {
+        data.embedding = parseEmbedding(data.embedding);
+      }
+      
       return data as KnowledgeEntry;
     } catch (error) {
       console.error("Exception while adding knowledge entry:", error);
@@ -184,7 +202,14 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
       }
       
       console.log("Fetched knowledge entries:", data.length);
-      return data as KnowledgeEntry[];
+      
+      // Parse embeddings for all entries
+      const entriesWithParsedEmbeddings = data.map(entry => ({
+        ...entry,
+        embedding: entry.embedding ? parseEmbedding(entry.embedding) : undefined
+      }));
+      
+      return entriesWithParsedEmbeddings as KnowledgeEntry[];
     } catch (error) {
       console.error("Exception while fetching knowledge entries:", error);
       return [];
@@ -220,7 +245,14 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
       }
       
       console.log("Search results:", data.length);
-      return data as KnowledgeEntry[];
+      
+      // Parse embeddings for all entries
+      const entriesWithParsedEmbeddings = data.map(entry => ({
+        ...entry,
+        embedding: entry.embedding ? parseEmbedding(entry.embedding) : undefined
+      }));
+      
+      return entriesWithParsedEmbeddings as KnowledgeEntry[];
     } catch (error) {
       console.error("Exception while searching knowledge entries:", error);
       return [];

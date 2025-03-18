@@ -8,7 +8,7 @@ export interface KnowledgeEntry {
   user_id?: string; // To associate entries with specific users
   created_at?: string;
   updated_at?: string;
-  embedding?: number[]; // Vector embedding for semantic search
+  embedding?: number[] | string; // Vector embedding for semantic search (can be string from DB or number[] for processing)
 }
 
 export interface KnowledgeBaseStats {
