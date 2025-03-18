@@ -17,7 +17,7 @@ export const useKnowledgeSearch = () => {
   const kb = useKnowledgeBaseService();
 
   useEffect(() => {
-    // Load knowledge entries when component mounts
+    // Chargement des entrées de la base de connaissances au montage
     const loadEntries = async () => {
       const entries = await kb.getEntries();
       setKnowledgeEntries(entries);
@@ -46,24 +46,36 @@ export const useKnowledgeSearch = () => {
       
       // Si l'option est activée, inclure également le contenu local
       if (includeLocalContent) {
+        // Utiliser une recherche plus précise pour trouver le contenu pertinent
         const searchResults = await kb.searchEntries(query);
         
         if (searchResults.length > 0) {
-          context = searchResults
-            .map(entry => `Q: ${entry.question}\nA: ${entry.answer}`)
-            .join('\n\n');
+          // Format plus structuré pour le contexte
+          context = "Information de notre base de connaissances :\n\n" + 
+            searchResults
+              .map((entry, index) => 
+                `[Source ${index + 1}]\nQuestion: ${entry.question}\nRéponse: ${entry.answer}`)
+              .join('\n\n');
           
+          // Sources plus descriptives
           usedSources = searchResults.map(entry => 
-            `Base de connaissances: ${entry.question.substring(0, 50)}${entry.question.length > 50 ? '...' : ''}`
+            `Base de connaissances: ${entry.question}`
           );
           
           console.log("Contenu local inclus dans la recherche Internet:", searchResults.length, "entrées");
         }
       }
       
-      // Utiliser Gemini pour la recherche Internet, avec ou sans contexte local
+      // Instructions plus précises pour Gemini
+      const promptPrefix = includeLocalContent && context 
+        ? "Analyse soigneusement les informations fournies de notre base de connaissances et utilise-les pour répondre à la question suivante. " +
+          "Si les informations sont pertinentes, base ta réponse dessus. Sinon, utilise tes connaissances générales.\n\n" +
+          "Question: "
+        : "";
+      
+      // Utiliser Gemini pour la recherche Internet
       const result = await sendMessageToGemini(
-        query, 
+        promptPrefix + query, 
         [], 
         includeLocalContent, 
         includeLocalContent ? context : ""
@@ -98,33 +110,43 @@ export const useKnowledgeSearch = () => {
     setSources([]);
     
     try {
-      // Rechercher dans la base de connaissances locale
+      // Recherche améliorée dans la base de connaissances locale
       const searchResults = await kb.searchEntries(query);
       let usedSources: string[] = [];
       
       if (searchResults.length > 0) {
-        // Utiliser les résultats de la recherche comme contexte pour Gemini
-        const context = searchResults
-          .map(entry => `Q: ${entry.question}\nA: ${entry.answer}`)
-          .join('\n\n');
+        // Formatage amélioré du contexte pour Gemini
+        const context = "Voici les informations pertinentes de notre base de connaissances :\n\n" +
+          searchResults
+            .map((entry, index) => 
+              `[Source ${index + 1}]\nQuestion: ${entry.question}\nRéponse: ${entry.answer}`)
+            .join('\n\n');
         
         usedSources = searchResults.map(entry => 
-          `Base de connaissances: ${entry.question.substring(0, 50)}${entry.question.length > 50 ? '...' : ''}`
+          `Base de connaissances: ${entry.question}`
         );
         
-        const result = await sendMessageToGemini(query, [], true, context);
+        // Instructions plus précises pour Gemini
+        const prompt = 
+          "Tu es un assistant spécialisé dans la finance. Tu dois répondre à la question suivante en utilisant UNIQUEMENT les informations fournies de notre base de connaissances. " +
+          "Si les informations ne contiennent pas d'éléments pertinents pour répondre, indique clairement: 'Je ne trouve pas d'information spécifique sur ce sujet dans notre base de connaissances.'\n\n" +
+          "Question: " + query;
+        
+        const result = await sendMessageToGemini(prompt, [], true, context);
         setResponse(result);
-        setSources([...usedSources, "Augmenté par Gemini"]);
+        setSources([...usedSources]);
       } else {
-        // Aucun résultat trouvé, utiliser Gemini sans contexte
+        // Si aucun résultat local, message plus clair
         const result = await sendMessageToGemini(
-          query, 
+          "Tu es un assistant spécialisé dans la finance. La question suivante a été posée, mais aucune information pertinente n'a été trouvée dans notre base de connaissances locale. " +
+          "Réponds en indiquant clairement au début que cette information ne se trouve pas dans notre base locale, puis propose une réponse générale si possible.\n\n" +
+          "Question: " + query, 
           [], 
-          true, 
-          "Aucune information pertinente trouvée dans la base de connaissances locale."
+          false, 
+          ""
         );
         setResponse(result);
-        setSources(["Aucune information pertinente dans la base locale", "Réponse fournie par Gemini"]);
+        setSources(["Aucune information pertinente dans la base locale", "Réponse générale via Gemini"]);
       }
     } catch (error) {
       console.error("Erreur lors de la recherche:", error);

@@ -19,30 +19,32 @@ serve(async (req) => {
   try {
     const { prompt, history = [], useRAG = false, documentContext = null } = await req.json();
     
-    console.log("Received request with prompt:", prompt);
+    console.log("Received request with prompt:", prompt.substring(0, 100));
     console.log("Using RAG:", useRAG);
     
-    // Prepare system message based on RAG mode
-    let systemMessage = "Vous êtes un assistant IA financier qui répond aux questions des utilisateurs de manière claire, précise et professionnelle.";
+    // Préparation de messages système plus précis selon le mode
+    let systemMessage = "Vous êtes un assistant IA financier expert qui répond aux questions des utilisateurs de façon claire, précise et professionnelle. Utilisez un langage accessible mais précis.";
     
     if (useRAG && documentContext) {
-      systemMessage = `Vous êtes un assistant IA financier qui répond aux questions en vous basant UNIQUEMENT sur les informations contenues dans les documents fournis.
+      systemMessage = `Vous êtes un assistant IA financier expert qui répond aux questions en vous basant PRIORITAIREMENT sur les informations contenues dans les documents fournis.
       
-Si l'information demandée n'est pas présente dans les documents, répondez systématiquement: "Aucune information à ce sujet dans nos documents internes."
+Votre objectif est de fournir des réponses précises qui reflètent fidèlement le contenu des documents. Si les documents fournissent une information partielle, utilisez-la et complétez-la de façon cohérente.
 
-N'inventez JAMAIS de réponse qui n'est pas dans les documents. Référencez toujours la source du document quand c'est possible.`;
+Si l'information demandée n'est PAS DU TOUT présente dans les documents, indiquez clairement: "Je ne trouve pas d'information spécifique sur ce sujet dans notre base de connaissances."
+
+N'inventez JAMAIS de réponse qui contredit les documents. Citez toujours vos sources quand c'est possible.`;
     }
 
-    // Format messages for Gemini API
+    // Format messages pour l'API Gemini
     const messages = [];
     
-    // Add system message
+    // Ajout du message système
     messages.push({
       role: "model",
       parts: [{ text: systemMessage }]
     });
     
-    // Add document context if using RAG
+    // Ajout du contexte documentaire si utilisation de RAG
     if (useRAG && documentContext) {
       messages.push({
         role: "user",
@@ -51,7 +53,7 @@ N'inventez JAMAIS de réponse qui n'est pas dans les documents. Référencez tou
       
       messages.push({
         role: "model", 
-        parts: [{ text: "Je vais analyser ces documents pour répondre à votre question." }]
+        parts: [{ text: "Je vais analyser soigneusement ces documents pour répondre à votre question avec précision." }]
       });
       
       messages.push({
@@ -65,7 +67,7 @@ N'inventez JAMAIS de réponse qui n'est pas dans les documents. Référencez tou
       });
     }
     
-    // Add chat history
+    // Ajout de l'historique des conversations
     history.forEach((msg: { role: string, content: string }) => {
       messages.push({
         role: msg.role === "user" ? "user" : "model",
@@ -73,7 +75,7 @@ N'inventez JAMAIS de réponse qui n'est pas dans les documents. Référencez tou
       });
     });
     
-    // Add current user message
+    // Ajout du message utilisateur actuel
     messages.push({
       role: "user",
       parts: [{ text: prompt }]
@@ -81,7 +83,7 @@ N'inventez JAMAIS de réponse qui n'est pas dans les documents. Référencez tou
     
     console.log("Sending messages to Gemini API:", JSON.stringify(messages.length, null, 2));
 
-    // Make request to Gemini API
+    // Requête à l'API Gemini avec des paramètres optimisés
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -90,7 +92,7 @@ N'inventez JAMAIS de réponse qui n'est pas dans les documents. Référencez tou
       body: JSON.stringify({
         contents: messages,
         generationConfig: {
-          temperature: useRAG ? 0.1 : 0.7, // Lower temperature for RAG
+          temperature: useRAG ? 0.1 : 0.7, // Température plus basse pour RAG
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
