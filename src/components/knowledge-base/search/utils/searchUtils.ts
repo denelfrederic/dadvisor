@@ -4,6 +4,7 @@ import { useKnowledgeBaseService } from "../../services";
 import { sendMessageToGemini } from "../../../chat/services";
 import { searchLocalDocuments } from "../../../chat/services/document/searchService";
 import { generateEmbedding } from "../../../chat/services/document/embeddingService";
+import { DocumentSearchResult } from "../../../chat/types";
 
 // Memoize formatter functions with cache to avoid redundant processing
 const cachedFormatters = new Map();
@@ -44,7 +45,7 @@ export const formatKnowledgeBaseContext = (results: KnowledgeEntry[]) => {
   return result;
 };
 
-export const formatDocumentContext = (docResults: any[]) => {
+export const formatDocumentContext = (docResults: DocumentSearchResult[]): { context: string, sources: string[] } => {
   if (docResults.length === 0) return { context: "", sources: [] };
   
   // Generate a cache key based on document titles and timestamps

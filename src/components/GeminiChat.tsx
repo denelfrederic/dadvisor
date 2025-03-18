@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useKnowledgeBaseService } from "./knowledge-base/services";
 import { searchKnowledgeBaseSemantically } from "./knowledge-base/search/utils/searchUtils";
 import { searchLocalDocuments } from "./chat/services/document/searchService";
+import { formatDocumentContext } from "./knowledge-base/search/utils/searchUtils";
 
 const GeminiChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -74,12 +75,21 @@ const GeminiChat = () => {
             searchLocalDocuments(input)
           ]);
           
-          if (kbResults.context || docResults.context) {
-            additionalContext = (kbResults.context ? kbResults.context + "\n\n" : "") + 
-                               (docResults.context ? docResults.context : "");
+          // Formater les résultats de KB pour obtenir le contexte
+          const kbContext = kbResults.context || "";
+          const kbSources = kbResults.sources || [];
+          
+          // Formater les résultats des documents pour obtenir le contexte
+          const formattedDocResults = formatDocumentContext(docResults);
+          const docContext = formattedDocResults.context || "";
+          const docSources = formattedDocResults.sources || [];
+          
+          if (kbContext || docContext) {
+            additionalContext = (kbContext ? kbContext + "\n\n" : "") + 
+                               (docContext ? docContext : "");
             
-            debugInfo.push(`Trouvé ${kbResults.sources.length} entrées dans la base de connaissances`);
-            debugInfo.push(`Trouvé ${docResults.sources.length} extraits de documents`);
+            debugInfo.push(`Trouvé ${kbSources.length} entrées dans la base de connaissances`);
+            debugInfo.push(`Trouvé ${docSources.length} extraits de documents`);
           } else {
             debugInfo.push("Aucune information pertinente trouvée dans la base locale");
           }
