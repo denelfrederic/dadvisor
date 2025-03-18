@@ -98,10 +98,11 @@ export const useSearchService = () => {
       
       console.log(`Found ${data.length} similar knowledge entries`);
       
-      // Parse embeddings if present and format results
+      // Format results - note that the RPC function doesn't return the embedding field,
+      // so we don't need to parse it here
       return data.map(entry => ({
         ...entry,
-        embedding: parseEmbedding(entry.embedding)
+        embedding: null // RPC result doesn't include embedding
       })) as KnowledgeEntry[];
     } catch (error) {
       console.error("Exception while searching knowledge entries by similarity:", error);

@@ -21,4 +21,3 @@ export const prepareEmbeddingForStorage = (embedding: number[] | null): string |
   if (!embedding) return null;
   return JSON.stringify(embedding);
 };
-
