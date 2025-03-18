@@ -1,16 +1,13 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useEmbeddingsUpdate } from "../search/hooks/useEmbeddingsUpdate";
 import { Database, BookOpen, Brain, RefreshCcw } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const EmbeddingMaintenance = () => {
-  const [activeTab, setActiveTab] = useState<string>("documents");
   const { 
     isUpdating, 
     progress, 

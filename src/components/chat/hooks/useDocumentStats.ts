@@ -7,6 +7,9 @@ interface DocumentStats {
   totalSize: number;
 }
 
+/**
+ * Hook for fetching and managing document statistics
+ */
 export const useDocumentStats = () => {
   const [stats, setStats] = useState<DocumentStats>({ count: 0, types: {}, totalSize: 0 });
   const [isDocManagerOpen, setIsDocManagerOpen] = useState(false);
