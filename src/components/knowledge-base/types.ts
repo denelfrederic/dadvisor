@@ -8,7 +8,7 @@ export interface KnowledgeEntry {
   user_id?: string; // To associate entries with specific users
   created_at?: string;
   updated_at?: string;
-  embedding?: any; // Pour le support des embeddings
+  embedding?: any; // Optional embedding field
 }
 
 export interface KnowledgeBaseStats {
