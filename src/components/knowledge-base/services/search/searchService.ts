@@ -1,15 +1,16 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../types";
-import { generateEmbedding } from "./embeddingService";
+import { generateEntryEmbedding } from "../embedding/embeddingService";
 
 export const searchEntries = async (query: string, topK: number = 5): Promise<KnowledgeEntry[]> => {
   try {
     // Generate embedding for the search query
-    const queryEmbedding = await generateEmbedding(query);
+    const queryEmbedding = await generateEntryEmbedding(query);
     const queryEmbeddingString = JSON.stringify(queryEmbedding);
 
-    // Perform a similarity search
-    const { data, error } = await supabase.rpc('match_knowledge_base', {
+    // Perform a similarity search with RPC function
+    const { data, error } = await supabase.rpc('match_knowledge_entries', {
       query_embedding: queryEmbeddingString,
       match_threshold: 0.7,
       match_count: topK,
@@ -20,11 +21,11 @@ export const searchEntries = async (query: string, topK: number = 5): Promise<Kn
       throw new Error(error.message);
     }
 
-    // Fetch the corresponding entries from the knowledge_base table
-    if (data && data.length > 0) {
+    // Fetch the corresponding entries from the knowledge_entries table
+    if (data && Array.isArray(data) && data.length > 0) {
       const ids = data.map((item: any) => item.id);
       const { data: entries, error: fetchError } = await supabase
-        .from('knowledge_base')
+        .from('knowledge_entries')
         .select('*')
         .in('id', ids);
 
@@ -33,7 +34,7 @@ export const searchEntries = async (query: string, topK: number = 5): Promise<Kn
         throw new Error(fetchError.message);
       }
 
-      return entries || [];
+      return entries as KnowledgeEntry[] || [];
     } else {
       return [];
     }
@@ -52,13 +53,14 @@ export const updateEntryEmbeddingBatch = async (
   
   try {
     for (const entry of entries) {
-      // Generate new embedding
-      const embedding = await generateEmbedding(entry.content);
+      // Generate new embedding from combined question and answer
+      const combinedText = `${entry.question}\n${entry.answer}`;
+      const embedding = await generateEntryEmbedding(combinedText);
       const embeddingString = JSON.stringify(embedding);
       
       // Update the entry in the database
       const { error } = await supabase
-        .from('knowledge_base')
+        .from('knowledge_entries')
         .update({ 
           embedding: embeddingString,
           updated_at: new Date().toISOString()
@@ -82,7 +84,7 @@ export const updateEntryEmbeddingBatch = async (
 export const getAllEntries = async (): Promise<KnowledgeEntry[]> => {
   try {
     const { data, error } = await supabase
-      .from('knowledge_base')
+      .from('knowledge_entries')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -90,9 +92,44 @@ export const getAllEntries = async (): Promise<KnowledgeEntry[]> => {
       throw new Error(error.message);
     }
 
-    return data || [];
+    return data as KnowledgeEntry[] || [];
   } catch (error: any) {
     console.error("Error fetching all entries:", error);
     throw new Error(error.message);
   }
+};
+
+// Add hook for compatibility with the knowledge base service
+export const useSearchService = () => {
+  return {
+    searchEntries,
+    getEntries: getAllEntries,
+    searchEntriesBySimilarity: async (queryEmbedding: number[], threshold = 0.7, limit = 5) => {
+      try {
+        const queryEmbeddingString = JSON.stringify(queryEmbedding);
+        const { data, error } = await supabase.rpc('match_knowledge_entries', {
+          query_embedding: queryEmbeddingString,
+          match_threshold: threshold,
+          match_count: limit,
+        });
+
+        if (error) throw error;
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          const ids = data.map((item: any) => item.id);
+          const { data: entries, error: fetchError } = await supabase
+            .from('knowledge_entries')
+            .select('*')
+            .in('id', ids);
+
+          if (fetchError) throw fetchError;
+          return entries as KnowledgeEntry[] || [];
+        }
+        return [];
+      } catch (error) {
+        console.error('Error in searchEntriesBySimilarity:', error);
+        return [];
+      }
+    }
+  };
 };

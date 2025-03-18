@@ -1,16 +1,18 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../types";
-import { generateEmbedding } from "../embedding/embeddingService";
+import { generateEntryEmbedding } from "../embedding/embeddingService";
+import { processEntryForEmbedding } from "../embedding/embeddingUtils";
 
 export const createEntry = async (
-  title: string,
-  content: string,
-  category: string
+  question: string,
+  answer: string,
+  source?: string
 ): Promise<KnowledgeEntry> => {
   try {
     const { data, error } = await supabase
-      .from('knowledge_base')
-      .insert([{ title, content, category }])
+      .from('knowledge_entries')
+      .insert([{ question, answer, source }])
       .select()
       .single();
 
@@ -18,7 +20,7 @@ export const createEntry = async (
       throw error;
     }
 
-    return data;
+    return data as KnowledgeEntry;
   } catch (error) {
     console.error("Error creating entry:", error);
     throw error;
@@ -28,7 +30,7 @@ export const createEntry = async (
 export const getEntryById = async (id: string): Promise<KnowledgeEntry | null> => {
   try {
     const { data, error } = await supabase
-      .from('knowledge_base')
+      .from('knowledge_entries')
       .select('*')
       .eq('id', id)
       .single();
@@ -38,7 +40,7 @@ export const getEntryById = async (id: string): Promise<KnowledgeEntry | null> =
       return null;
     }
 
-    return data;
+    return data as KnowledgeEntry;
   } catch (error) {
     console.error("Error fetching entry by ID:", error);
     return null;
@@ -48,7 +50,7 @@ export const getEntryById = async (id: string): Promise<KnowledgeEntry | null> =
 export const getAllEntries = async (): Promise<KnowledgeEntry[]> => {
   try {
     const { data: entries, error } = await supabase
-      .from('knowledge_base')
+      .from('knowledge_entries')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -57,7 +59,7 @@ export const getAllEntries = async (): Promise<KnowledgeEntry[]> => {
       return [];
     }
 
-    return entries || [];
+    return entries as KnowledgeEntry[];
   } catch (error) {
     console.error("Error fetching all entries:", error);
     return [];
@@ -70,7 +72,7 @@ export const updateEntry = async (
 ): Promise<KnowledgeEntry | null> => {
   try {
     const { data, error } = await supabase
-      .from('knowledge_base')
+      .from('knowledge_entries')
       .update(updates)
       .eq('id', id)
       .select()
@@ -81,7 +83,7 @@ export const updateEntry = async (
       return null;
     }
 
-    return data;
+    return data as KnowledgeEntry;
   } catch (error) {
     console.error("Error updating entry:", error);
     return null;
@@ -91,7 +93,7 @@ export const updateEntry = async (
 export const deleteEntry = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('knowledge_base')
+      .from('knowledge_entries')
       .delete()
       .eq('id', id);
 
@@ -109,15 +111,16 @@ export const deleteEntry = async (id: string): Promise<boolean> => {
 
 export const updateEntryEmbedding = async (entry: KnowledgeEntry): Promise<KnowledgeEntry> => {
   try {
-    // Generate embedding
-    const embedding = await generateEmbedding(entry.content);
+    // Generate embedding from combined question and answer
+    const combinedText = processEntryForEmbedding(entry.question, entry.answer);
+    const embedding = await generateEntryEmbedding(combinedText);
     
     // Store embedding as a string in Supabase
     const embeddingString = JSON.stringify(embedding);
     
     // Update the entry with the new embedding
     const { data, error } = await supabase
-      .from('knowledge_base')
+      .from('knowledge_entries')
       .update({
         embedding: embeddingString,
         updated_at: new Date().toISOString()
@@ -127,7 +130,7 @@ export const updateEntryEmbedding = async (entry: KnowledgeEntry): Promise<Knowl
       .single();
     
     if (error) throw error;
-    return data;
+    return data as KnowledgeEntry;
   } catch (error) {
     console.error('Error updating entry embedding:', error);
     throw error;
@@ -137,7 +140,7 @@ export const updateEntryEmbedding = async (entry: KnowledgeEntry): Promise<Knowl
 export const deleteEntryEmbedding = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('knowledge_base')
+      .from('knowledge_entries')
       .update({ embedding: null })
       .eq('id', id);
 
@@ -151,4 +154,17 @@ export const deleteEntryEmbedding = async (id: string): Promise<boolean> => {
     console.error("Error deleting entry embedding:", error);
     return false;
   }
+};
+
+// Add hook for compatibility with the knowledge base service
+export const useEntryService = () => {
+  return {
+    addEntry: async (entry: Omit<KnowledgeEntry, 'id'>) => {
+      return await createEntry(entry.question, entry.answer, entry.source);
+    },
+    updateEntry: async (id: string, updates: Partial<KnowledgeEntry>) => {
+      return !!(await updateEntry(id, updates));
+    },
+    deleteEntry: deleteEntry
+  };
 };

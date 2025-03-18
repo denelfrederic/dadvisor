@@ -21,3 +21,10 @@ export const prepareEmbeddingForStorage = (embedding: number[] | null): string |
   if (!embedding) return null;
   return JSON.stringify(embedding);
 };
+
+/**
+ * Process text from knowledge entry to create combined text for embedding
+ */
+export const processEntryForEmbedding = (question: string, answer: string): string => {
+  return `${question}\n${answer}`.trim();
+};
