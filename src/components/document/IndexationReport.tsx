@@ -23,8 +23,8 @@ const IndexationReport = () => {
   } = useIndexationReport();
   
   const { 
-    isUpdatingEmbeddings,
-    updateExistingDocumentEmbeddings
+    isUpdating: isUpdatingEmbeddings,
+    updateDocumentEmbeddings
   } = useEmbeddingsUpdate();
 
   const exportReportToCSV = () => {
@@ -66,7 +66,7 @@ const IndexationReport = () => {
     <div className="space-y-4">
       <ReportHeader 
         onGenerateReport={generateReport}
-        onUpdateEmbeddings={updateExistingDocumentEmbeddings}
+        onUpdateEmbeddings={updateDocumentEmbeddings}
         isLoading={isLoading}
         isUpdatingEmbeddings={isUpdatingEmbeddings}
         reportExists={!!report}

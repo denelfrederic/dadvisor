@@ -5,7 +5,7 @@ import { RefreshCw, FilePlus } from "lucide-react";
 
 interface ReportHeaderProps {
   onGenerateReport: () => void;
-  onUpdateEmbeddings: () => void;
+  onUpdateEmbeddings: () => Promise<void>;
   isLoading: boolean;
   isUpdatingEmbeddings: boolean;
   reportExists: boolean;

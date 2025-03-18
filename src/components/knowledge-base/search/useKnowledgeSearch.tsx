@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { KnowledgeEntry } from "../types";
 import { useKnowledgeBaseService } from "../services";
@@ -118,7 +117,7 @@ export const useKnowledgeSearch = () => {
     setIncludeLocalContent,
     handleSearch,
     debugLogs,
-    isUpdatingEmbeddings: embeddingsUpdate.isUpdatingEmbeddings,
-    updateExistingDocumentEmbeddings: embeddingsUpdate.updateExistingDocumentEmbeddings
+    isUpdatingEmbeddings: embeddingsUpdate.isUpdating,
+    updateExistingDocumentEmbeddings: embeddingsUpdate.updateDocumentEmbeddings
   };
 };
