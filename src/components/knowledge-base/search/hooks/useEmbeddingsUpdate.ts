@@ -1,11 +1,10 @@
-
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   updateDocuments, 
   updateKnowledgeEntries, 
   updateAllEmbeddings 
-} from "../../services/embedding/embeddingUpdateService";
+} from "../../services/embedding/update";
 
 export const useEmbeddingsUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
