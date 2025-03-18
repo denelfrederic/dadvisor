@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../types";
 import { generateEntryEmbedding } from "../embedding/embeddingService";
-import { processEntryForEmbedding } from "../embedding/embeddingUtils";
+import { prepareEmbeddingForStorage, processEntryForEmbedding } from "../embedding/embeddingUtils";
 
 export const createEntry = async (
   question: string,
@@ -71,6 +71,14 @@ export const updateEntry = async (
   updates: Partial<KnowledgeEntry>
 ): Promise<KnowledgeEntry | null> => {
   try {
+    // If updates.embedding is a number[], convert it to a string for storage
+    if (updates.embedding && Array.isArray(updates.embedding)) {
+      updates = {
+        ...updates,
+        embedding: prepareEmbeddingForStorage(updates.embedding as number[])
+      };
+    }
+
     const { data, error } = await supabase
       .from('knowledge_entries')
       .update(updates)
@@ -116,7 +124,7 @@ export const updateEntryEmbedding = async (entry: KnowledgeEntry): Promise<Knowl
     const embedding = await generateEntryEmbedding(combinedText);
     
     // Store embedding as a string in Supabase
-    const embeddingString = JSON.stringify(embedding);
+    const embeddingString = prepareEmbeddingForStorage(embedding);
     
     // Update the entry with the new embedding
     const { data, error } = await supabase

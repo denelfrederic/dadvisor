@@ -2,17 +2,18 @@
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../types";
 import { generateEntryEmbedding } from "../embedding/embeddingService";
+import { parseEmbedding, prepareEmbeddingForStorage } from "../embedding/embeddingUtils";
 
 export const searchEntries = async (query: string, topK: number = 5): Promise<KnowledgeEntry[]> => {
   try {
     // Generate embedding for the search query
     const queryEmbedding = await generateEntryEmbedding(query);
-    const queryEmbeddingString = JSON.stringify(queryEmbedding);
+    const queryEmbeddingString = prepareEmbeddingForStorage(queryEmbedding);
 
     // Perform a similarity search with RPC function
     const { data, error } = await supabase.rpc('match_knowledge_entries', {
       query_embedding: queryEmbeddingString,
-      match_threshold: 0.7,
+      similarity_threshold: 0.7, // Changed from match_threshold to similarity_threshold
       match_count: topK,
     });
 
@@ -56,7 +57,7 @@ export const updateEntryEmbeddingBatch = async (
       // Generate new embedding from combined question and answer
       const combinedText = `${entry.question}\n${entry.answer}`;
       const embedding = await generateEntryEmbedding(combinedText);
-      const embeddingString = JSON.stringify(embedding);
+      const embeddingString = prepareEmbeddingForStorage(embedding);
       
       // Update the entry in the database
       const { error } = await supabase
@@ -106,10 +107,10 @@ export const useSearchService = () => {
     getEntries: getAllEntries,
     searchEntriesBySimilarity: async (queryEmbedding: number[], threshold = 0.7, limit = 5) => {
       try {
-        const queryEmbeddingString = JSON.stringify(queryEmbedding);
+        const queryEmbeddingString = prepareEmbeddingForStorage(queryEmbedding);
         const { data, error } = await supabase.rpc('match_knowledge_entries', {
           query_embedding: queryEmbeddingString,
-          match_threshold: threshold,
+          similarity_threshold: threshold, // Changed from match_threshold to similarity_threshold
           match_count: limit,
         });
 
