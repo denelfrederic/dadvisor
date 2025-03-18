@@ -3,9 +3,7 @@ import { useState, useRef } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Message } from "../types";
 import { sendMessageToGemini } from "../services";
-import { searchKnowledgeBaseSemantically } from "../../knowledge-base/search/utils/searchUtils";
-import { searchLocalDocuments } from "../services/document/searchService";
-import { formatDocumentContext } from "../../knowledge-base/search/utils/searchUtils";
+import { retrieveContext } from "../services/contextRetrievalService";
 import { useKnowledgeBaseService } from "../../knowledge-base/services";
 
 export const useChatState = () => {
@@ -45,37 +43,10 @@ export const useChatState = () => {
       let debugInfo = [];
       
       if (useKnowledgeBase) {
-        try {
-          debugInfo.push("Recherche dans la base de connaissances et les documents...");
-          
-          // Recherche parallèle pour une meilleure performance
-          const [kbResults, docResults] = await Promise.all([
-            searchKnowledgeBaseSemantically(kb, input),
-            searchLocalDocuments(input)
-          ]);
-          
-          // Formater les résultats de KB pour obtenir le contexte
-          const kbContext = kbResults.context || "";
-          const kbSources = kbResults.sources || [];
-          
-          // Formater les résultats des documents pour obtenir le contexte
-          const formattedDocResults = formatDocumentContext(docResults);
-          const docContext = formattedDocResults.context || "";
-          const docSources = formattedDocResults.sources || [];
-          
-          if (kbContext || docContext) {
-            additionalContext = (kbContext ? kbContext + "\n\n" : "") + 
-                               (docContext ? docContext : "");
-            
-            debugInfo.push(`Trouvé ${kbSources.length} entrées dans la base de connaissances`);
-            debugInfo.push(`Trouvé ${docSources.length} extraits de documents`);
-          } else {
-            debugInfo.push("Aucune information pertinente trouvée dans la base locale");
-          }
-        } catch (searchError) {
-          console.error("Erreur lors de la recherche locale:", searchError);
-          debugInfo.push(`Erreur de recherche: ${searchError.message}`);
-        }
+        // Utiliser le service dédié pour récupérer le contexte
+        const contextResult = await retrieveContext(input, kb);
+        additionalContext = contextResult.context;
+        debugInfo = contextResult.debugInfo;
       }
       
       console.log("Contexte additionnel:", additionalContext ? "Présent" : "Absent");
