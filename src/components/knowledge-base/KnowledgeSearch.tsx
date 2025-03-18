@@ -7,7 +7,7 @@ import { KnowledgeEntry } from "./types";
 import { useKnowledgeBaseService } from "./knowledgeBaseService";
 import { sendMessageToGemini } from "../chat/services";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, Database, ArrowRight } from "lucide-react";
+import { Search, Database, ArrowRight, Globe, BookOpen } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 const KnowledgeSearch = () => {
@@ -118,12 +118,12 @@ const KnowledgeSearch = () => {
       <Tabs defaultValue="internet" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 mb-6">
           <TabsTrigger value="internet" className="flex items-center gap-2">
-            <Search size={16} />
+            <Globe size={16} />
             Recherche Internet
           </TabsTrigger>
           <TabsTrigger value="local" className="flex items-center gap-2">
-            <Database size={16} />
-            Recherche Base Locale + Gemini
+            <BookOpen size={16} />
+            Base Locale + Gemini
           </TabsTrigger>
         </TabsList>
         
@@ -147,7 +147,9 @@ const KnowledgeSearch = () => {
               </>
             ) : (
               <>
-                {activeTab === "internet" ? "Rechercher sur Internet" : "Rechercher Base Locale + Gemini"}
+                {activeTab === "internet" 
+                  ? "Rechercher sur Internet" 
+                  : "Lancer recherche dans la Base Locale et augmenter avec Gemini"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}

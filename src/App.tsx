@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster"
@@ -15,7 +14,7 @@ import Portfolios from './pages/Portfolios';
 import Wallet from './pages/Wallet';
 import NotFound from './pages/NotFound';
 import AdminCheck from './pages/AdminCheck';
-import GeminiAssistant from './pages/GeminiAssistant';
+import Assistant_Admin from './pages/Assistant_Admin';
 
 // Import contexts
 import { AuthProvider } from './contexts/auth';
@@ -44,7 +43,7 @@ function App() {
               <Route path="/portfolios" element={<Portfolios />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/admin-check" element={<AdminCheck />} />
-              <Route path="/assistant" element={<GeminiAssistant />} />
+              <Route path="/assistant" element={<Assistant_Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

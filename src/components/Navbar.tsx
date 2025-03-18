@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -81,6 +80,7 @@ const Navbar = () => {
           <NavLink to="/questionnaire" label="Questionnaire" currentPath={location.pathname} />
           <NavLink to="/portfolios" label="Portefeuilles" currentPath={location.pathname} />
           <NavLink to="/wallet" label="Wallet" currentPath={location.pathname} />
+          <NavLink to="/assistant" label="Administration IA" currentPath={location.pathname} />
           
           {user ? (
             <Button 
