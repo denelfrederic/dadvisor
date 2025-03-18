@@ -1,7 +1,7 @@
-
+import { supabase } from "@/integrations/supabase/client";
 import { DocumentSearchResult } from '../types';
 
-// Fonction pour gérer l'upload et le traitement de documents
+// Process and store document in Supabase
 export const processDocument = async (file: File): Promise<boolean> => {
   try {
     // Read the file content
@@ -10,26 +10,21 @@ export const processDocument = async (file: File): Promise<boolean> => {
       throw new Error("Impossible de lire le contenu du fichier");
     }
     
-    // Create document object
-    const document = {
-      id: `doc_${Date.now()}`,
-      title: file.name,
-      content: content,
-      type: file.type,
-      size: file.size,
-      source: "Upload utilisateur",
-      timestamp: new Date().toISOString()
-    };
+    // Insert document into Supabase
+    const { error } = await supabase
+      .from('documents')
+      .insert({
+        title: file.name,
+        content: content,
+        type: file.type,
+        size: file.size,
+        source: "Upload utilisateur"
+      });
     
-    // Save to local document store
-    const existingDocsString = localStorage.getItem('documentDatabase');
-    const existingDocs = existingDocsString ? JSON.parse(existingDocsString) : [];
-    
-    // Add the new document
-    existingDocs.push(document);
-    
-    // Save back to localStorage
-    localStorage.setItem('documentDatabase', JSON.stringify(existingDocs));
+    if (error) {
+      console.error("Erreur lors de l'insertion du document:", error);
+      return false;
+    }
     
     console.log(`Document ajouté à la base: ${file.name}`);
     return true;
@@ -70,10 +65,14 @@ export const readFileContent = (file: File): Promise<string> => {
   });
 };
 
-// Function to get document stats
-export const getDocumentStats = () => {
-  const docsString = localStorage.getItem('documentDatabase');
-  if (!docsString) {
+// Function to get document stats from Supabase
+export const getDocumentStats = async () => {
+  const { data: docs, error } = await supabase
+    .from('documents')
+    .select('type, size');
+    
+  if (error) {
+    console.error("Erreur lors de la récupération des statistiques:", error);
     return {
       count: 0,
       types: {},
@@ -81,17 +80,13 @@ export const getDocumentStats = () => {
     };
   }
   
-  const docs = JSON.parse(docsString);
   const types = {};
   let totalSize = 0;
   
   docs.forEach(doc => {
-    // Count by file type
     if (doc.type) {
       types[doc.type] = (types[doc.type] || 0) + 1;
     }
-    
-    // Sum up sizes
     if (doc.size) {
       totalSize += doc.size;
     }
@@ -104,64 +99,34 @@ export const getDocumentStats = () => {
   };
 };
 
-// Function to clear the document database
-export const clearDocumentDatabase = () => {
-  localStorage.removeItem('documentDatabase');
+// Function to clear all documents
+export const clearDocumentDatabase = async () => {
+  const { error } = await supabase
+    .from('documents')
+    .delete()
+    .neq('id', 'placeholder'); // Delete all rows
+    
+  if (error) {
+    console.error("Erreur lors de la suppression des documents:", error);
+    return false;
+  }
+  return true;
 };
 
-// Recherche les documents pertinents dans la base locale
+// Search documents using Supabase's search_documents function
 export const searchLocalDocuments = async (query: string): Promise<DocumentSearchResult[]> => {
   try {
-    // First check if we have local documents stored
-    const localDocuments = localStorage.getItem('documentDatabase');
-    if (!localDocuments) {
-      console.log("Aucun document dans la base locale");
-      return [];
-    }
-
-    // Parse the documents from localStorage
-    const documents = JSON.parse(localDocuments);
-    
-    // Simple keyword-based search (in a real app, this would use vector similarity)
-    const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
-    
-    if (searchTerms.length === 0) return [];
-    
-    const results = documents.map(doc => {
-      const content = doc.content.toLowerCase();
-      let score = 0;
-      let matchCount = 0;
-      
-      searchTerms.forEach(term => {
-        const matches = content.match(new RegExp(term, 'g'));
-        if (matches) {
-          matchCount += matches.length;
-          score += matches.length;
-        }
+    const { data, error } = await supabase
+      .rpc('search_documents', {
+        search_query: query
       });
       
-      // Give higher score to documents with matching titles
-      if (doc.title) {
-        const titleLower = doc.title.toLowerCase();
-        searchTerms.forEach(term => {
-          if (titleLower.includes(term)) {
-            score += 5; // Title matches are more important
-          }
-        });
-      }
-      
-      return {
-        ...doc,
-        score,
-        matchCount
-      };
-    }).filter(doc => doc.score > 0);
+    if (error) {
+      console.error("Erreur lors de la recherche:", error);
+      return [];
+    }
     
-    // Sort by relevance score
-    results.sort((a, b) => b.score - a.score);
-    
-    // Return top results
-    return results.slice(0, 5);
+    return data || [];
   } catch (error) {
     console.error("Erreur lors de la recherche dans les documents:", error);
     return [];

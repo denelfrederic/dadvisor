@@ -6,7 +6,7 @@ import { formatMessagesForApi } from './messageService';
 
 export const sendMessageToGemini = async (prompt: string, history: Message[]) => {
   try {
-    // First search in local document database
+    // First search in document database
     const relevantDocuments = await searchLocalDocuments(prompt);
     
     // Prepare context from relevant documents if any

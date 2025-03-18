@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      documents: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          size: number | null
+          source: string | null
+          title: string
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          size?: number | null
+          source?: string | null
+          title: string
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          size?: number | null
+          source?: string | null
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       investment_profiles: {
         Row: {
           created_at: string
@@ -89,7 +125,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_documents: {
+        Args: {
+          search_query: string
+        }
+        Returns: {
+          id: string
+          title: string
+          content: string
+          type: string
+          source: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
