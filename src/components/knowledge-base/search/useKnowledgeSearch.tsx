@@ -14,6 +14,7 @@ export const useKnowledgeSearch = () => {
   const [sources, setSources] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("internet");
   const [includeLocalContent, setIncludeLocalContent] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const kb = useKnowledgeBaseService();
 
   // Import specialized search hooks - we don't need to store entries anymore
@@ -32,6 +33,13 @@ export const useKnowledgeSearch = () => {
 
   // Use useCallback to memoize handleSearch function
   const handleSearch = useCallback(() => {
+    // Clear previous logs
+    setDebugLogs([]);
+    
+    // Log search initiation
+    const searchLog = `[${new Date().toISOString()}] Initiating search for "${query}" in ${activeTab} tab${includeLocalContent ? " with local content" : ""}`;
+    setDebugLogs(prev => [...prev, searchLog]);
+    
     if (activeTab === "internet") {
       internetSearch.handleSearch(query, includeLocalContent);
     } else if (activeTab === "local") {
@@ -57,28 +65,45 @@ export const useKnowledgeSearch = () => {
     if (activeTab === "internet" && !internetSearch.isSearching) {
       setResponse(internetSearch.response);
       setSources(internetSearch.sources);
+      // Collect logs
+      if (internetSearch.debugLogs?.length > 0) {
+        setDebugLogs(prev => [...prev, ...internetSearch.debugLogs]);
+      }
     } else if (activeTab === "local" && !localSearch.isSearching) {
       setResponse(localSearch.response);
       setSources(localSearch.sources);
+      // Collect logs
+      if (localSearch.debugLogs?.length > 0) {
+        setDebugLogs(prev => [...prev, ...localSearch.debugLogs]);
+      }
     } else if (activeTab === "documents" && !documentSearch.isSearching) {
       setResponse(documentSearch.response);
       setSources(documentSearch.sources);
+      // Collect logs
+      if (documentSearch.debugLogs?.length > 0) {
+        setDebugLogs(prev => [...prev, ...documentSearch.debugLogs]);
+      }
     } else if (activeTab === "semantic" && !semanticSearch.isSearching) {
       setResponse(semanticSearch.response);
       setSources(semanticSearch.sources);
+      // Collect logs
+      if (semanticSearch.debugLogs?.length > 0) {
+        setDebugLogs(prev => [...prev, ...semanticSearch.debugLogs]);
+      }
     }
   }, [
     activeTab,
-    internetSearch.isSearching, internetSearch.response, internetSearch.sources,
-    localSearch.isSearching, localSearch.response, localSearch.sources,
-    documentSearch.isSearching, documentSearch.response, documentSearch.sources,
-    semanticSearch.isSearching, semanticSearch.response, semanticSearch.sources
+    internetSearch.isSearching, internetSearch.response, internetSearch.sources, internetSearch.debugLogs,
+    localSearch.isSearching, localSearch.response, localSearch.sources, localSearch.debugLogs,
+    documentSearch.isSearching, documentSearch.response, documentSearch.sources, documentSearch.debugLogs,
+    semanticSearch.isSearching, semanticSearch.response, semanticSearch.sources, semanticSearch.debugLogs
   ]);
 
   // Clean up response and sources when active tab changes
   useEffect(() => {
     setResponse("");
     setSources([]);
+    setDebugLogs([`[${new Date().toISOString()}] Tab changed to ${activeTab}`]);
   }, [activeTab]);
 
   return {
@@ -92,6 +117,7 @@ export const useKnowledgeSearch = () => {
     includeLocalContent,
     setIncludeLocalContent,
     handleSearch,
+    debugLogs,
     isUpdatingEmbeddings: embeddingsUpdate.isUpdatingEmbeddings,
     updateExistingDocumentEmbeddings: embeddingsUpdate.updateExistingDocumentEmbeddings
   };
