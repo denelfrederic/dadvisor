@@ -40,6 +40,6 @@ export const processEntryForEmbedding = (question: string, answer: string): stri
 /**
  * Check if embedding dimensions match expected dimensions for knowledge entries
  */
-export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 1536): boolean => {
+export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 384): boolean => {
   return embedding && Array.isArray(embedding) && embedding.length === expectedDimension;
 };

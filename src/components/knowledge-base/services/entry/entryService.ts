@@ -130,9 +130,9 @@ export const updateEntryEmbedding = async (entry: KnowledgeEntry): Promise<Knowl
       throw new Error("Failed to generate embedding");
     }
     
-    // Validate embedding dimensions (should be 1536 for OpenAI embeddings)
-    if (!validateEmbeddingDimensions(embedding, 1536)) {
-      throw new Error(`Invalid embedding dimensions: expected 1536, got ${embedding.length}`);
+    // Validate embedding dimensions (should be 384 for Hugging Face embeddings)
+    if (!validateEmbeddingDimensions(embedding, 384)) {
+      throw new Error(`Invalid embedding dimensions: expected 384, got ${embedding.length}`);
     }
     
     // Store embedding as a string in Supabase
