@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentSearchResult } from '../types';
 
@@ -82,7 +83,7 @@ export const processDocument = async (file: File): Promise<boolean> => {
 };
 
 // Fonction pour générer l'embedding à partir du texte
-export const generateEmbedding = async (text: string): Promise<number[]> => {
+export const generateEmbedding = async (text: string): Promise<any> => {
   try {
     // Tronquer le texte si nécessaire (les API d'embedding ont souvent des limites de caractères)
     const truncatedText = text.slice(0, 10000);

@@ -1,6 +1,6 @@
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Globe, BookOpen, Database, FileText, Vector } from "lucide-react";
+import { Globe, BookOpen, Database, FileText, Network } from "lucide-react";
 
 interface SearchTabsProps {
   activeTab: string;
@@ -52,7 +52,7 @@ const SearchTabs = ({ activeTab, setActiveTab }: SearchTabsProps) => {
         data-active={activeTab === "semantic"}
         onClick={() => setActiveTab("semantic")}
       >
-        <Vector size={16} />
+        <Network size={16} />
         <div className="flex flex-col items-start text-left">
           <span className="font-medium">Recherche Sémantique</span>
           <span className="text-xs text-muted-foreground">Vectorisation</span>

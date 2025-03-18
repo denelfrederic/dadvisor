@@ -1,7 +1,6 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, AlertCircle, Vector } from "lucide-react";
+import { Upload, FileText, Loader2, AlertCircle, Network } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { processDocument } from "../chat/services/documentService";
 import { formatFileSize } from "./utils";
@@ -175,7 +174,7 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
         </div>
         
         <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-          <Vector size={12} />
+          <Network size={12} />
           <span>Vectorisation automatique activée</span>
         </div>
       </div>
