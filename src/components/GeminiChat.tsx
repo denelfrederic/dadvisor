@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Message } from "./chat/types";
@@ -13,7 +14,15 @@ const GeminiChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDocManagerOpen, setIsDocManagerOpen] = useState(false);
-  const docStats = getDocumentStats();
+  const [stats, setStats] = useState({ count: 0, types: {}, totalSize: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const docStats = await getDocumentStats();
+      setStats(docStats);
+    };
+    fetchStats();
+  }, []);
 
   const handleSendMessage = async (input: string) => {
     const userMessage: Message = {
@@ -59,7 +68,7 @@ const GeminiChat = () => {
             onClick={() => setIsDocManagerOpen(true)}
           >
             <Database className="h-4 w-4 mr-2" />
-            {docStats.count > 0 ? `${docStats.count} documents` : "Gérer les documents"}
+            {stats.count > 0 ? `${stats.count} documents` : "Gérer les documents"}
           </Button>
           <Button
             variant="ghost"

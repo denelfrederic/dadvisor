@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +24,8 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
   const [stats, setStats] = useState({ count: 0, types: {}, totalSize: 0 });
   const { toast } = useToast();
 
-  const refreshStats = () => {
-    const currentStats = getDocumentStats();
+  const refreshStats = async () => {
+    const currentStats = await getDocumentStats();
     setStats(currentStats);
   };
 
@@ -34,10 +35,10 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
     }
   }, [isOpen]);
 
-  const handleClearDatabase = () => {
+  const handleClearDatabase = async () => {
     if (confirm("Voulez-vous vraiment supprimer tous les documents de la base locale ?")) {
-      clearDocumentDatabase();
-      refreshStats();
+      await clearDocumentDatabase();
+      await refreshStats();
       toast({
         title: "Base de données vidée",
         description: "Tous les documents ont été supprimés de la base locale."
