@@ -85,8 +85,8 @@ export const useEmbeddingsUpdate = () => {
           // Combiner question et réponse pour l'embedding
           const textToEmbed = `${entry.question}\n${entry.answer}`;
           
-          // Générer l'embedding
-          const embedding = await generateEmbedding(textToEmbed);
+          // Générer l'embedding avec le type de modèle "knowledge-entry"
+          const embedding = await generateEmbedding(textToEmbed, "knowledge-entry");
           
           if (!embedding) {
             addLog(`Échec de génération d'embedding pour l'entrée ${entry.id}`);
@@ -178,8 +178,8 @@ export const useEmbeddingsUpdate = () => {
             // Combiner question et réponse pour l'embedding
             const textToEmbed = `${entry.question}\n${entry.answer}`;
             
-            // Générer l'embedding
-            const embedding = await generateEmbedding(textToEmbed);
+            // Générer l'embedding avec le type de modèle "knowledge-entry"
+            const embedding = await generateEmbedding(textToEmbed, "knowledge-entry");
             
             if (!embedding) {
               addLog(`Échec de génération d'embedding pour l'entrée ${entry.id}`);
