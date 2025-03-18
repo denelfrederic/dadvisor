@@ -17,22 +17,69 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, history = [] } = await req.json();
+    const { prompt, history = [], useRAG = false, documentContext = null } = await req.json();
     
     console.log("Received request with prompt:", prompt);
-    console.log("Chat history:", history);
+    console.log("Using RAG:", useRAG);
+    
+    // Prepare system message based on RAG mode
+    let systemMessage = "Vous êtes un assistant IA financier qui répond aux questions des utilisateurs de manière claire, précise et professionnelle.";
+    
+    if (useRAG && documentContext) {
+      systemMessage = `Vous êtes un assistant IA financier qui répond aux questions en vous basant UNIQUEMENT sur les informations contenues dans les documents fournis.
+      
+Si l'information demandée n'est pas présente dans les documents, répondez systématiquement: "Aucune information à ce sujet dans nos documents internes."
+
+N'inventez JAMAIS de réponse qui n'est pas dans les documents. Référencez toujours la source du document quand c'est possible.`;
+    }
 
     // Format messages for Gemini API
-    const messages = history.map((msg: { role: string, content: string }) => ({
-      role: msg.role,
-      parts: [{ text: msg.content }]
-    }));
-
+    const messages = [];
+    
+    // Add system message
+    messages.push({
+      role: "model",
+      parts: [{ text: systemMessage }]
+    });
+    
+    // Add document context if using RAG
+    if (useRAG && documentContext) {
+      messages.push({
+        role: "user",
+        parts: [{ text: "Voici les documents pertinents pour répondre à la prochaine question:" }]
+      });
+      
+      messages.push({
+        role: "model", 
+        parts: [{ text: "Je vais analyser ces documents pour répondre à votre question." }]
+      });
+      
+      messages.push({
+        role: "user",
+        parts: [{ text: documentContext }]
+      });
+      
+      messages.push({
+        role: "model",
+        parts: [{ text: "J'ai pris connaissance des documents. Quelle est votre question?" }]
+      });
+    }
+    
+    // Add chat history
+    history.forEach((msg: { role: string, content: string }) => {
+      messages.push({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }]
+      });
+    });
+    
     // Add current user message
     messages.push({
       role: "user",
       parts: [{ text: prompt }]
     });
+    
+    console.log("Sending messages to Gemini API:", JSON.stringify(messages.length, null, 2));
 
     // Make request to Gemini API
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -43,7 +90,7 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: messages,
         generationConfig: {
-          temperature: 0.7,
+          temperature: useRAG ? 0.1 : 0.7, // Lower temperature for RAG
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
@@ -71,7 +118,7 @@ serve(async (req) => {
 
     const data = await response.json();
     
-    console.log("Gemini API response:", JSON.stringify(data, null, 2));
+    console.log("Gemini API response status:", response.status);
 
     if (data.error) {
       throw new Error(`Gemini API Error: ${data.error.message}`);
@@ -80,7 +127,8 @@ serve(async (req) => {
     const generatedText = data.candidates[0]?.content?.parts[0]?.text || "Désolé, je n'ai pas pu générer de réponse.";
 
     return new Response(JSON.stringify({ 
-      response: generatedText 
+      response: generatedText,
+      usedRAG: useRAG
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
