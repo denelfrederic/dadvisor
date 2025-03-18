@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentSearchResult } from '../types';
 
@@ -7,7 +6,7 @@ export const processDocument = async (file: File): Promise<boolean> => {
   try {
     console.log(`Début du traitement du document: ${file.name}`);
     
-    // For text files, we'll try to read the content
+    // Pour les fichiers texte, nous essayons de lire le contenu
     let content = "";
     
     if (file.type.includes('text') || 
@@ -22,7 +21,7 @@ export const processDocument = async (file: File): Promise<boolean> => {
         content = `[Erreur de lecture du contenu. Format: ${file.type}]`;
       }
     } else if (file.type === 'application/pdf') {
-      // For PDFs, we'll try to extract basic text (browser-based approach)
+      // Pour les PDFs, nous essayons d'extraire le texte basique
       try {
         content = await extractPdfText(file);
         console.log(`Contenu PDF extrait: ${content.substring(0, 100)}...`);
@@ -31,15 +30,28 @@ export const processDocument = async (file: File): Promise<boolean> => {
         content = `[Document PDF: ${file.name}. Échec de l'extraction du texte.]`;
       }
     } else {
-      // For other files, we'll store a placeholder with metadata
+      // Pour les autres fichiers, nous stockons un placeholder avec les métadonnées
       content = `[Ce document est au format ${file.type}. Taille: ${(file.size / 1024).toFixed(2)} KB]`;
     }
     
-    // Insert document into Supabase with detailed logging
+    // Générer l'embedding pour le contenu
+    let embedding = null;
+    if (content && content.length > 0) {
+      try {
+        embedding = await generateEmbedding(content);
+        console.log("Embedding généré avec succès");
+      } catch (embeddingError) {
+        console.error("Erreur lors de la génération de l'embedding:", embeddingError);
+        // Continuer sans embedding si l'erreur se produit
+      }
+    }
+    
+    // Insérer le document dans Supabase avec journalisation détaillée
     console.log("Tentative d'insertion dans Supabase:", {
       title: file.name,
       type: file.type,
-      size: file.size
+      size: file.size,
+      has_embedding: embedding !== null
     });
 
     const { data, error } = await supabase
@@ -49,7 +61,8 @@ export const processDocument = async (file: File): Promise<boolean> => {
         content: content,
         type: file.type,
         size: file.size,
-        source: "Upload utilisateur"
+        source: "Upload utilisateur",
+        embedding: embedding
       })
       .select()
       .single();
@@ -65,6 +78,29 @@ export const processDocument = async (file: File): Promise<boolean> => {
   } catch (error) {
     console.error("Erreur lors du traitement du document:", error);
     return false;
+  }
+};
+
+// Fonction pour générer l'embedding à partir du texte
+export const generateEmbedding = async (text: string): Promise<number[]> => {
+  try {
+    // Tronquer le texte si nécessaire (les API d'embedding ont souvent des limites de caractères)
+    const truncatedText = text.slice(0, 10000);
+    
+    // Appel à notre fonction edge pour générer l'embedding
+    const { data, error } = await supabase.functions.invoke("generate-embeddings", {
+      body: { text: truncatedText }
+    });
+    
+    if (error) {
+      console.error("Erreur lors de la génération de l'embedding:", error);
+      throw new Error("Échec de la génération de l'embedding");
+    }
+    
+    return data.embedding;
+  } catch (error) {
+    console.error("Exception lors de la génération de l'embedding:", error);
+    throw error;
   }
 };
 
@@ -220,22 +256,108 @@ export const exportDocuments = async () => {
   return data;
 };
 
-// Search documents using Supabase's search_documents function
+// Recherche de documents avec similarité vectorielle
 export const searchLocalDocuments = async (query: string): Promise<DocumentSearchResult[]> => {
   try {
-    const { data, error } = await supabase
-      .rpc('search_documents', {
-        search_query: query
+    // Essayer d'abord la recherche vectorielle si possible
+    try {
+      // Générer l'embedding pour la requête
+      const queryEmbedding = await generateEmbedding(query);
+      
+      // Recherche vectorielle avec match_documents
+      const { data: vectorResults, error: vectorError } = await supabase.rpc('match_documents', {
+        query_embedding: queryEmbedding,
+        similarity_threshold: 0.6, // Ajustable selon les besoins
+        match_count: 5
       });
       
-    if (error) {
-      console.error("Erreur lors de la recherche:", error);
+      if (!vectorError && vectorResults && vectorResults.length > 0) {
+        console.log("Résultats de recherche vectorielle trouvés:", vectorResults.length);
+        return vectorResults.map(item => ({
+          id: item.id,
+          title: item.title || "Sans titre",
+          content: item.content,
+          type: item.type,
+          source: item.source,
+          score: item.similarity,
+          matchCount: 1 // Non applicable pour la recherche vectorielle
+        }));
+      }
+    } catch (vectorSearchError) {
+      console.warn("Recherche vectorielle échouée, repli sur la recherche textuelle:", vectorSearchError);
+      // Continuer avec la recherche textuelle en cas d'échec
+    }
+    
+    // Recherche textuelle classique (fallback)
+    const { data: textResults, error: textError } = await supabase.rpc('search_documents', {
+      search_query: query
+    });
+      
+    if (textError) {
+      console.error("Erreur lors de la recherche textuelle:", textError);
       return [];
     }
     
-    return data || [];
+    return textResults || [];
   } catch (error) {
     console.error("Erreur lors de la recherche dans les documents:", error);
     return [];
+  }
+};
+
+// Fonction pour mettre à jour les embeddings de documents existants sans embedding
+export const updateDocumentEmbeddings = async (): Promise<{ success: boolean, count: number }> => {
+  try {
+    // Récupérer les documents sans embedding
+    const { data: documentsWithoutEmbedding, error: fetchError } = await supabase
+      .from('documents')
+      .select('id, content')
+      .is('embedding', null)
+      .not('content', 'eq', '');
+    
+    if (fetchError) {
+      console.error("Erreur lors de la récupération des documents sans embedding:", fetchError);
+      return { success: false, count: 0 };
+    }
+    
+    if (!documentsWithoutEmbedding || documentsWithoutEmbedding.length === 0) {
+      console.log("Aucun document sans embedding trouvé.");
+      return { success: true, count: 0 };
+    }
+    
+    console.log(`${documentsWithoutEmbedding.length} documents sans embedding trouvés, traitement...`);
+    
+    // Mettre à jour chaque document
+    let successCount = 0;
+    
+    for (const doc of documentsWithoutEmbedding) {
+      if (!doc.content) continue;
+      
+      try {
+        // Générer l'embedding
+        const embedding = await generateEmbedding(doc.content);
+        
+        // Mettre à jour le document
+        const { error: updateError } = await supabase
+          .from('documents')
+          .update({ embedding })
+          .eq('id', doc.id);
+        
+        if (updateError) {
+          console.error(`Erreur lors de la mise à jour de l'embedding pour le document ${doc.id}:`, updateError);
+        } else {
+          successCount++;
+          console.log(`Document ${doc.id} mis à jour avec embedding.`);
+        }
+      } catch (docError) {
+        console.error(`Erreur lors du traitement du document ${doc.id}:`, docError);
+      }
+    }
+    
+    console.log(`${successCount}/${documentsWithoutEmbedding.length} documents mis à jour avec succès.`);
+    return { success: true, count: successCount };
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour des embeddings:", error);
+    return { success: false, count: 0 };
   }
 };

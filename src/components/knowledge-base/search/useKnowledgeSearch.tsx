@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry } from "../types";
 import { useKnowledgeBaseService } from "../services";
 import { sendMessageToGemini } from "../../chat/services";
+import { searchLocalDocuments, updateDocumentEmbeddings } from "../../chat/services/documentService";
 
 export const useKnowledgeSearch = () => {
   const [query, setQuery] = useState("");
@@ -12,6 +12,7 @@ export const useKnowledgeSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState("internet");
   const [includeLocalContent, setIncludeLocalContent] = useState(false);
+  const [isUpdatingEmbeddings, setIsUpdatingEmbeddings] = useState(false);
   const [knowledgeEntries, setKnowledgeEntries] = useState<KnowledgeEntry[]>([]);
   const { toast } = useToast();
   const kb = useKnowledgeBaseService();
@@ -160,11 +161,159 @@ export const useKnowledgeSearch = () => {
     }
   };
 
+  const handleDocumentSearch = async () => {
+    if (!query.trim()) {
+      toast({
+        title: "Question vide",
+        description: "Veuillez entrer une question pour la recherche documentaire.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSearching(true);
+    setResponse("");
+    setSources([]);
+    
+    try {
+      // Recherche dans les documents
+      const searchResults = await searchLocalDocuments(query);
+      
+      if (searchResults.length > 0) {
+        // Formatage du contexte pour Gemini
+        const context = "Voici les documents pertinents de notre base documentaire :\n\n" +
+          searchResults
+            .map((doc, index) => 
+              `[Document ${index + 1}: ${doc.title || 'Sans titre'}]\n${doc.content.substring(0, 1500)}${doc.content.length > 1500 ? '...' : ''}`)
+            .join('\n\n');
+        
+        const usedSources = searchResults.map(doc => 
+          `Document: ${doc.title || 'Sans titre'} (Score: ${doc.score?.toFixed(2) || 'N/A'})`
+        );
+        
+        // Instructions pour Gemini
+        const prompt = 
+          "Tu es un assistant spécialisé dans la finance. Tu dois répondre à la question suivante en utilisant UNIQUEMENT les informations fournies dans les documents ci-dessous. " +
+          "Si les documents ne contiennent pas d'éléments pertinents pour répondre, indique clairement: 'Je ne trouve pas d'information spécifique sur ce sujet dans notre base documentaire.'\n\n" +
+          "Question: " + query;
+        
+        const result = await sendMessageToGemini(prompt, [], true, context);
+        setResponse(result);
+        setSources([...usedSources]);
+      } else {
+        // Si aucun résultat, message plus clair
+        setResponse("Aucun document pertinent n'a été trouvé dans notre base documentaire pour répondre à cette question.");
+        setSources(["Aucun document pertinent trouvé"]);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la recherche documentaire:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la recherche documentaire. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSemanticSearch = async () => {
+    if (!query.trim()) {
+      toast({
+        title: "Question vide",
+        description: "Veuillez entrer une question pour la recherche sémantique.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSearching(true);
+    setResponse("");
+    setSources([]);
+    
+    try {
+      // Recherche sémantique dans les documents avec embeddings
+      const searchResults = await searchLocalDocuments(query);
+      
+      if (searchResults.length > 0) {
+        // Formatage du contexte pour Gemini avec plus d'emphase sur la pertinence sémantique
+        const context = "Voici les documents sémantiquement similaires à votre requête :\n\n" +
+          searchResults
+            .map((doc, index) => 
+              `[Document ${index + 1}: ${doc.title || 'Sans titre'} - Similarité: ${(doc.score || 0).toFixed(2)}]\n${doc.content.substring(0, 1500)}${doc.content.length > 1500 ? '...' : ''}`)
+            .join('\n\n');
+        
+        const usedSources = searchResults.map(doc => 
+          `Document: ${doc.title || 'Sans titre'} (Similarité: ${(doc.score || 0).toFixed(2)})`
+        );
+        
+        // Instructions plus précises pour Gemini avec recherche sémantique
+        const prompt = 
+          "Tu es un assistant spécialisé dans la finance qui utilise la recherche sémantique. La question de l'utilisateur a été analysée et les documents les plus proches sémantiquement ont été identifiés. " +
+          "Utilise ces documents pour répondre à la question, en tenant compte que la pertinence est basée sur la similarité sémantique plutôt que sur des correspondances exactes de mots-clés. " +
+          "Si les documents ne contiennent pas d'information pertinente, indique-le clairement.\n\n" +
+          "Question: " + query;
+        
+        const result = await sendMessageToGemini(prompt, [], true, context);
+        setResponse(result);
+        setSources([...usedSources]);
+      } else {
+        // Message spécifique pour l'absence de résultats sémantiques
+        setResponse("Aucun document sémantiquement similaire n'a été trouvé dans notre base documentaire. Cela peut être dû à l'absence de documents avec des embeddings vectoriels ou à une faible similarité avec votre requête.");
+        setSources(["Aucun document sémantiquement similaire trouvé"]);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la recherche sémantique:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la recherche sémantique. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const updateExistingDocumentEmbeddings = async () => {
+    setIsUpdatingEmbeddings(true);
+    
+    try {
+      const result = await updateDocumentEmbeddings();
+      
+      if (result.success) {
+        toast({
+          title: "Mise à jour des embeddings",
+          description: `${result.count} document(s) ont été mis à jour avec des embeddings vectoriels.`,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Une erreur est survenue lors de la mise à jour des embeddings.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour des embeddings:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur inattendue s'est produite.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdatingEmbeddings(false);
+    }
+  };
+
   const handleSearch = () => {
     if (activeTab === "internet") {
       handleInternetSearch();
-    } else {
+    } else if (activeTab === "local") {
       handleLocalSearch();
+    } else if (activeTab === "documents") {
+      handleDocumentSearch();
+    } else if (activeTab === "semantic") {
+      handleSemanticSearch();
     }
   };
 
@@ -178,6 +327,8 @@ export const useKnowledgeSearch = () => {
     setActiveTab,
     includeLocalContent,
     setIncludeLocalContent,
-    handleSearch
+    handleSearch,
+    isUpdatingEmbeddings,
+    updateExistingDocumentEmbeddings
   };
 };

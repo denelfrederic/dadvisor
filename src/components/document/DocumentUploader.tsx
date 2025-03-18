@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, AlertCircle } from "lucide-react";
+import { Upload, FileText, Loader2, AlertCircle, Vector } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { processDocument } from "../chat/services/documentService";
 import { formatFileSize } from "./utils";
@@ -71,7 +71,7 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
       if (successCount > 0) {
         toast({
           title: "Documents ajoutés",
-          description: `${successCount} document(s) ont été ajoutés à la base de données.`,
+          description: `${successCount} document(s) ont été ajoutés à la base de données avec vectorisation automatique.`,
           variant: "default"
         });
       } else if (sizeErrorCount === 0) {
@@ -166,12 +166,17 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
           <div className="text-amber-800">
             <p className="font-medium">Informations importantes</p>
             <p className="text-xs">
-              Les documents sont stockés de manière sécurisée dans la base de données.
+              Les documents sont stockés de manière sécurisée et vectorisés automatiquement pour la recherche sémantique.
               Pour les fichiers PDF, une extraction basique du texte est tentée.
               Pour de meilleurs résultats avec les PDFs, privilégiez des documents qui contiennent du texte sélectionnable.
               Limite: {formatFileSize(MAX_FILE_SIZE)} par fichier.
             </p>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+          <Vector size={12} />
+          <span>Vectorisation automatique activée</span>
         </div>
       </div>
     </div>

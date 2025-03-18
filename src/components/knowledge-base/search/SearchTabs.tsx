@@ -1,6 +1,6 @@
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Globe, BookOpen, Database, FileText } from "lucide-react";
+import { Globe, BookOpen, Database, FileText, Vector } from "lucide-react";
 
 interface SearchTabsProps {
   activeTab: string;
@@ -9,7 +9,7 @@ interface SearchTabsProps {
 
 const SearchTabs = ({ activeTab, setActiveTab }: SearchTabsProps) => {
   return (
-    <TabsList className="grid grid-cols-3 mb-6">
+    <TabsList className="grid grid-cols-4 mb-6">
       <TabsTrigger 
         value="internet" 
         className="flex items-center gap-2 py-3"
@@ -44,6 +44,18 @@ const SearchTabs = ({ activeTab, setActiveTab }: SearchTabsProps) => {
         <div className="flex flex-col items-start text-left">
           <span className="font-medium">Documents</span>
           <span className="text-xs text-muted-foreground">PDF et autres fichiers</span>
+        </div>
+      </TabsTrigger>
+      <TabsTrigger 
+        value="semantic" 
+        className="flex items-center gap-2 py-3"
+        data-active={activeTab === "semantic"}
+        onClick={() => setActiveTab("semantic")}
+      >
+        <Vector size={16} />
+        <div className="flex flex-col items-start text-left">
+          <span className="font-medium">Recherche Sémantique</span>
+          <span className="text-xs text-muted-foreground">Vectorisation</span>
         </div>
       </TabsTrigger>
     </TabsList>
