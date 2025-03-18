@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendMessageToGemini } from "../../../chat/services";
-import { searchLocalDocuments } from "../../../chat/services/documentService";
+import { searchLocalDocuments } from "../../../chat/services/document/searchService";
 import { useKnowledgeBaseService } from "../../services";
 import { generateEmbedding } from "../../../chat/services/document/embeddingService";
 
@@ -14,10 +14,10 @@ export const useSemanticSearch = () => {
   const { toast } = useToast();
   const kb = useKnowledgeBaseService();
 
-  const addLog = (message: string) => {
+  const addLog = useCallback((message: string) => {
     console.log(message);
     setDebugLogs(prev => [...prev, message]);
-  };
+  }, []);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {

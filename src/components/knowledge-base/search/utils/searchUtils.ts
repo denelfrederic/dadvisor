@@ -2,7 +2,7 @@
 import { KnowledgeEntry } from "../../types";
 import { useKnowledgeBaseService } from "../../services";
 import { sendMessageToGemini } from "../../../chat/services";
-import { searchLocalDocuments } from "../../../chat/services/documentService";
+import { searchLocalDocuments } from "../../../chat/services/document/searchService";
 import { generateEmbedding } from "../../../chat/services/document/embeddingService";
 
 // Memoize formatter functions with cache to avoid redundant processing

@@ -1,53 +1,62 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { updateDocumentEmbeddings } from "../../../chat/services/documentService";
 import { supabase } from "@/integrations/supabase/client";
-import { generateEntryEmbedding, processEntryForEmbedding } from "../../services/embedding/embeddingService";
+import { updateDocumentEmbeddings } from "../../../chat/services/document/documentProcessor";
+import { generateEmbedding } from "../../../chat/services/document/embeddingService";
 import { prepareEmbeddingForStorage } from "../../services/embedding/embeddingUtils";
 
 export const useEmbeddingsUpdate = () => {
-  const [isUpdatingEmbeddings, setIsUpdatingEmbeddings] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [logs, setLogs] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const updateExistingDocumentEmbeddings = async () => {
-    setIsUpdatingEmbeddings(true);
+  const addLog = useCallback((message: string) => {
+    console.log(message);
+    setLogs(prev => [...prev, message]);
+  }, []);
+
+  const updateDocumentEmbeddingsWithProgress = useCallback(async () => {
+    setIsUpdating(true);
+    setProgress(0);
+    addLog("Début de la mise à jour des embeddings des documents...");
     
     try {
-      // Mettre à jour les embeddings des documents
-      const docResult = await updateDocumentEmbeddings();
+      const result = await updateDocumentEmbeddings();
       
-      // Mettre à jour les embeddings des entrées de connaissances
-      const kbResult = await updateKnowledgeEntryEmbeddings();
-      
-      const totalUpdated = (docResult.count || 0) + (kbResult.count || 0);
-      
-      if (docResult.success && kbResult.success) {
+      if (result.success) {
+        addLog(`${result.count} documents mis à jour avec succès.`);
+        setProgress(100);
         toast({
-          title: "Mise à jour des embeddings",
-          description: `${totalUpdated} élément(s) ont été mis à jour avec des embeddings vectoriels (${docResult.count} documents, ${kbResult.count} entrées KB).`,
-          variant: "default"
+          title: "Mise à jour terminée",
+          description: `${result.count} documents ont été enrichis avec des embeddings.`
         });
       } else {
+        addLog("Échec de la mise à jour des embeddings des documents.");
         toast({
-          title: "Erreur partielle",
-          description: "Certains éléments n'ont pas pu être mis à jour avec des embeddings vectoriels.",
+          title: "Erreur",
+          description: "Une erreur est survenue lors de la mise à jour des embeddings.",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des embeddings:", error);
+      addLog(`Erreur: ${error instanceof Error ? error.message : String(error)}`);
       toast({
         title: "Erreur",
-        description: "Une erreur inattendue s'est produite lors de la mise à jour des embeddings.",
+        description: "Une erreur est survenue lors de la mise à jour des embeddings.",
         variant: "destructive"
       });
     } finally {
-      setIsUpdatingEmbeddings(false);
+      setIsUpdating(false);
     }
-  };
+  }, [addLog, toast]);
 
-  const updateKnowledgeEntryEmbeddings = async (): Promise<{ success: boolean, count: number }> => {
+  const updateKnowledgeEntryEmbeddings = useCallback(async () => {
+    setIsUpdating(true);
+    setProgress(0);
+    addLog("Début de la mise à jour des embeddings des entrées de connaissances...");
+    
     try {
       // Récupérer les entrées sans embedding
       const { data: entriesWithoutEmbedding, error: fetchError } = await supabase
@@ -56,57 +65,78 @@ export const useEmbeddingsUpdate = () => {
         .is('embedding', null);
       
       if (fetchError) {
-        console.error("Erreur lors de la récupération des entrées sans embedding:", fetchError);
-        return { success: false, count: 0 };
+        throw new Error(`Erreur lors de la récupération des entrées: ${fetchError.message}`);
       }
       
       if (!entriesWithoutEmbedding || entriesWithoutEmbedding.length === 0) {
-        console.log("Aucune entrée sans embedding trouvée.");
-        return { success: true, count: 0 };
+        addLog("Aucune entrée sans embedding trouvée.");
+        setProgress(100);
+        return;
       }
       
-      console.log(`${entriesWithoutEmbedding.length} entrées sans embedding trouvées, traitement...`);
-      
-      // Mettre à jour chaque entrée
+      addLog(`${entriesWithoutEmbedding.length} entrées sans embedding trouvées, traitement...`);
       let successCount = 0;
       
-      for (const entry of entriesWithoutEmbedding) {
+      for (let i = 0; i < entriesWithoutEmbedding.length; i++) {
+        const entry = entriesWithoutEmbedding[i];
+        setProgress(Math.floor((i / entriesWithoutEmbedding.length) * 100));
+        
         try {
-          // Générer l'embedding
-          const combinedText = processEntryForEmbedding(entry.question, entry.answer);
-          const embedding = await generateEntryEmbedding(combinedText);
+          // Combiner question et réponse pour l'embedding
+          const textToEmbed = `${entry.question}\n${entry.answer}`;
           
-          if (embedding) {
-            // Mettre à jour l'entrée
-            const { error: updateError } = await supabase
-              .from('knowledge_entries')
-              .update({ 
-                embedding: prepareEmbeddingForStorage(embedding) 
-              })
-              .eq('id', entry.id);
-            
-            if (updateError) {
-              console.error(`Erreur lors de la mise à jour de l'embedding pour l'entrée ${entry.id}:`, updateError);
-            } else {
-              successCount++;
-              console.log(`Entrée ${entry.id} mise à jour avec embedding.`);
-            }
+          // Générer l'embedding
+          const embedding = await generateEmbedding(textToEmbed);
+          
+          if (!embedding) {
+            addLog(`Échec de génération d'embedding pour l'entrée ${entry.id}`);
+            continue;
+          }
+          
+          // Préparer l'embedding pour le stockage
+          const embeddingForStorage = prepareEmbeddingForStorage(embedding);
+          
+          // Mettre à jour l'entrée
+          const { error: updateError } = await supabase
+            .from('knowledge_entries')
+            .update({ embedding: embeddingForStorage })
+            .eq('id', entry.id);
+          
+          if (updateError) {
+            addLog(`Erreur lors de la mise à jour de l'entrée ${entry.id}: ${updateError.message}`);
+          } else {
+            successCount++;
+            addLog(`Entrée ${entry.id} mise à jour avec embedding.`);
           }
         } catch (entryError) {
-          console.error(`Erreur lors du traitement de l'entrée ${entry.id}:`, entryError);
+          addLog(`Erreur lors du traitement de l'entrée ${entry.id}: ${entryError instanceof Error ? entryError.message : String(entryError)}`);
         }
       }
       
-      console.log(`${successCount}/${entriesWithoutEmbedding.length} entrées mises à jour avec succès.`);
-      return { success: true, count: successCount };
+      setProgress(100);
+      addLog(`${successCount}/${entriesWithoutEmbedding.length} entrées mises à jour avec succès.`);
+      
+      toast({
+        title: "Mise à jour terminée",
+        description: `${successCount} entrées de connaissances ont été enrichies avec des embeddings.`
+      });
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des embeddings des entrées:", error);
-      return { success: false, count: 0 };
+      addLog(`Erreur globale: ${error instanceof Error ? error.message : String(error)}`);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour des embeddings.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
     }
-  };
+  }, [addLog, toast]);
 
   return {
-    isUpdatingEmbeddings,
-    updateExistingDocumentEmbeddings
+    isUpdating,
+    progress,
+    logs,
+    updateDocumentEmbeddings: updateDocumentEmbeddingsWithProgress,
+    updateKnowledgeEntryEmbeddings
   };
 };
