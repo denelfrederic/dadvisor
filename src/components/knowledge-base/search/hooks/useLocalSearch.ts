@@ -8,10 +8,18 @@ export const useLocalSearch = () => {
   const [response, setResponse] = useState("");
   const [sources, setSources] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const { toast } = useToast();
   const kb = useKnowledgeBaseService();
 
+  const addLog = (message: string) => {
+    console.log(message);
+    setDebugLogs(prev => [...prev, message]);
+  };
+
   const handleSearch = async (query: string) => {
+    setDebugLogs([]); // Reset logs for new search
+    
     if (!query.trim()) {
       toast({
         title: "Question vide",
@@ -27,24 +35,35 @@ export const useLocalSearch = () => {
     
     try {
       // Utilisation d'une recherche plus flexible et contextuelle
-      console.log("Recherche dans la base de connaissances pour:", query);
+      addLog(`Recherche dans la base de connaissances pour: "${query}"`);
       
       // Amélioration de la recherche pour plus de flexibilité
       const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
-      console.log("Termes de recherche:", searchTerms);
+      addLog(`Termes de recherche: ${searchTerms.join(', ')}`);
       
       // Récupérer toutes les entrées et filtrer côté client pour plus de flexibilité
       const allEntries = await kb.getEntries();
-      console.log(`Nombre total d'entrées récupérées: ${allEntries.length}`);
+      addLog(`Nombre total d'entrées récupérées: ${allEntries.length}`);
       
-      // Algorithme de correspondance amélioré
-      const matchedEntries = allEntries.filter(entry => {
+      if (allEntries.length === 0) {
+        addLog("ALERTE: Aucune entrée trouvée dans la base de connaissances");
+        setResponse("Aucune entrée n'a été trouvée dans la base de connaissances. Veuillez ajouter des questions/réponses avant d'effectuer une recherche.");
+        setSources(["Base de connaissances vide"]);
+        setIsSearching(false);
+        return;
+      }
+      
+      // Algorithme de correspondance amélioré avec plus de logging
+      const matchScores: {entry: any, score: number}[] = [];
+      
+      for (const entry of allEntries) {
         const questionLower = entry.question.toLowerCase();
         const answerLower = entry.answer.toLowerCase();
         
         // Vérifier la correspondance exacte d'abord
         if (questionLower.includes(query.toLowerCase())) {
-          return true;
+          matchScores.push({entry, score: 100});
+          continue;
         }
         
         // Puis vérifier les correspondances partielles
@@ -55,19 +74,24 @@ export const useLocalSearch = () => {
         }
         
         // Critère de correspondance minimum
-        return matchScore >= Math.min(2, searchTerms.length);
-      });
+        if (matchScore >= Math.min(2, searchTerms.length)) {
+          matchScores.push({entry, score: matchScore});
+        }
+      }
       
-      console.log(`Entrées correspondantes trouvées: ${matchedEntries.length}`);
+      // Trier les correspondances par score descendant
+      matchScores.sort((a, b) => b.score - a.score);
       
-      // Trier les correspondances par pertinence
-      matchedEntries.sort((a, b) => {
-        const aScore = a.question.toLowerCase().includes(query.toLowerCase()) ? 100 : 0;
-        const bScore = b.question.toLowerCase().includes(query.toLowerCase()) ? 100 : 0;
-        return bScore - aScore;
-      });
+      const matchedEntries = matchScores.map(item => item.entry);
+      
+      addLog(`Entrées correspondantes trouvées: ${matchedEntries.length}`);
       
       if (matchedEntries.length > 0) {
+        // Log des meilleurs résultats pour debug
+        matchedEntries.slice(0, 3).forEach((entry, idx) => {
+          addLog(`Top résultat #${idx + 1}: "${entry.question}" (score: ${matchScores[idx].score})`);
+        });
+        
         // Formatage amélioré du contexte pour Gemini
         const context = "Voici les informations pertinentes de notre base de connaissances :\n\n" +
           matchedEntries
@@ -80,6 +104,8 @@ export const useLocalSearch = () => {
           `Base de connaissances: ${entry.question}`
         );
         
+        addLog("Envoi de la requête à Gemini avec contexte");
+        
         // Instructions plus précises pour Gemini
         const prompt = 
           "Tu es un assistant spécialisé dans la finance. Tu dois répondre à la question suivante en utilisant UNIQUEMENT les informations fournies de notre base de connaissances. " +
@@ -87,9 +113,13 @@ export const useLocalSearch = () => {
           "Question: " + query;
         
         const result = await sendMessageToGemini(prompt, [], true, context);
+        addLog("Réponse reçue de Gemini");
+        
         setResponse(result);
         setSources([...usedSources]);
       } else {
+        addLog("Aucune correspondance trouvée dans la base de connaissances");
+        
         // Si aucun résultat local, message plus clair
         const result = await sendMessageToGemini(
           "Tu es un assistant spécialisé dans la finance. La question suivante a été posée, mais aucune information pertinente n'a été trouvée dans notre base de connaissances locale. " +
@@ -104,6 +134,8 @@ export const useLocalSearch = () => {
       }
     } catch (error) {
       console.error("Erreur lors de la recherche:", error);
+      addLog(`ERREUR: ${error instanceof Error ? error.message : String(error)}`);
+      
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la recherche. Veuillez réessayer.",
@@ -118,6 +150,7 @@ export const useLocalSearch = () => {
     response,
     sources,
     isSearching,
-    handleSearch
+    handleSearch,
+    debugLogs
   };
 };

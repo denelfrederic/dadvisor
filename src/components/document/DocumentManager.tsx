@@ -9,9 +9,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, FileText, Trash2, Download } from "lucide-react";
+import { Database, FileText, Trash2, Download, BarChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DocumentUploader from "./DocumentUploader";
+import IndexationReport from "./IndexationReport";
 import { clearDocumentDatabase, getDocumentStats, exportDocuments } from "../chat/services";
 import { formatFileSize } from "./utils";
 
@@ -94,7 +95,7 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
@@ -103,10 +104,14 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
         </DialogHeader>
 
         <Tabs defaultValue="upload">
-          <TabsList className="grid grid-cols-2 mb-4">
+          <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="upload">
               <FileText className="h-4 w-4 mr-2" />
               Ajouter des documents
+            </TabsTrigger>
+            <TabsTrigger value="report">
+              <BarChart className="h-4 w-4 mr-2" />
+              Rapport d'indexation
             </TabsTrigger>
             <TabsTrigger value="manage">
               <Database className="h-4 w-4 mr-2" />
@@ -125,6 +130,10 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
                 <li>Évitez les documents trop volumineux ou très formatés</li>
               </ul>
             </div>
+          </TabsContent>
+
+          <TabsContent value="report">
+            <IndexationReport />
           </TabsContent>
 
           <TabsContent value="manage">
