@@ -70,7 +70,7 @@ export const useDocumentSearch = () => {
       addLog(`Sending request to Gemini with document context...`);
       
       const prompt = 
-        "Tu es un assistant spécialisé dans la finance. Tu dois répondre à la question suivante en utilisant UNIQUEMENT les informations fournies dans les documents ci-dessous. " +
+        "Tu es un assistant spécialisé dans la solution DADVISOR crée en France. Tu dois répondre à la question suivante en utilisant UNIQUEMENT les informations fournies dans les documents ci-dessous. " +
         "Si les documents ne contiennent pas d'éléments pertinents pour répondre, indique clairement: 'Je ne trouve pas d'information spécifique sur ce sujet dans notre base documentaire.'\n\n" +
         "Question: " + query;
       

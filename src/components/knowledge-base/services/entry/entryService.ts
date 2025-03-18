@@ -1,161 +1,154 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry } from "../../types";
-import { generateEntryEmbedding, processEntryForEmbedding } from "../embedding/embeddingService";
-import { parseEmbedding, prepareEmbeddingForStorage } from "../embedding/embeddingUtils";
+import { generateEmbedding } from "../embedding/embeddingService";
 
-/**
- * Service for managing basic CRUD operations on knowledge entries
- */
-export const useEntryService = () => {
-  const { toast } = useToast();
+export const createEntry = async (
+  title: string,
+  content: string,
+  category: string
+): Promise<KnowledgeEntry> => {
+  try {
+    const { data, error } = await supabase
+      .from('knowledge_base')
+      .insert([{ title, content, category }])
+      .select()
+      .single();
 
-  /**
-   * Add a new entry to the knowledge base
-   */
-  const addEntry = async (entry: Omit<KnowledgeEntry, 'id'>): Promise<KnowledgeEntry | null> => {
-    try {
-      console.log("Adding new knowledge entry:", entry);
-      
-      // Generate embedding for the entry if possible
-      const combinedText = processEntryForEmbedding(entry.question, entry.answer);
-      const embedding = await generateEntryEmbedding(combinedText);
-      
-      const insertData: any = {
-        question: entry.question,
-        answer: entry.answer,
-        source: entry.source || "User input",
-      };
-      
-      // Only add embedding if it was successfully generated
-      if (embedding) {
-        insertData.embedding = prepareEmbeddingForStorage(embedding);
-      }
-      
-      const { data, error } = await supabase
-        .from('knowledge_entries')
-        .insert(insertData)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error adding knowledge entry:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible d'ajouter l'entrée à la base de connaissances",
-          variant: "destructive"
-        });
-        return null;
-      }
-      
-      console.log("Knowledge entry added successfully:", data);
-      
-      // Ensure embedding is properly parsed
-      if (data.embedding) {
-        data.embedding = parseEmbedding(data.embedding);
-      }
-      
-      return data as KnowledgeEntry;
-    } catch (error) {
-      console.error("Exception while adding knowledge entry:", error);
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error creating entry:", error);
+    throw error;
+  }
+};
+
+export const getEntryById = async (id: string): Promise<KnowledgeEntry | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('knowledge_base')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching entry by ID:", error);
       return null;
     }
-  };
 
-  /**
-   * Update an existing entry in the knowledge base
-   */
-  const updateEntry = async (id: string, entry: Partial<KnowledgeEntry>): Promise<boolean> => {
-    try {
-      console.log("Updating knowledge entry:", id, entry);
-      
-      const updateData: any = {
+    return data;
+  } catch (error) {
+    console.error("Error fetching entry by ID:", error);
+    return null;
+  }
+};
+
+export const getAllEntries = async (): Promise<KnowledgeEntry[]> => {
+  try {
+    const { data: entries, error } = await supabase
+      .from('knowledge_base')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching all entries:", error);
+      return [];
+    }
+
+    return entries || [];
+  } catch (error) {
+    console.error("Error fetching all entries:", error);
+    return [];
+  }
+};
+
+export const updateEntry = async (
+  id: string,
+  updates: Partial<KnowledgeEntry>
+): Promise<KnowledgeEntry | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('knowledge_base')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating entry:", error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error updating entry:", error);
+    return null;
+  }
+};
+
+export const deleteEntry = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('knowledge_base')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting entry:", error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting entry:", error);
+    return false;
+  }
+};
+
+export const updateEntryEmbedding = async (entry: KnowledgeEntry): Promise<KnowledgeEntry> => {
+  try {
+    // Generate embedding
+    const embedding = await generateEmbedding(entry.content);
+    
+    // Store embedding as a string in Supabase
+    const embeddingString = JSON.stringify(embedding);
+    
+    // Update the entry with the new embedding
+    const { data, error } = await supabase
+      .from('knowledge_base')
+      .update({
+        embedding: embeddingString,
         updated_at: new Date().toISOString()
-      };
-      
-      // Only include fields that were provided in the update
-      if (entry.question !== undefined) updateData.question = entry.question;
-      if (entry.answer !== undefined) updateData.answer = entry.answer;
-      if (entry.source !== undefined) updateData.source = entry.source;
-      
-      // If question or answer was updated, regenerate the embedding
-      if (entry.question !== undefined || entry.answer !== undefined) {
-        // First get the current entry to combine with updates
-        const { data: currentEntry } = await supabase
-          .from('knowledge_entries')
-          .select('question, answer')
-          .eq('id', id)
-          .single();
-          
-        if (currentEntry) {
-          const question = entry.question || currentEntry.question;
-          const answer = entry.answer || currentEntry.answer;
-          const combinedText = processEntryForEmbedding(question, answer);
-          
-          const embedding = await generateEntryEmbedding(combinedText);
-          if (embedding) {
-            updateData.embedding = prepareEmbeddingForStorage(embedding);
-          }
-        }
-      }
-      
-      const { error } = await supabase
-        .from('knowledge_entries')
-        .update(updateData)
-        .eq('id', id);
-      
-      if (error) {
-        console.error("Error updating knowledge entry:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour l'entrée",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      console.log("Knowledge entry updated successfully");
-      return true;
-    } catch (error) {
-      console.error("Exception while updating knowledge entry:", error);
+      })
+      .eq('id', entry.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating entry embedding:', error);
+    throw error;
+  }
+};
+
+export const deleteEntryEmbedding = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('knowledge_base')
+      .update({ embedding: null })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting entry embedding:", error);
       return false;
     }
-  };
 
-  /**
-   * Delete an entry from the knowledge base
-   */
-  const deleteEntry = async (id: string): Promise<boolean> => {
-    try {
-      console.log("Deleting knowledge entry:", id);
-      
-      const { error } = await supabase
-        .from('knowledge_entries')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error("Error deleting knowledge entry:", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de supprimer l'entrée",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      console.log("Knowledge entry deleted successfully");
-      return true;
-    } catch (error) {
-      console.error("Exception while deleting knowledge entry:", error);
-      return false;
-    }
-  };
-
-  return {
-    addEntry,
-    updateEntry,
-    deleteEntry
-  };
+    return true;
+  } catch (error) {
+    console.error("Error deleting entry embedding:", error);
+    return false;
+  }
 };
