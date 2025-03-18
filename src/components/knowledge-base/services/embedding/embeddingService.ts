@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { prepareEmbeddingForStorage, isValidEmbedding } from "./embeddingUtils";
+import { prepareEmbeddingForStorage, isValidEmbedding, processEntryForEmbedding } from "./embeddingUtils";
 
 /**
  * Generate embedding for a knowledge base entry with consistent dimensions
@@ -43,13 +43,6 @@ export const generateEntryEmbedding = async (text: string): Promise<number[] | n
     console.error("Error generating embedding:", error);
     return null;
   }
-};
-
-/**
- * Process text from knowledge entry to create combined text for embedding
- */
-export const processEntryForEmbedding = (question: string, answer: string): string => {
-  return `${question}\n${answer}`.trim();
 };
 
 /**

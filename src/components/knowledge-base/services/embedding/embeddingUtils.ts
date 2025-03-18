@@ -70,3 +70,10 @@ export const isValidEmbedding = (embedding: any): boolean => {
     return false;
   }
 };
+
+/**
+ * Process text from knowledge entry to create combined text for embedding
+ */
+export const processEntryForEmbedding = (question: string, answer: string): string => {
+  return `${question}\n${answer}`.trim();
+};

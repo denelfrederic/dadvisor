@@ -6,7 +6,7 @@ export { getKnowledgeBaseStats } from './statsService';
 export { useEntryService } from './entry/entryService';
 export { useSearchService } from './search/searchService';
 export { generateEntryEmbedding } from './embedding/embeddingService';
-export { parseEmbedding, processEntryForEmbedding } from './embedding/embeddingUtils';
+export { parseEmbedding, processEntryForEmbedding, isValidEmbedding, prepareEmbeddingForStorage } from './embedding/embeddingUtils';
 
 // Export types
 export type { KnowledgeEntry, KnowledgeBaseOperations, KnowledgeBaseStats } from '../types';
