@@ -1,13 +1,22 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentSearchResult } from '../types';
 
 // Process and store document in Supabase
 export const processDocument = async (file: File): Promise<boolean> => {
   try {
-    // Read the file content
-    const content = await readFileContent(file);
-    if (!content) {
-      throw new Error("Impossible de lire le contenu du fichier");
+    // Read the file content based on type
+    let content: string;
+    
+    if (file.type.includes('pdf') || file.type.includes('image')) {
+      // For binary files, we'll store a placeholder with metadata
+      content = `[Ce document est au format ${file.type}. Taille: ${(file.size / 1024).toFixed(2)} KB]`;
+    } else {
+      // For text files, read the actual content
+      content = await readFileContent(file);
+      if (!content) {
+        throw new Error("Impossible de lire le contenu du fichier");
+      }
     }
     
     // Insert document into Supabase
@@ -51,15 +60,14 @@ export const readFileContent = (file: File): Promise<string> => {
       reject(new Error("Erreur lors de la lecture du fichier"));
     };
     
-    // Read based on file type
+    // Determine how to read the file based on its type
     if (file.type.includes('text') || 
         file.name.endsWith('.md') || 
         file.name.endsWith('.json') || 
         file.name.endsWith('.csv')) {
       reader.readAsText(file);
     } else {
-      // For binary files we would normally process differently
-      // For now, just read as text to extract whatever we can
+      // For binary files, read as text but we'll only use metadata
       reader.readAsText(file);
     }
   });

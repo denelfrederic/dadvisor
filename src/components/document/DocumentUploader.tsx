@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2, AlertCircle } from "lucide-react";
@@ -9,7 +10,7 @@ interface DocumentUploaderProps {
   onUploadComplete: () => void;
 }
 
-// Taille maximale recommandée pour localStorage (environ 5 Mo)
+// Taille maximale recommandée pour les documents (environ 5 Mo)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
@@ -70,13 +71,13 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
       if (successCount > 0) {
         toast({
           title: "Documents ajoutés",
-          description: `${successCount} document(s) ont été ajoutés à la base de données locale.`,
+          description: `${successCount} document(s) ont été ajoutés à la base de données.`,
           variant: "default"
         });
       } else if (sizeErrorCount === 0) {
         toast({
           title: "Échec de l'importation",
-          description: "Aucun document n'a pu être ajouté à la base de données locale.",
+          description: "Aucun document n'a pu être ajouté à la base de données.",
           variant: "destructive"
         });
       }
@@ -85,7 +86,9 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
       onUploadComplete();
       
       // Reset file input
-      e.target.value = '';
+      if (e.target) {
+        e.target.value = '';
+      }
     } catch (error) {
       console.error("Erreur lors de l'upload:", error);
       toast({
@@ -101,7 +104,9 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
 
   // Fonction pour déclencher le clic sur l'input file caché
   const triggerFileInput = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   return (
@@ -111,7 +116,7 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
           <FileText className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h3 className="font-medium">Ajouter des documents à la base locale</h3>
+          <h3 className="font-medium">Ajouter des documents à la base de données</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Formats supportés: PDF, Word, TXT, CSV, JSON, MD
           </p>
@@ -159,10 +164,11 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
         <div className="bg-amber-50 border border-amber-200 p-3 rounded text-sm flex gap-2 items-start">
           <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
           <div className="text-amber-800">
-            <p className="font-medium">Limitation de taille</p>
+            <p className="font-medium">Informations importantes</p>
             <p className="text-xs">
-              Les fichiers sont stockés dans le navigateur et limités à {formatFileSize(MAX_FILE_SIZE)} par fichier.
-              Pour de meilleurs résultats, privilégiez les fichiers texte (.txt, .md).
+              Les documents sont stockés de manière sécurisée dans la base de données.
+              Pour les fichiers binaires (PDF, images), seules les métadonnées sont indexées pour la recherche.
+              Limite: {formatFileSize(MAX_FILE_SIZE)} par fichier.
             </p>
           </div>
         </div>
