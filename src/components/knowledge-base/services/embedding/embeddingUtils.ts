@@ -17,7 +17,8 @@ export const parseEmbedding = (embedding: string | number[] | null): number[] | 
 /**
  * Safely convert a number[] embedding to a format suitable for database storage
  */
-export const prepareEmbeddingForStorage = (embedding: number[] | null): number[] | null => {
+export const prepareEmbeddingForStorage = (embedding: number[] | null): string | null => {
   if (!embedding) return null;
-  return embedding;
+  return JSON.stringify(embedding);
 };
+
