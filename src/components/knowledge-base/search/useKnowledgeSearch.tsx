@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { KnowledgeEntry } from "../types";
 import { useKnowledgeBaseService } from "../services";
 import { useInternetSearch } from "./hooks/useInternetSearch";
@@ -14,10 +14,9 @@ export const useKnowledgeSearch = () => {
   const [sources, setSources] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("internet");
   const [includeLocalContent, setIncludeLocalContent] = useState(false);
-  const [knowledgeEntries, setKnowledgeEntries] = useState<KnowledgeEntry[]>([]);
   const kb = useKnowledgeBaseService();
 
-  // Import specialized search hooks
+  // Import specialized search hooks - we don't need to store entries anymore
   const internetSearch = useInternetSearch();
   const localSearch = useLocalSearch();
   const documentSearch = useDocumentSearch();
@@ -31,8 +30,30 @@ export const useKnowledgeSearch = () => {
     documentSearch.isSearching || 
     semanticSearch.isSearching;
 
+  // Use useCallback to memoize handleSearch function
+  const handleSearch = useCallback(() => {
+    if (activeTab === "internet") {
+      internetSearch.handleSearch(query, includeLocalContent);
+    } else if (activeTab === "local") {
+      localSearch.handleSearch(query);
+    } else if (activeTab === "documents") {
+      documentSearch.handleSearch(query);
+    } else if (activeTab === "semantic") {
+      semanticSearch.handleSearch(query);
+    }
+  }, [
+    activeTab, 
+    query, 
+    includeLocalContent, 
+    internetSearch, 
+    localSearch, 
+    documentSearch, 
+    semanticSearch
+  ]);
+
+  // Optimize useEffect to update response and sources only when necessary
   useEffect(() => {
-    // Update response and sources when any search completes
+    // Update response and sources when active tab or search results change
     if (activeTab === "internet" && !internetSearch.isSearching) {
       setResponse(internetSearch.response);
       setSources(internetSearch.sources);
@@ -54,27 +75,11 @@ export const useKnowledgeSearch = () => {
     semanticSearch.isSearching, semanticSearch.response, semanticSearch.sources
   ]);
 
+  // Clean up response and sources when active tab changes
   useEffect(() => {
-    // Chargement des entrées de la base de connaissances au montage
-    const loadEntries = async () => {
-      const entries = await kb.getEntries();
-      setKnowledgeEntries(entries);
-    };
-    
-    loadEntries();
-  }, []);
-
-  const handleSearch = () => {
-    if (activeTab === "internet") {
-      internetSearch.handleSearch(query, includeLocalContent);
-    } else if (activeTab === "local") {
-      localSearch.handleSearch(query);
-    } else if (activeTab === "documents") {
-      documentSearch.handleSearch(query);
-    } else if (activeTab === "semantic") {
-      semanticSearch.handleSearch(query);
-    }
-  };
+    setResponse("");
+    setSources([]);
+  }, [activeTab]);
 
   return {
     query,

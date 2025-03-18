@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useKnowledgeBaseService } from "../../services";
 import { sendMessageToGemini } from "../../../chat/services";
@@ -12,7 +12,8 @@ export const useInternetSearch = () => {
   const { toast } = useToast();
   const kb = useKnowledgeBaseService();
 
-  const handleSearch = async (query: string, includeLocalContent: boolean) => {
+  // Use useCallback to memoize the search function
+  const handleSearch = useCallback(async (query: string, includeLocalContent: boolean) => {
     if (!query.trim()) {
       toast({
         title: "Question vide",
@@ -32,22 +33,21 @@ export const useInternetSearch = () => {
       
       // Si l'option est activée, inclure tout le contenu local (base de connaissances ET documents)
       if (includeLocalContent) {
-        // 1. Recherche dans la base de connaissances
-        const kbResults = await searchKnowledgeBase(kb, query);
+        // Process local content in parallel for better performance
+        const [kbResults, docResults] = await Promise.all([
+          searchKnowledgeBase(kb, query),
+          searchDocuments(query)
+        ]);
         
+        // Combine results
         if (kbResults.context) {
           context += kbResults.context + "\n\n";
           usedSources = [...usedSources, ...kbResults.sources];
-          console.log("Contenu de la base de connaissances inclus:", kbResults.sources.length, "entrées");
         }
-        
-        // 2. Recherche dans les documents
-        const docResults = await searchDocuments(query);
         
         if (docResults.context) {
           context += docResults.context + "\n\n";
           usedSources = [...usedSources, ...docResults.sources];
-          console.log("Contenu des documents inclus:", docResults.sources.length, "documents");
         }
       }
       
@@ -74,7 +74,7 @@ export const useInternetSearch = () => {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [kb, toast]);
 
   return {
     response,

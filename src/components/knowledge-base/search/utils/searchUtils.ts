@@ -4,8 +4,19 @@ import { useKnowledgeBaseService } from "../../services";
 import { sendMessageToGemini } from "../../../chat/services";
 import { searchLocalDocuments } from "../../../chat/services/documentService";
 
+// Memoize formatter functions with cache to avoid redundant processing
+const cachedFormatters = new Map();
+
 export const formatKnowledgeBaseContext = (results: KnowledgeEntry[]) => {
   if (results.length === 0) return { context: "", sources: [] };
+  
+  // Generate a cache key based on the IDs of entries
+  const cacheKey = results.map(entry => entry.id).join('|');
+  
+  // Return cached result if available
+  if (cachedFormatters.has(cacheKey)) {
+    return cachedFormatters.get(cacheKey);
+  }
   
   // Format structured context for the knowledge base
   const context = "Information de notre base de connaissances :\n\n" + 
@@ -19,11 +30,31 @@ export const formatKnowledgeBaseContext = (results: KnowledgeEntry[]) => {
     `Base de connaissances: ${entry.question}`
   );
   
-  return { context, sources };
+  const result = { context, sources };
+  
+  // Cache the result (limit cache size to avoid memory issues)
+  if (cachedFormatters.size > 50) {
+    // Remove oldest entry if cache is too large
+    const firstKey = cachedFormatters.keys().next().value;
+    cachedFormatters.delete(firstKey);
+  }
+  cachedFormatters.set(cacheKey, result);
+  
+  return result;
 };
 
 export const formatDocumentContext = (docResults: any[]) => {
   if (docResults.length === 0) return { context: "", sources: [] };
+  
+  // Generate a cache key based on document titles and timestamps
+  const cacheKey = docResults.map(doc => 
+    `${doc.title || 'untitled'}-${doc.content.length}`
+  ).join('|');
+  
+  // Return cached result if available
+  if (cachedFormatters.has(cacheKey)) {
+    return cachedFormatters.get(cacheKey);
+  }
   
   // Format structured context for documents
   const context = "Information de nos documents :\n\n" + 
@@ -37,9 +68,19 @@ export const formatDocumentContext = (docResults: any[]) => {
     `Document: ${doc.title || 'Sans titre'} (Score: ${doc.score?.toFixed(2) || 'N/A'})`
   );
   
-  return { context, sources };
+  const result = { context, sources };
+  
+  // Cache the result (limit cache size to avoid memory issues)
+  if (cachedFormatters.size > 50) {
+    const firstKey = cachedFormatters.keys().next().value;
+    cachedFormatters.delete(firstKey);
+  }
+  cachedFormatters.set(cacheKey, result);
+  
+  return result;
 };
 
+// Optimize search functions to minimize redundant work
 export const searchKnowledgeBase = async (kb: ReturnType<typeof useKnowledgeBaseService>, query: string) => {
   const results = await kb.searchEntries(query);
   return formatKnowledgeBaseContext(results);
