@@ -73,7 +73,7 @@ export const updateDocuments = async (): Promise<{ success: boolean; count: numb
     const { data: documents, error } = await supabase
       .from('documents')
       .select('id, content')
-      .or('embedding.is.null,embedding.eq.')  // Get documents with NULL or empty embedding
+      .or('embedding.is.null,embedding.eq.{}');  // Fix: Use {} instead of empty string
 
     if (error) {
       console.error("Error fetching documents:", error);
@@ -155,11 +155,11 @@ export const updateKnowledgeEntries = async (
 
     log("Fetching knowledge entries without embeddings...");
     
-    // Get entries that don't have embeddings
+    // Get entries that don't have embeddings - Fix the query to avoid empty string issue
     const { data: entries, error } = await supabase
       .from('knowledge_entries')
       .select('*')
-      .or('embedding.is.null,embedding.eq.');  // Get entries with NULL or empty embedding
+      .or('embedding.is.null,embedding.eq.{}');  // Fix: Use {} instead of empty string
 
     if (error) {
       log(`Error fetching entries: ${error.message}`);

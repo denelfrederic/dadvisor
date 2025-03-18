@@ -35,7 +35,8 @@ export const useKnowledgeManager = () => {
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
       const filtered = allEntries.filter(entry => 
         entry.question.toLowerCase().includes(lowerCaseSearchTerm) || 
-        entry.answer.toLowerCase().includes(lowerCaseSearchTerm)
+        entry.answer.toLowerCase().includes(lowerCaseSearchTerm) ||
+        (entry.source && entry.source.toLowerCase().includes(lowerCaseSearchTerm))
       );
       setEntries(filtered);
     }
