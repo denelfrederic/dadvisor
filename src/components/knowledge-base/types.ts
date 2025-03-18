@@ -4,6 +4,5 @@ export interface KnowledgeEntry {
   id: string;
   question: string;
   answer: string;
-  source?: string; // Source of the document (filename)
-  timestamp?: number; // Date added
+  source?: string;
 }
