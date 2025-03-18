@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../types";
 import { generateEntryEmbedding, validateEmbeddingDimensions } from "../embedding/embeddingService";
-import { parseEmbedding } from "../embedding/embeddingUtils";
+import { parseEmbedding, prepareEmbeddingForStorage } from "../embedding/embeddingUtils";
 
 /**
  * Search for knowledge entries by semantic similarity using embeddings
@@ -19,9 +19,12 @@ export const searchEntriesBySimilarity = async (
       return [];
     }
 
+    // Convert embedding to string format for DB storage
+    const embeddingString = prepareEmbeddingForStorage(queryEmbedding);
+
     // Call the database function that performs the vector similarity search
     const { data, error } = await supabase.rpc('match_knowledge_entries', {
-      query_embedding: queryEmbedding,
+      query_embedding: embeddingString,
       similarity_threshold: threshold,
       match_count: limit
     });
@@ -101,4 +104,36 @@ export const processEntryEmbeddings = (entries: KnowledgeEntry[]): KnowledgeEntr
     ...entry,
     embedding: parseEmbedding(entry.embedding)
   }));
+};
+
+/**
+ * Get all knowledge entries
+ */
+export const getAllEntries = async (): Promise<KnowledgeEntry[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('knowledge_entries')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching knowledge entries:", error);
+      return [];
+    }
+    
+    return data as KnowledgeEntry[];
+  } catch (error) {
+    console.error("Error fetching knowledge entries:", error);
+    return [];
+  }
+};
+
+/**
+ * Search entries (unified function that other components can use)
+ */
+export const searchEntries = async (query: string, limit = 5): Promise<KnowledgeEntry[]> => {
+  if (!query.trim()) {
+    return await getAllEntries();
+  }
+  return await searchEntriesByText(query, limit);
 };

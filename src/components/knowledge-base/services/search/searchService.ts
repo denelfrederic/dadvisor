@@ -1,7 +1,7 @@
 
-import { searchEntries, getAllEntries } from "./entrySearchService";
-import { searchEntriesBySimilarity } from "./embeddingSearchUtils";
-import { updateEntryEmbeddingBatch } from "./embeddingUpdateService";
+import { KnowledgeEntry } from "../../types";
+import { searchEntries, getAllEntries, searchEntriesBySimilarity } from "./entrySearchService";
+import { updateEntryEmbeddingBatch } from "../embedding/embeddingUpdateService";
 
 // Hook for compatibility with the knowledge base service
 export const useSearchService = () => {
