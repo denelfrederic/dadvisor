@@ -79,6 +79,7 @@ export type Database = {
         Row: {
           answer: string
           created_at: string | null
+          embedding: string | null
           id: string
           question: string
           source: string | null
@@ -88,6 +89,7 @@ export type Database = {
         Insert: {
           answer: string
           created_at?: string | null
+          embedding?: string | null
           id?: string
           question: string
           source?: string | null
@@ -97,6 +99,7 @@ export type Database = {
         Update: {
           answer?: string
           created_at?: string | null
+          embedding?: string | null
           id?: string
           question?: string
           source?: string | null
@@ -280,6 +283,20 @@ export type Database = {
           title: string
           content: string
           type: string
+          source: string
+          similarity: number
+        }[]
+      }
+      match_knowledge_entries: {
+        Args: {
+          query_embedding: string
+          similarity_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: string
+          question: string
+          answer: string
           source: string
           similarity: number
         }[]

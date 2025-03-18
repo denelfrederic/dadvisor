@@ -8,7 +8,7 @@ export interface KnowledgeEntry {
   user_id?: string; // To associate entries with specific users
   created_at?: string;
   updated_at?: string;
-  embedding?: any; // Optional embedding field
+  embedding?: number[]; // Vector embedding for semantic search
 }
 
 export interface KnowledgeBaseStats {
@@ -24,6 +24,8 @@ export interface KnowledgeBaseOperations {
   deleteEntry: (id: string) => Promise<boolean>;
   getEntries: () => Promise<KnowledgeEntry[]>;
   searchEntries: (query: string) => Promise<KnowledgeEntry[]>;
+  searchEntriesBySimilarity: (queryEmbedding: number[], threshold?: number, limit?: number) => Promise<KnowledgeEntry[]>;
+  generateEmbedding: (text: string) => Promise<number[] | null>;
 }
 
 export interface CombinedReport {

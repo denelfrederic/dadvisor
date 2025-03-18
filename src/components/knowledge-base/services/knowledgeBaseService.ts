@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry, KnowledgeBaseOperations } from "../types";
+import { generateEmbedding } from "@/components/chat/services/document/embeddingService";
 
 /**
  * Service for managing the knowledge base using Supabase
@@ -10,19 +11,45 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
   const { toast } = useToast();
 
   /**
+   * Generate embedding for a knowledge base entry
+   */
+  const generateEntryEmbedding = async (text: string): Promise<number[] | null> => {
+    try {
+      const combinedText = text.trim();
+      if (!combinedText) return null;
+
+      return await generateEmbedding(combinedText);
+    } catch (error) {
+      console.error("Error generating embedding:", error);
+      return null;
+    }
+  };
+
+  /**
    * Add a new entry to the knowledge base
    */
   const addEntry = async (entry: Omit<KnowledgeEntry, 'id'>): Promise<KnowledgeEntry | null> => {
     try {
       console.log("Adding new knowledge entry:", entry);
       
+      // Generate embedding for the entry if possible
+      const combinedText = `${entry.question}\n${entry.answer}`;
+      const embedding = await generateEntryEmbedding(combinedText);
+      
+      const insertData: any = {
+        question: entry.question,
+        answer: entry.answer,
+        source: entry.source || "User input",
+      };
+      
+      // Only add embedding if it was successfully generated
+      if (embedding) {
+        insertData.embedding = embedding;
+      }
+      
       const { data, error } = await supabase
         .from('knowledge_entries')
-        .insert({
-          question: entry.question,
-          answer: entry.answer,
-          source: entry.source || "User input",
-        })
+        .insert(insertData)
         .select()
         .single();
       
@@ -51,14 +78,39 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
     try {
       console.log("Updating knowledge entry:", id, entry);
       
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only include fields that were provided in the update
+      if (entry.question !== undefined) updateData.question = entry.question;
+      if (entry.answer !== undefined) updateData.answer = entry.answer;
+      if (entry.source !== undefined) updateData.source = entry.source;
+      
+      // If question or answer was updated, regenerate the embedding
+      if (entry.question !== undefined || entry.answer !== undefined) {
+        // First get the current entry to combine with updates
+        const { data: currentEntry } = await supabase
+          .from('knowledge_entries')
+          .select('question, answer')
+          .eq('id', id)
+          .single();
+          
+        if (currentEntry) {
+          const question = entry.question || currentEntry.question;
+          const answer = entry.answer || currentEntry.answer;
+          const combinedText = `${question}\n${answer}`;
+          
+          const embedding = await generateEntryEmbedding(combinedText);
+          if (embedding) {
+            updateData.embedding = embedding;
+          }
+        }
+      }
+      
       const { error } = await supabase
         .from('knowledge_entries')
-        .update({
-          question: entry.question,
-          answer: entry.answer,
-          source: entry.source,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id);
       
       if (error) {
@@ -118,7 +170,7 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
       
       const { data, error } = await supabase
         .from('knowledge_entries')
-        .select('id, question, answer, source, created_at, updated_at')
+        .select('id, question, answer, source, created_at, updated_at, embedding')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -153,7 +205,7 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
       // Using Supabase's full-text search
       const { data, error } = await supabase
         .from('knowledge_entries')
-        .select('id, question, answer, source, created_at, updated_at')
+        .select('id, question, answer, source, created_at, updated_at, embedding')
         .or(`question.ilike.%${query}%,answer.ilike.%${query}%`)
         .order('created_at', { ascending: false });
       
@@ -175,11 +227,51 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
     }
   };
 
+  /**
+   * Search entries by semantic similarity using embeddings
+   */
+  const searchEntriesBySimilarity = async (
+    queryEmbedding: number[], 
+    threshold: number = 0.7, 
+    limit: number = 5
+  ): Promise<KnowledgeEntry[]> => {
+    try {
+      console.log("Searching knowledge entries by similarity");
+      
+      const { data, error } = await supabase.rpc(
+        'match_knowledge_entries',
+        {
+          query_embedding: queryEmbedding,
+          similarity_threshold: threshold,
+          match_count: limit
+        }
+      );
+      
+      if (error) {
+        console.error("Error in similarity search:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'effectuer la recherche sémantique",
+          variant: "destructive"
+        });
+        return [];
+      }
+      
+      console.log("Semantic search results:", data?.length || 0);
+      return data as KnowledgeEntry[];
+    } catch (error) {
+      console.error("Exception in similarity search:", error);
+      return [];
+    }
+  };
+
   return {
     addEntry,
     updateEntry,
     deleteEntry,
     getEntries,
-    searchEntries
+    searchEntries,
+    searchEntriesBySimilarity,
+    generateEmbedding: generateEntryEmbedding
   };
 };

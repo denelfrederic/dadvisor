@@ -3,6 +3,7 @@ import { KnowledgeEntry } from "../../types";
 import { useKnowledgeBaseService } from "../../services";
 import { sendMessageToGemini } from "../../../chat/services";
 import { searchLocalDocuments } from "../../../chat/services/documentService";
+import { generateEmbedding } from "../../../chat/services/document/embeddingService";
 
 // Memoize formatter functions with cache to avoid redundant processing
 const cachedFormatters = new Map();
@@ -84,6 +85,25 @@ export const formatDocumentContext = (docResults: any[]) => {
 export const searchKnowledgeBase = async (kb: ReturnType<typeof useKnowledgeBaseService>, query: string) => {
   const results = await kb.searchEntries(query);
   return formatKnowledgeBaseContext(results);
+};
+
+export const searchKnowledgeBaseSemantically = async (kb: ReturnType<typeof useKnowledgeBaseService>, query: string) => {
+  try {
+    // Generate embedding for the query
+    const queryEmbedding = await generateEmbedding(query);
+    if (!queryEmbedding) {
+      console.error("Could not generate embedding for query");
+      return { context: "", sources: [] };
+    }
+    
+    // Search by similarity
+    const results = await kb.searchEntriesBySimilarity(queryEmbedding, 0.65, 5);
+    
+    return formatKnowledgeBaseContext(results);
+  } catch (error) {
+    console.error("Error in semantic KB search:", error);
+    return { context: "", sources: [] };
+  }
 };
 
 export const searchDocuments = async (query: string) => {

@@ -17,17 +17,18 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       return { count: 0 };
     }
     
-    // Vérifier les catégories (sources)
+    // Vérifier les catégories (sources) et les embeddings
     let categories: Record<string, number> = {};
+    let withEmbeddings = 0;
     
     // Récupérer toutes les entrées pour analyse
     const { data: entries, error: entriesError } = await supabase
       .from('knowledge_entries')
-      .select('id, source');
+      .select('id, source, embedding');
     
     if (!entriesError && entries) {
-      // Note: The embedding field is not available, so we're setting withEmbeddings to 0
-      const withEmbeddings = 0;
+      // Compter les entrées avec embeddings
+      withEmbeddings = entries.filter(entry => entry.embedding).length;
       
       // Analyser les sources comme catégories
       entries.forEach(entry => {
@@ -38,7 +39,7 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
     
     return { 
       count: count || 0,
-      withEmbeddings: 0, // No embeddings are available yet
+      withEmbeddings: withEmbeddings,
       categories: categories,
       categoriesCount: Object.keys(categories).length
     };

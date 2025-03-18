@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendMessageToGemini } from "../../../chat/services";
 import { searchLocalDocuments } from "../../../chat/services/documentService";
+import { useKnowledgeBaseService } from "../../services";
+import { generateEmbedding } from "../../../chat/services/document/embeddingService";
 
 export const useSemanticSearch = () => {
   const [response, setResponse] = useState("");
@@ -10,6 +12,7 @@ export const useSemanticSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const { toast } = useToast();
+  const kb = useKnowledgeBaseService();
 
   const addLog = (message: string) => {
     console.log(message);
@@ -34,47 +37,75 @@ export const useSemanticSearch = () => {
     addLog(`[${new Date().toISOString()}] Starting semantic search for: "${query}"`);
     
     try {
-      // Recherche sémantique dans les documents avec embeddings
-      addLog(`Performing semantic vector search...`);
-      const searchResults = await searchLocalDocuments(query);
+      // Generate embedding for the query
+      addLog("Generating embedding for query...");
+      const queryEmbedding = await generateEmbedding(query);
       
-      addLog(`Retrieved ${searchResults.length} semantically similar documents`);
+      if (!queryEmbedding) {
+        addLog("ERROR: Could not generate embedding for query");
+        throw new Error("Failed to generate embedding for query");
+      }
       
-      if (searchResults.length > 0) {
-        // Log details about top semantic matches
-        searchResults.slice(0, 3).forEach((doc, idx) => {
-          addLog(`Top semantic match #${idx + 1}: "${doc.title || 'Untitled'}" (similarity: ${(doc.score || 0).toFixed(3)})`);
-        });
-        
-        // Formatage du contexte pour Gemini avec plus d'emphase sur la pertinence sémantique
-        const context = "Voici les documents sémantiquement similaires à votre requête :\n\n" +
-          searchResults
-            .map((doc, index) => 
-              `[Document ${index + 1}: ${doc.title || 'Sans titre'} - Similarité: ${(doc.score || 0).toFixed(2)}]\n${doc.content.substring(0, 1500)}${doc.content.length > 1500 ? '...' : ''}`)
+      // Search in both knowledge base and documents
+      addLog("Searching knowledge base by embedding similarity...");
+      const kbResults = await kb.searchEntriesBySimilarity(queryEmbedding, 0.65, 3);
+      
+      addLog("Searching documents by embedding similarity...");
+      const docResults = await searchLocalDocuments(query);
+      
+      addLog(`Retrieved ${kbResults.length} knowledge entries and ${docResults.length} documents`);
+      
+      // Combine results for context
+      let context = "";
+      const allSources: string[] = [];
+      
+      // Add knowledge base results to context
+      if (kbResults.length > 0) {
+        context += "Information de notre base de connaissances :\n\n" + 
+          kbResults
+            .map((entry, index) => 
+              `[Base de connaissances ${index + 1}]\nQuestion: ${entry.question}\nRéponse: ${entry.answer}`)
             .join('\n\n');
-        
-        const usedSources = searchResults.map(doc => 
-          `Document: ${doc.title || 'Sans titre'} (Similarité: ${(doc.score || 0).toFixed(2)})`
-        );
-        
-        // Instructions plus précises pour Gemini avec recherche sémantique
+            
+        allSources.push(...kbResults.map(entry => 
+          `Base de connaissances: ${entry.question}`
+        ));
+      }
+      
+      // Add document results to context
+      if (docResults.length > 0) {
+        if (context) context += "\n\n";
+        context += "Information de nos documents :\n\n" + 
+          docResults
+            .map((doc, index) => 
+              `[Document ${index + 1}: ${doc.title || 'Sans titre'}]\n${doc.content.substring(0, 1000)}${doc.content.length > 1000 ? '...' : ''}`)
+            .join('\n\n');
+            
+        allSources.push(...docResults.map(doc => 
+          `Document: ${doc.title || 'Sans titre'} (Score: ${doc.score?.toFixed(2) || 'N/A'})`
+        ));
+      }
+      
+      if (context) {
+        // Instructions for Gemini with semantic search results
         const prompt = 
-          "Tu es un assistant spécialisé dans la finance qui utilise la recherche sémantique. La question de l'utilisateur a été analysée et les documents les plus proches sémantiquement ont été identifiés. " +
-          "Utilise ces documents pour répondre à la question, en tenant compte que la pertinence est basée sur la similarité sémantique plutôt que sur des correspondances exactes de mots-clés. " +
-          "Si les documents ne contiennent pas d'information pertinente, indique-le clairement.\n\n" +
+          "Tu es un assistant spécialisé dans la finance qui utilise la recherche sémantique. " +
+          "Les documents et entrées de connaissances les plus proches sémantiquement de la question ont été identifiés. " +
+          "Utilise ces informations pour répondre à la question, en tenant compte que la pertinence est basée sur la similarité sémantique. " +
+          "Si les informations ne contiennent pas d'éléments pertinents pour répondre, indique-le clairement.\n\n" +
           "Question: " + query;
         
-        addLog(`Sending request to Gemini with semantic context...`);
+        addLog(`Sending request to Gemini with combined semantic context...`);
         const result = await sendMessageToGemini(prompt, [], true, context);
         addLog(`Received response from Gemini (${result.length} characters)`);
         
         setResponse(result);
-        setSources([...usedSources]);
+        setSources([...allSources]);
       } else {
-        // Message spécifique pour l'absence de résultats sémantiques
-        addLog(`No semantically similar documents found`);
-        setResponse("Aucun document sémantiquement similaire n'a été trouvé dans notre base documentaire. Cela peut être dû à l'absence de documents avec des embeddings vectoriels ou à une faible similarité avec votre requête.");
-        setSources(["Aucun document sémantiquement similaire trouvé"]);
+        // Message for no semantic results
+        addLog(`No semantically similar content found`);
+        setResponse("Aucun contenu sémantiquement similaire n'a été trouvé dans notre base documentaire ou de connaissances. Cela peut être dû à l'absence d'entrées avec des embeddings vectoriels ou à une faible similarité avec votre requête.");
+        setSources(["Aucun contenu sémantiquement similaire trouvé"]);
       }
     } catch (error) {
       console.error("Erreur lors de la recherche sémantique:", error);
