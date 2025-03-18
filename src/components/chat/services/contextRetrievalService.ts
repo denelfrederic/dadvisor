@@ -2,7 +2,7 @@
 import { searchKnowledgeBaseSemantically } from "../../knowledge-base/search/utils/searchUtils";
 import { searchLocalDocuments } from "./document/searchService";
 import { formatDocumentContext } from "../../knowledge-base/search/utils/searchUtils";
-import { KnowledgeBaseService } from "../../knowledge-base/services/types";
+import { KnowledgeBaseOperations } from "../../knowledge-base/types";
 
 interface ContextResult {
   context: string;
@@ -14,7 +14,7 @@ interface ContextResult {
  */
 export const retrieveContext = async (
   input: string, 
-  kb: KnowledgeBaseService
+  kb: KnowledgeBaseOperations
 ): Promise<ContextResult> => {
   let additionalContext = "";
   let debugInfo: string[] = [];
