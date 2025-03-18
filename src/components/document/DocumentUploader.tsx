@@ -167,7 +167,8 @@ const DocumentUploader = ({ onUploadComplete }: DocumentUploaderProps) => {
             <p className="font-medium">Informations importantes</p>
             <p className="text-xs">
               Les documents sont stockés de manière sécurisée dans la base de données.
-              Pour les fichiers binaires (PDF, images), seules les métadonnées sont indexées pour la recherche.
+              Pour les fichiers PDF, une extraction basique du texte est tentée.
+              Pour de meilleurs résultats avec les PDFs, privilégiez des documents qui contiennent du texte sélectionnable.
               Limite: {formatFileSize(MAX_FILE_SIZE)} par fichier.
             </p>
           </div>

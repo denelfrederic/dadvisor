@@ -1,6 +1,6 @@
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Globe, BookOpen, Database } from "lucide-react";
+import { Globe, BookOpen, Database, FileText } from "lucide-react";
 
 interface SearchTabsProps {
   activeTab: string;
@@ -9,11 +9,12 @@ interface SearchTabsProps {
 
 const SearchTabs = ({ activeTab, setActiveTab }: SearchTabsProps) => {
   return (
-    <TabsList className="grid grid-cols-2 mb-6">
+    <TabsList className="grid grid-cols-3 mb-6">
       <TabsTrigger 
         value="internet" 
         className="flex items-center gap-2 py-3"
         data-active={activeTab === "internet"}
+        onClick={() => setActiveTab("internet")}
       >
         <Globe size={16} />
         <div className="flex flex-col items-start text-left">
@@ -25,11 +26,24 @@ const SearchTabs = ({ activeTab, setActiveTab }: SearchTabsProps) => {
         value="local" 
         className="flex items-center gap-2 py-3"
         data-active={activeTab === "local"}
+        onClick={() => setActiveTab("local")}
       >
         <Database size={16} />
         <div className="flex flex-col items-start text-left">
           <span className="font-medium">Base de Connaissances</span>
           <span className="text-xs text-muted-foreground">Enrichie par Gemini</span>
+        </div>
+      </TabsTrigger>
+      <TabsTrigger 
+        value="documents" 
+        className="flex items-center gap-2 py-3"
+        data-active={activeTab === "documents"}
+        onClick={() => setActiveTab("documents")}
+      >
+        <FileText size={16} />
+        <div className="flex flex-col items-start text-left">
+          <span className="font-medium">Documents</span>
+          <span className="text-xs text-muted-foreground">PDF et autres fichiers</span>
         </div>
       </TabsTrigger>
     </TabsList>
