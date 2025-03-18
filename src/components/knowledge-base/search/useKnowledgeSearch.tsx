@@ -65,29 +65,29 @@ export const useKnowledgeSearch = () => {
     if (activeTab === "internet" && !internetSearch.isSearching) {
       setResponse(internetSearch.response);
       setSources(internetSearch.sources);
-      // Collect logs
-      if (internetSearch.debugLogs?.length > 0) {
+      // Collect logs if they exist
+      if (internetSearch.debugLogs && internetSearch.debugLogs.length > 0) {
         setDebugLogs(prev => [...prev, ...internetSearch.debugLogs]);
       }
     } else if (activeTab === "local" && !localSearch.isSearching) {
       setResponse(localSearch.response);
       setSources(localSearch.sources);
-      // Collect logs
-      if (localSearch.debugLogs?.length > 0) {
+      // Collect logs if they exist
+      if (localSearch.debugLogs && localSearch.debugLogs.length > 0) {
         setDebugLogs(prev => [...prev, ...localSearch.debugLogs]);
       }
     } else if (activeTab === "documents" && !documentSearch.isSearching) {
       setResponse(documentSearch.response);
       setSources(documentSearch.sources);
-      // Collect logs
-      if (documentSearch.debugLogs?.length > 0) {
+      // Collect logs if they exist
+      if (documentSearch.debugLogs && documentSearch.debugLogs.length > 0) {
         setDebugLogs(prev => [...prev, ...documentSearch.debugLogs]);
       }
     } else if (activeTab === "semantic" && !semanticSearch.isSearching) {
       setResponse(semanticSearch.response);
       setSources(semanticSearch.sources);
-      // Collect logs
-      if (semanticSearch.debugLogs?.length > 0) {
+      // Collect logs if they exist
+      if (semanticSearch.debugLogs && semanticSearch.debugLogs.length > 0) {
         setDebugLogs(prev => [...prev, ...semanticSearch.debugLogs]);
       }
     }

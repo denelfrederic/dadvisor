@@ -9,8 +9,15 @@ export const useInternetSearch = () => {
   const [response, setResponse] = useState("");
   const [sources, setSources] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const { toast } = useToast();
   const kb = useKnowledgeBaseService();
+
+  // Helper to add logs
+  const addLog = (message: string) => {
+    console.log(message);
+    setDebugLogs(prev => [...prev, message]);
+  };
 
   // Use useCallback to memoize the search function
   const handleSearch = useCallback(async (query: string, includeLocalContent: boolean) => {
@@ -26,6 +33,9 @@ export const useInternetSearch = () => {
     setIsSearching(true);
     setResponse("");
     setSources([]);
+    setDebugLogs([]); // Reset logs
+    
+    addLog(`[${new Date().toISOString()}] Starting internet search for: "${query}" (include local: ${includeLocalContent})`);
     
     try {
       let context = "";
@@ -34,6 +44,7 @@ export const useInternetSearch = () => {
       // Si l'option est activée, inclure tout le contenu local (base de connaissances ET documents)
       if (includeLocalContent) {
         try {
+          addLog(`Gathering local content to enhance internet search...`);
           // Process local content in parallel for better performance
           const [kbResults, docResults] = await Promise.all([
             searchKnowledgeBase(kb, query),
@@ -44,14 +55,17 @@ export const useInternetSearch = () => {
           if (kbResults.context) {
             context += kbResults.context + "\n\n";
             usedSources = [...usedSources, ...kbResults.sources];
+            addLog(`Added ${kbResults.sources.length} knowledge base entries to context`);
           }
           
           if (docResults.context) {
             context += docResults.context + "\n\n";
             usedSources = [...usedSources, ...docResults.sources];
+            addLog(`Added ${docResults.sources.length} document snippets to context`);
           }
         } catch (localError) {
           console.error("Erreur lors de la recherche locale:", localError);
+          addLog(`ERROR in local content search: ${localError instanceof Error ? localError.message : String(localError)}`);
           // Continue with internet search even if local search fails
           toast({
             title: "Attention",
@@ -62,9 +76,11 @@ export const useInternetSearch = () => {
       }
       
       // Instructions plus précises pour Gemini
+      addLog(`Building prompt for Gemini with${includeLocalContent ? '' : 'out'} local context...`);
       const promptPrefix = buildPromptForLocalContent(query, includeLocalContent && context.length > 0, context);
       
       // Utiliser Gemini pour la recherche Internet
+      addLog(`Sending request to Gemini...`);
       const result = await sendMessageToGemini(
         promptPrefix, 
         [], 
@@ -72,10 +88,12 @@ export const useInternetSearch = () => {
         includeLocalContent ? context : ""
       );
       
+      addLog(`Received response from Gemini (${result.length} characters)`);
       setResponse(result);
       setSources([...usedSources, "Recherche Internet via Gemini"]);
     } catch (error) {
       console.error("Erreur lors de la recherche:", error);
+      addLog(`SEARCH ERROR: ${error instanceof Error ? error.message : String(error)}`);
       // Let error propagate to ErrorBoundary
       throw new Error(
         error instanceof Error 
@@ -83,6 +101,7 @@ export const useInternetSearch = () => {
           : "Une erreur est survenue lors de la recherche Internet. Veuillez réessayer."
       );
     } finally {
+      addLog(`[${new Date().toISOString()}] Internet search completed`);
       setIsSearching(false);
     }
   }, [kb, toast]);
@@ -91,6 +110,7 @@ export const useInternetSearch = () => {
     response,
     sources,
     isSearching,
-    handleSearch
+    handleSearch,
+    debugLogs
   };
 };
