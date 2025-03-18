@@ -56,7 +56,7 @@ export const useInternetSearch = () => {
           toast({
             title: "Attention",
             description: "La recherche dans le contenu local a échoué, mais la recherche internet continue.",
-            variant: "warning"
+            variant: "default" // Changed from "warning" to "default"
           });
         }
       }
