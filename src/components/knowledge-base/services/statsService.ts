@@ -27,8 +27,8 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       .select('id, source, embedding');
     
     if (!entriesError && entries) {
-      // Compter les entrées avec embeddings - vérifier plus soigneusement si l'embedding existe
-      withEmbeddings = entries.filter(entry => entry.embedding != null && entry.embedding !== 'null' && entry.embedding !== '').length;
+      // Compter les entrées avec embeddings correctement - vérifier si l'embedding n'est pas null
+      withEmbeddings = entries.filter(entry => entry.embedding !== null).length;
       
       // Analyser les sources comme catégories
       entries.forEach(entry => {
@@ -75,10 +75,8 @@ export const generateCombinedReport = async (): Promise<{
     }
     
     const docTotal = documents?.length || 0;
-    // Vérifier plus soigneusement si l'embedding existe
-    const docWithEmbeddings = documents?.filter(doc => 
-      doc.embedding != null && doc.embedding !== 'null' && doc.embedding !== ''
-    ).length || 0;
+    // Vérifier plus précisément si l'embedding existe (n'est pas null)
+    const docWithEmbeddings = documents?.filter(doc => doc.embedding !== null).length || 0;
     
     const docWithoutEmbeddings = docTotal - docWithEmbeddings;
     const docPercentage = docTotal > 0 ? Math.round((docWithEmbeddings / docTotal) * 100) : 0;

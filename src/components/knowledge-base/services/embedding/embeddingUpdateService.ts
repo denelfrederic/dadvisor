@@ -11,7 +11,7 @@ import { getAllEntries } from "../entry/entryService";
 export const updateEntryEmbeddingBatch = async (
   entries: KnowledgeEntry[],
   progressCallback?: (progress: number) => void
-): Promise<void> => {
+): Promise<{succeeded: number, total: number}> => {
   const totalEntries = entries.length;
   let processedEntries = 0;
   let successCount = 0;
@@ -57,6 +57,7 @@ export const updateEntryEmbeddingBatch = async (
     }
     
     console.log(`${successCount}/${totalEntries} entrées mises à jour avec succès.`);
+    return {succeeded: successCount, total: totalEntries};
   } catch (error) {
     console.error('Error updating entry embeddings in batch:', error);
     throw error;
@@ -174,14 +175,14 @@ export const updateKnowledgeEntries = async (
     log(`Found ${entries.length} entries without embeddings. Starting update...`);
     
     // Update the entries in batches
-    await updateEntryEmbeddingBatch(entries, progressCallback);
+    const result = await updateEntryEmbeddingBatch(entries, progressCallback);
     
     log(`Finished updating ${entries.length} entries`);
     
     return { 
       success: true, 
       processed: entries.length,
-      succeeded: entries.length // This is an approximation, we should update to track actual success
+      succeeded: result.succeeded
     };
   } catch (error) {
     console.error("Error in updateKnowledgeEntries:", error);
