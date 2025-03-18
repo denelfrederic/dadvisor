@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentSearchResult } from '../types';
 
@@ -142,6 +143,24 @@ export const clearDocumentDatabase = async () => {
     return false;
   }
   return true;
+};
+
+// Export all documents from the database
+export const exportDocuments = async () => {
+  console.log("Export des documents...");
+  
+  const { data, error } = await supabase
+    .from('documents')
+    .select('*')
+    .order('created_at', { ascending: false });
+    
+  if (error) {
+    console.error("Erreur lors de l'export des documents:", error);
+    throw new Error(`Erreur lors de l'export: ${error.message}`);
+  }
+  
+  console.log(`${data?.length || 0} documents exportés`);
+  return data;
 };
 
 // Search documents using Supabase's search_documents function

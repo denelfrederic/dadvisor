@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Database, FileText, Trash2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DocumentUploader from "./DocumentUploader";
-import { clearDocumentDatabase, getDocumentStats } from "../chat/services";
+import { clearDocumentDatabase, getDocumentStats, exportDocuments } from "../chat/services";
 import { formatFileSize } from "./utils";
 
 interface DocumentManagerProps {
@@ -22,6 +22,7 @@ interface DocumentManagerProps {
 
 const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
   const [stats, setStats] = useState({ count: 0, types: {}, totalSize: 0 });
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   const refreshStats = async () => {
@@ -46,22 +47,45 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
     }
   };
 
-  const handleExportDatabase = () => {
-    const dbData = localStorage.getItem('documentDatabase') || '[]';
-    const blob = new Blob([dbData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dadvisor-docs-${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    toast({
-      title: "Export réussi",
-      description: "Base de documents exportée en format JSON."
-    });
+  const handleExportDatabase = async () => {
+    try {
+      setIsExporting(true);
+      const documents = await exportDocuments();
+      
+      if (!documents || documents.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Export échoué",
+          description: "Aucun document trouvé dans la base de données."
+        });
+        return;
+      }
+      
+      const jsonData = JSON.stringify(documents, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dadvisor-docs-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export réussi",
+        description: `${documents.length} documents exportés en format JSON.`
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'export:", error);
+      toast({
+        variant: "destructive",
+        title: "Export échoué",
+        description: "Une erreur s'est produite lors de l'export des documents."
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleUploadComplete = () => {
@@ -135,9 +159,13 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
               )}
 
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={handleExportDatabase} disabled={stats.count === 0}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportDatabase} 
+                  disabled={stats.count === 0 || isExporting}
+                >
                   <Download className="h-4 w-4 mr-2" />
-                  Exporter
+                  {isExporting ? 'Export...' : 'Exporter'}
                 </Button>
                 <Button 
                   variant="destructive" 
