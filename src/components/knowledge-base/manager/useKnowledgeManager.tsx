@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry } from "../types";
 import { useKnowledgeBaseService, getKnowledgeBaseStats } from "../services";
@@ -17,23 +17,49 @@ export const useKnowledgeManager = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [allEntries, setAllEntries] = useState<KnowledgeEntry[]>([]);
   
   const { toast } = useToast();
   const kb = useKnowledgeBaseService();
 
+  // Charger toutes les entrées au début
   useEffect(() => {
     loadEntries();
   }, []);
 
+  // Filtrer les entrées basées sur le terme de recherche
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setEntries(allEntries);
+    } else {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      const filtered = allEntries.filter(entry => 
+        entry.question.toLowerCase().includes(lowerCaseSearchTerm) || 
+        entry.answer.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+      setEntries(filtered);
+    }
+  }, [searchTerm, allEntries]);
+
   const loadEntries = async () => {
     setIsLoading(true);
-    const fetchedEntries = await kb.getEntries();
-    setEntries(fetchedEntries);
-    
-    const fetchedStats = await getKnowledgeBaseStats();
-    setStats(fetchedStats);
-    
-    setIsLoading(false);
+    try {
+      const fetchedEntries = await kb.getEntries();
+      setAllEntries(fetchedEntries);
+      setEntries(fetchedEntries);
+      
+      const fetchedStats = await getKnowledgeBaseStats();
+      setStats(fetchedStats);
+    } catch (error) {
+      console.error("Erreur lors du chargement des entrées:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les entrées de la base de connaissances",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddEntry = () => {
@@ -97,14 +123,8 @@ export const useKnowledgeManager = () => {
     setIsBatchImportOpen(true);
   };
 
-  const filteredEntries = searchTerm 
-    ? entries.filter(entry => 
-        entry.question.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        entry.answer.toLowerCase().includes(searchTerm.toLowerCase()))
-    : entries;
-
   return {
-    entries: filteredEntries,
+    entries,
     stats,
     isLoading,
     isDialogOpen,
