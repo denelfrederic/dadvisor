@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster"
@@ -43,7 +44,9 @@ function App() {
               <Route path="/portfolios" element={<Portfolios />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/admin-check" element={<AdminCheck />} />
-              <Route path="/assistant" element={<Assistant_Admin />} />
+              <Route path="/adminllm" element={<Assistant_Admin />} />
+              {/* Redirection de /assistant vers /adminllm */}
+              <Route path="/assistant" element={<Navigate to="/adminllm" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
