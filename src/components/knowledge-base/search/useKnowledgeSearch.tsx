@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeEntry } from "../types";
@@ -45,32 +46,55 @@ export const useKnowledgeSearch = () => {
       let context = "";
       let usedSources: string[] = [];
       
-      // Si l'option est activée, inclure également le contenu local
+      // Si l'option est activée, inclure tout le contenu local (base de connaissances ET documents)
       if (includeLocalContent) {
-        // Utiliser une recherche plus précise pour trouver le contenu pertinent
-        const searchResults = await kb.searchEntries(query);
+        // 1. Recherche dans la base de connaissances
+        const kbResults = await kb.searchEntries(query);
         
-        if (searchResults.length > 0) {
-          // Format plus structuré pour le contexte
-          context = "Information de notre base de connaissances :\n\n" + 
-            searchResults
-              .map((entry, index) => 
-                `[Source ${index + 1}]\nQuestion: ${entry.question}\nRéponse: ${entry.answer}`)
-              .join('\n\n');
+        if (kbResults.length > 0) {
+          // Format plus structuré pour le contexte de la base de connaissances
+          const kbContext = kbResults
+            .map((entry, index) => 
+              `[Base de connaissances ${index + 1}]\nQuestion: ${entry.question}\nRéponse: ${entry.answer}`)
+            .join('\n\n');
+          
+          context += "Information de notre base de connaissances :\n\n" + kbContext + "\n\n";
           
           // Sources plus descriptives
-          usedSources = searchResults.map(entry => 
+          usedSources = kbResults.map(entry => 
             `Base de connaissances: ${entry.question}`
           );
           
-          console.log("Contenu local inclus dans la recherche Internet:", searchResults.length, "entrées");
+          console.log("Contenu de la base de connaissances inclus:", kbResults.length, "entrées");
+        }
+        
+        // 2. Recherche dans les documents
+        const docResults = await searchLocalDocuments(query);
+        
+        if (docResults.length > 0) {
+          // Format structuré pour le contexte des documents
+          const docContext = docResults
+            .map((doc, index) => 
+              `[Document ${index + 1}: ${doc.title || 'Sans titre'}]\n${doc.content.substring(0, 1000)}${doc.content.length > 1000 ? '...' : ''}`)
+            .join('\n\n');
+          
+          context += "Information de nos documents :\n\n" + docContext + "\n\n";
+          
+          // Ajouter les sources de documents
+          const docSources = docResults.map(doc => 
+            `Document: ${doc.title || 'Sans titre'} (Score: ${doc.score?.toFixed(2) || 'N/A'})`
+          );
+          
+          usedSources = [...usedSources, ...docSources];
+          
+          console.log("Contenu des documents inclus:", docResults.length, "documents");
         }
       }
       
       // Instructions plus précises pour Gemini
       const promptPrefix = includeLocalContent && context 
-        ? "Analyse soigneusement les informations fournies de notre base de connaissances et utilise-les pour répondre à la question suivante. " +
-          "Si les informations sont pertinentes, base ta réponse dessus. Sinon, utilise tes connaissances générales.\n\n" +
+        ? "Analyse soigneusement les informations fournies de notre base de connaissances ET de nos documents locaux, puis utilise-les pour répondre à la question suivante. " +
+          "Si les informations sont pertinentes, base ta réponse dessus en priorité. Sinon, utilise tes connaissances générales.\n\n" +
           "Question: "
         : "";
       
