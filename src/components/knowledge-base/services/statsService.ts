@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeBaseStats } from "../types";
-import { parseEmbedding } from "./embedding/embeddingUtils";
+import { isValidEmbedding, parseEmbedding } from "./embedding/embeddingUtils";
 
 /**
  * Get statistics about the knowledge base
@@ -28,17 +28,9 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       .select('id, source, embedding');
     
     if (!entriesError && entries) {
-      // Compter les entrées avec embeddings correctement
+      // Compter les entrées avec embeddings valides
       withEmbeddings = entries.filter(entry => {
-        try {
-          // Vérifier si l'embedding existe et est non vide
-          return entry.embedding !== null && 
-                 typeof entry.embedding === 'string' && 
-                 entry.embedding.length > 2; // Au moins "{}" + quelque chose
-        } catch (e) {
-          console.error("Error checking embedding:", e);
-          return false;
-        }
+        return isValidEmbedding(entry.embedding);
       }).length;
       
       // Analyser les sources comme catégories
@@ -47,6 +39,8 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
         categories[category] = (categories[category] || 0) + 1;
       });
     }
+    
+    console.log(`Statistics: Total entries: ${count}, With embeddings: ${withEmbeddings}`);
     
     return { 
       count: count || 0,
@@ -87,23 +81,17 @@ export const generateCombinedReport = async (): Promise<{
     
     const docTotal = documents?.length || 0;
     
-    // Vérifier plus précisément si l'embedding existe
+    // Vérifier plus précisément si l'embedding existe et est valide
     const docWithEmbeddings = documents?.filter(doc => {
-      try {
-        // Vérifier si l'embedding existe et est non vide
-        return doc.embedding !== null && 
-               typeof doc.embedding === 'string' && 
-               doc.embedding.length > 2; // Au moins "{}" + quelque chose
-      } catch (e) {
-        console.error("Error checking document embedding:", e);
-        return false;
-      }
+      return isValidEmbedding(doc.embedding);
     }).length || 0;
     
     const docWithoutEmbeddings = docTotal - docWithEmbeddings;
     const docPercentage = docTotal > 0 
       ? Math.round((docWithEmbeddings / docTotal) * 100) 
       : 0;
+    
+    console.log(`Documents: Total: ${docTotal}, With embeddings: ${docWithEmbeddings}, Percentage: ${docPercentage}%`);
     
     return {
       knowledgeBase: kbStats,

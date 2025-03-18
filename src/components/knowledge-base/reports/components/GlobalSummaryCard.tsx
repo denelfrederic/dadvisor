@@ -15,6 +15,14 @@ const GlobalSummaryCard = ({ report }: GlobalSummaryCardProps) => {
     ? Math.round((withEmbeddings / totalSources) * 100)
     : 0;
 
+  console.log("GlobalSummaryCard calculation:", {
+    totalSources,
+    withEmbeddings,
+    globalPercentage,
+    knowledgeBase: report.knowledgeBase,
+    documents: report.documents
+  });
+
   return (
     <Card>
       <CardHeader className="pb-2">

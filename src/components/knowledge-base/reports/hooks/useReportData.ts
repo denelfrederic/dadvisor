@@ -43,17 +43,24 @@ export const useReportData = () => {
       const data = await generateCombinedReport();
       console.log("Generated report:", data);
       
-      // Save current report to history if it exists
+      // Save current report to history only if it exists and is different from the new one
       if (report) {
-        const currentDate = new Date().toISOString();
-        const updatedReports = [
-          { date: currentDate, report: report },
-          ...previousReports.slice(0, 4) // Keep only the last 5 reports
-        ];
+        // Convertir en string pour comparaison simple
+        const currentReportStr = JSON.stringify(report);
+        const newReportStr = JSON.stringify(data);
         
-        setPreviousReports(updatedReports);
-        saveReportsToStorage(updatedReports);
-        console.log("Updated reports history with current report");
+        // Sauvegarder uniquement si différent du rapport actuel
+        if (currentReportStr !== newReportStr) {
+          const currentDate = new Date().toISOString();
+          const updatedReports = [
+            { date: currentDate, report: report },
+            ...previousReports.slice(0, 4) // Keep only the last 5 reports
+          ];
+          
+          setPreviousReports(updatedReports);
+          saveReportsToStorage(updatedReports);
+          console.log("Updated reports history with current report");
+        }
       }
       
       setReport(data);

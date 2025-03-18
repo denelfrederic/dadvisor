@@ -32,6 +32,7 @@ export const processEntryForEmbedding = (question: string, answer: string): stri
 
 /**
  * Check if an embedding is valid (not null and properly formatted)
+ * Improved version to handle all possible embedding formats
  */
 export const isValidEmbedding = (embedding: any): boolean => {
   if (embedding === null || embedding === undefined) return false;
@@ -42,10 +43,20 @@ export const isValidEmbedding = (embedding: any): boolean => {
       return embedding.length > 0;
     }
     
-    // Si c'est une chaîne, vérifier qu'elle peut être analysée comme un tableau
+    // Si c'est une chaîne, vérifier qu'elle contient un tableau valide
     if (typeof embedding === 'string') {
-      const parsed = JSON.parse(embedding);
-      return Array.isArray(parsed) && parsed.length > 0;
+      // Si la chaîne est vide ou juste "{}" ou "[]", elle n'est pas valide
+      if (embedding.trim() === '{}' || embedding.trim() === '[]' || embedding.trim() === '') {
+        return false;
+      }
+      
+      try {
+        const parsed = JSON.parse(embedding);
+        return Array.isArray(parsed) && parsed.length > 0;
+      } catch (e) {
+        // Si on ne peut pas parser la chaîne, elle n'est pas valide
+        return false;
+      }
     }
     
     return false;
