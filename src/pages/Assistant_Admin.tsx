@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, Database, Search, PenSquare, Plus, Upload, ArrowRight, BookOpen, BarChart3, Brain } from "lucide-react";
+import { Home, Database, Search, PenSquare, ArrowRight, BarChart3, Brain, FileText, Upload } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import KnowledgeSearch from "@/components/knowledge-base/KnowledgeSearch";
@@ -96,7 +96,10 @@ const Assistant_Admin = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-card rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Rapport d'indexation global</h2>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Rapport d'indexation
+              </h2>
               <Button variant="ghost" size="sm" onClick={() => setIsReportOpen(false)}>
                 ✕
               </Button>
@@ -111,7 +114,10 @@ const Assistant_Admin = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-card rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Maintenance des embeddings</h2>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Maintenance des embeddings
+              </h2>
               <Button variant="ghost" size="sm" onClick={() => setIsEmbeddingMaintenanceOpen(false)}>
                 ✕
               </Button>

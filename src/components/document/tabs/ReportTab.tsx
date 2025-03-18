@@ -1,6 +1,6 @@
 
 import React from "react";
-import IndexationReport from "../IndexationReport";
+import DocumentReport from "../report/DocumentReport";
 
 const ReportTab = () => {
   return (
@@ -10,7 +10,7 @@ const ReportTab = () => {
         les embeddings manquants pour améliorer la recherche sémantique. Le modèle utilisé génère 
         des embeddings de 384 dimensions.
       </p>
-      <IndexationReport />
+      <DocumentReport />
     </div>
   );
 };

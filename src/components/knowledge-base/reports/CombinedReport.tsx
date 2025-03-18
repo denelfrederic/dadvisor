@@ -1,56 +1,33 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ReportHeader from "./components/ReportHeader";
-import CurrentReport from "./components/CurrentReport";
-import HistoricalReportsList from "./components/HistoricalReportsList";
-import { useReportData } from "./hooks/useReportData";
+import DocumentReport from "../../document/report/DocumentReport";
+import KnowledgeBaseReport from "./KnowledgeBaseReport";
+import { Database, FileText } from "lucide-react";
 
 const CombinedReportView = () => {
-  const {
-    report,
-    previousReports,
-    isLoading,
-    activeTab,
-    setActiveTab,
-    handleGenerateReport
-  } = useReportData();
-
   return (
     <div className="space-y-6">
-      <ReportHeader 
-        isLoading={isLoading}
-        onGenerateReport={handleGenerateReport}
-      />
-
-      {previousReports.length > 0 && report && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="current">Rapport actuel</TabsTrigger>
-            <TabsTrigger value="history">Historique ({previousReports.length})</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="history">
-            <HistoricalReportsList previousReports={previousReports} />
-          </TabsContent>
-          
-          <TabsContent value="current">
-            <CurrentReport 
-              report={report}
-              isLoading={isLoading}
-              onGenerateReport={handleGenerateReport}
-            />
-          </TabsContent>
-        </Tabs>
-      )}
-      
-      {(!report || previousReports.length === 0) && (
-        <CurrentReport 
-          report={report}
-          isLoading={isLoading}
-          onGenerateReport={handleGenerateReport}
-        />
-      )}
+      <Tabs defaultValue="documents" className="w-full">
+        <TabsList className="grid grid-cols-2 mb-4">
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Documents
+          </TabsTrigger>
+          <TabsTrigger value="knowledge" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Base de connaissances
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="documents">
+          <DocumentReport />
+        </TabsContent>
+        
+        <TabsContent value="knowledge">
+          <KnowledgeBaseReport />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
