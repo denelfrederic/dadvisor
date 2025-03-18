@@ -4,7 +4,12 @@ import { Message } from '../types';
 import { searchLocalDocuments } from './documentService';
 import { formatMessagesForApi } from './messageService';
 
-export const sendMessageToGemini = async (prompt: string, history: Message[], useLocalSearch = false) => {
+export const sendMessageToGemini = async (
+  prompt: string, 
+  history: Message[], 
+  useLocalSearch = false,
+  additionalContext = ""
+) => {
   try {
     let contextFromDocuments = "";
     
@@ -24,24 +29,29 @@ export const sendMessageToGemini = async (prompt: string, history: Message[], us
       }
     }
     
+    // Ajouter le contexte supplémentaire s'il est fourni
+    if (additionalContext) {
+      contextFromDocuments += `\nContexte supplémentaire de la base de connaissances:\n${additionalContext}\n\n`;
+    }
+    
     // Format history for API
     const historyForApi = formatMessagesForApi(history);
     
     // Enhance the prompt with document context if available
-    const enhancedPrompt = useLocalSearch && contextFromDocuments 
-      ? `${contextFromDocuments}\nQuestion de l'utilisateur: ${prompt}\n\nVeuillez utiliser uniquement les informations fournies dans le contexte ci-dessus pour répondre. Si les documents ne contiennent pas d'information pertinente pour la question, veuillez répondre: "Aucune information à ce sujet dans nos documents internes."`
+    const enhancedPrompt = useLocalSearch && (contextFromDocuments || additionalContext)
+      ? `${contextFromDocuments}\nQuestion de l'utilisateur: ${prompt}\n\nVeuillez utiliser les informations fournies dans le contexte ci-dessus pour répondre. Si les informations ne contiennent pas de réponse pertinente pour la question, veuillez répondre au mieux en utilisant vos connaissances générales.`
       : prompt;
     
     // Log what we're sending
-    console.log("Envoi à l'API avec RAG:", useLocalSearch && contextFromDocuments.length > 0);
+    console.log("Envoi à l'API avec RAG:", useLocalSearch && (contextFromDocuments.length > 0 || additionalContext.length > 0));
     
     // Invoke the Gemini Edge Function
     const { data, error } = await supabase.functions.invoke("gemini-chat", {
       body: {
         prompt: enhancedPrompt,
         history: historyForApi,
-        useRAG: useLocalSearch && contextFromDocuments.length > 0,
-        documentContext: useLocalSearch && contextFromDocuments.length > 0 ? contextFromDocuments : null
+        useRAG: useLocalSearch && (contextFromDocuments.length > 0 || additionalContext.length > 0),
+        documentContext: useLocalSearch && (contextFromDocuments.length > 0 || additionalContext.length > 0) ? contextFromDocuments : null
       }
     });
     
