@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { RefreshCw, Database, FileBox, Clock, FileAnalytics } from "lucide-react";
+import { RefreshCw, Database, FileBox, Clock, FileText } from "lucide-react";
 import { CombinedReport } from "../types";
 import { generateCombinedReport } from "../services/statsService";
 import { useToast } from "@/hooks/use-toast";
@@ -72,7 +71,7 @@ const CombinedReportView = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold flex items-center gap-2">
-          <FileAnalytics className="h-5 w-5 text-primary" />
+          <FileText className="h-5 w-5 text-primary" />
           Rapport d'indexation global
         </h2>
         <Button 
