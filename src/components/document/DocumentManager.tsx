@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Database, FileText, Trash2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DocumentUploader from "./DocumentUploader";
-import { clearDocumentDatabase, getDocumentStats } from "../chat/GeminiService";
+import { clearDocumentDatabase, getDocumentStats } from "../chat/services";
 import { formatFileSize } from "./utils";
 
 interface DocumentManagerProps {

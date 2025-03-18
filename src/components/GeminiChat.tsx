@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Message } from "./chat/types";
 import ChatHeader from "./chat/ChatHeader";
 import MessageList from "./chat/MessageList";
 import ChatForm from "./chat/ChatForm";
-import { sendMessageToGemini, getDocumentStats } from "./chat/GeminiService";
+import { sendMessageToGemini, getDocumentStats } from "./chat/services";
 import DocumentManager from "./document/DocumentManager";
 import { Database, Info } from "lucide-react";
 
