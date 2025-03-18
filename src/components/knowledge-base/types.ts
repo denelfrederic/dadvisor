@@ -8,11 +8,14 @@ export interface KnowledgeEntry {
   user_id?: string; // To associate entries with specific users
   created_at?: string;
   updated_at?: string;
+  embedding?: any; // Pour le support des embeddings
 }
 
 export interface KnowledgeBaseStats {
   count: number;
   categories?: Record<string, number>;
+  categoriesCount?: number;
+  withEmbeddings?: number;
 }
 
 export interface KnowledgeBaseOperations {
@@ -21,4 +24,14 @@ export interface KnowledgeBaseOperations {
   deleteEntry: (id: string) => Promise<boolean>;
   getEntries: () => Promise<KnowledgeEntry[]>;
   searchEntries: (query: string) => Promise<KnowledgeEntry[]>;
+}
+
+export interface CombinedReport {
+  knowledgeBase: KnowledgeBaseStats;
+  documents: {
+    total: number;
+    withEmbeddings: number;
+    withoutEmbeddings: number;
+    percentage: number;
+  };
 }

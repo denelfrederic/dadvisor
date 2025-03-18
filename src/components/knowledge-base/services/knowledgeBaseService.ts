@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { KnowledgeEntry, KnowledgeBaseOperations } from "./types";
+import { KnowledgeEntry, KnowledgeBaseOperations } from "../types";
 
 /**
  * Service for managing the knowledge base using Supabase
@@ -118,7 +118,7 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
       
       const { data, error } = await supabase
         .from('knowledge_entries')
-        .select()
+        .select('id, question, answer, source, created_at, updated_at, embedding')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -153,7 +153,7 @@ export const useKnowledgeBaseService = (): KnowledgeBaseOperations => {
       // Using Supabase's full-text search
       const { data, error } = await supabase
         .from('knowledge_entries')
-        .select()
+        .select('id, question, answer, source, created_at, updated_at, embedding')
         .or(`question.ilike.%${query}%,answer.ilike.%${query}%`)
         .order('created_at', { ascending: false });
       

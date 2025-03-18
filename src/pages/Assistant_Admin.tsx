@@ -1,16 +1,18 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, Database, Search, PenSquare, Plus, Upload, ArrowRight, BookOpen } from "lucide-react";
+import { Home, Database, Search, PenSquare, Plus, Upload, ArrowRight, BookOpen, BarChart3 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import KnowledgeSearch from "@/components/knowledge-base/KnowledgeSearch";
 import KnowledgeManager from "@/components/knowledge-base/KnowledgeManager";
 import DocumentManager from "@/components/document/DocumentManager";
+import CombinedReportView from "@/components/knowledge-base/reports/CombinedReport";
 
 const Assistant_Admin = () => {
   const [activeTab, setActiveTab] = useState("search");
   const [isDocManagerOpen, setIsDocManagerOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-radial py-10 px-4">
@@ -21,6 +23,14 @@ const Assistant_Admin = () => {
             <h1 className="text-3xl font-bold">Administration IA</h1>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsReportOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 size={18} />
+              Rapport d'indexation
+            </Button>
             <Button 
               variant="outline" 
               onClick={() => setIsDocManagerOpen(true)}
@@ -70,6 +80,21 @@ const Assistant_Admin = () => {
         isOpen={isDocManagerOpen}
         onClose={() => setIsDocManagerOpen(false)}
       />
+      
+      {/* Modal pour le rapport d'indexation combiné */}
+      {isReportOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Rapport d'indexation global</h2>
+              <Button variant="ghost" size="sm" onClick={() => setIsReportOpen(false)}>
+                ✕
+              </Button>
+            </div>
+            <CombinedReportView />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
