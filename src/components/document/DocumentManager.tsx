@@ -41,7 +41,7 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
       refreshStats();
       toast({
         title: "Base de données vidée",
-        description: "Tous les documents ont été supprimés de la base locale.",
+        description: "Tous les documents ont été supprimés de la base locale."
       });
     }
   };
@@ -60,7 +60,7 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
     
     toast({
       title: "Export réussi",
-      description: "Base de documents exportée en format JSON.",
+      description: "Base de documents exportée en format JSON."
     });
   };
 
@@ -127,7 +127,7 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
                     {Object.entries(stats.types).map(([type, count]) => (
                       <div key={type} className="flex justify-between items-center text-sm">
                         <span>{type || "Inconnu"}</span>
-                        <span className="text-muted-foreground">{count} fichier(s)</span>
+                        <span className="text-muted-foreground">{count as number} fichier(s)</span>
                       </div>
                     ))}
                   </div>

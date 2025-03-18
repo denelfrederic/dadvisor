@@ -3,13 +3,9 @@ import { useRef, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import MessageItem from "./MessageItem";
 import ChatEmpty from "./ChatEmpty";
-import { Message } from "./types";
+import { Message, MessageListProps } from "./types";
 
-interface MessageListProps {
-  messages: Message[];
-}
-
-const MessageList = ({ messages }: MessageListProps) => {
+const MessageList = ({ messages, isLoading }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
