@@ -3,42 +3,141 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseEmbedding, prepareEmbeddingForStorage, isValidEmbedding } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 
 // Fonction pour générer l'embedding à partir du texte
-export const generateEmbedding = async (text: string, modelType = "document"): Promise<any> => {
+export const generateEmbedding = async (text: string, modelType = "document", options = {}): Promise<any> => {
   try {
-    // Tronquer le texte si nécessaire (les API d'embedding ont souvent des limites de caractères)
-    const truncatedText = text.slice(0, 10000);
+    // Vérifier si le texte est valide
+    if (!text || text.trim().length === 0) {
+      console.error("Le texte ne peut pas être vide pour la génération d'embedding");
+      throw new Error("Le texte est vide ou invalide");
+    }
+
+    // Configuration par défaut
+    const defaultOptions = {
+      maxLength: 10000,
+      retries: 1,
+      chunkSize: 0, // 0 signifie pas de découpage
+      ...options
+    };
+
+    // Tronquer le texte si nécessaire
+    const truncatedText = text.slice(0, defaultOptions.maxLength);
     
     console.log(`Générant embedding pour ${modelType}, longueur texte: ${truncatedText.length} caractères`);
     
-    // Appel à notre fonction edge pour générer l'embedding
-    const { data, error } = await supabase.functions.invoke("generate-embeddings", {
-      body: { 
-        text: truncatedText,
-        modelType
+    let lastError = null;
+    let retryCount = 0;
+    
+    // Tentatives multiples avec différentes configurations
+    while (retryCount <= defaultOptions.retries) {
+      try {
+        // Appel à notre fonction edge pour générer l'embedding
+        const { data, error } = await supabase.functions.invoke("generate-embeddings", {
+          body: { 
+            text: truncatedText,
+            modelType,
+            options: {
+              attemptNumber: retryCount + 1,
+              totalAttempts: defaultOptions.retries + 1
+            }
+          }
+        });
+        
+        if (error) {
+          console.error(`Erreur lors de la tentative ${retryCount + 1}:`, error);
+          lastError = error;
+          retryCount++;
+          continue;
+        }
+        
+        if (!data || !data.embedding || !Array.isArray(data.embedding) || data.embedding.length === 0) {
+          console.error(`Embedding invalide lors de la tentative ${retryCount + 1}:`, data);
+          lastError = new Error("L'embedding généré est invalide ou vide");
+          retryCount++;
+          continue;
+        }
+        
+        console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName || 'inconnu'}`);
+        
+        // Vérifier que l'embedding est valide
+        if (!isValidEmbedding(data.embedding)) {
+          console.error(`Embedding invalide lors de la tentative ${retryCount + 1}:`, data.embedding.slice(0, 5), "...");
+          lastError = new Error("L'embedding généré n'est pas valide");
+          retryCount++;
+          continue;
+        }
+        
+        return data.embedding;
+      } catch (attemptError) {
+        console.error(`Exception lors de la tentative ${retryCount + 1}:`, attemptError);
+        lastError = attemptError;
+        retryCount++;
       }
-    });
-    
-    if (error) {
-      console.error("Erreur lors de la génération de l'embedding:", error);
-      throw new Error("Échec de la génération de l'embedding: " + error.message);
     }
     
-    if (!data || !data.embedding || !Array.isArray(data.embedding) || data.embedding.length === 0) {
-      console.error("Embedding généré est invalide:", data);
-      throw new Error("L'embedding généré est invalide ou vide");
-    }
-    
-    console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName || 'inconnu'}`);
-    
-    // Vérifier que l'embedding est valide - accepter 384, 768 ou 1536 dimensions
-    if (!isValidEmbedding(data.embedding)) {
-      console.error("Embedding généré n'est pas valide:", data.embedding.slice(0, 5), "...");
-      throw new Error("L'embedding généré n'est pas valide");
-    }
-    
-    return data.embedding;
+    // Si nous arrivons ici, toutes les tentatives ont échoué
+    throw lastError || new Error("Échec de la génération d'embedding après plusieurs tentatives");
   } catch (error) {
     console.error("Exception lors de la génération de l'embedding:", error);
     throw error;
+  }
+};
+
+// Fonction pour forcer la génération d'un embedding avec des paramètres optimisés pour les cas difficiles
+export const forceGenerateEmbedding = async (documentId: string): Promise<boolean> => {
+  try {
+    console.log(`Tentative de génération forcée d'embedding pour le document ${documentId}`);
+    
+    // Récupérer le document
+    const { data: document, error: fetchError } = await supabase
+      .from('documents')
+      .select('id, content, title, type')
+      .eq('id', documentId)
+      .single();
+    
+    if (fetchError || !document) {
+      console.error("Erreur lors de la récupération du document:", fetchError);
+      return false;
+    }
+    
+    if (!document.content || document.content.trim() === '') {
+      console.error("Le document n'a pas de contenu");
+      return false;
+    }
+    
+    console.log(`Document récupéré: ${document.title}, type: ${document.type}, taille contenu: ${document.content.length}`);
+    
+    // Options optimisées pour les cas difficiles
+    const options = {
+      maxLength: 8000, // Réduire la taille pour les documents problématiques
+      retries: 2,      // Faire plus de tentatives
+    };
+    
+    // Générer l'embedding avec les options optimisées
+    const embedding = await generateEmbedding(document.content, "document", options);
+    
+    if (!embedding) {
+      console.error("Échec de la génération d'embedding optimisée");
+      return false;
+    }
+    
+    // Préparer pour le stockage
+    const embeddingForStorage = prepareEmbeddingForStorage(embedding);
+    
+    // Mettre à jour le document
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({ embedding: embeddingForStorage })
+      .eq('id', document.id);
+    
+    if (updateError) {
+      console.error("Erreur lors de la mise à jour de l'embedding:", updateError);
+      return false;
+    }
+    
+    console.log(`Embedding généré et enregistré avec succès pour ${document.title}`);
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la génération forcée d'embedding:", error);
+    return false;
   }
 };

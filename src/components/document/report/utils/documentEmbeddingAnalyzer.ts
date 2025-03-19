@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { forceGenerateEmbedding } from "@/components/chat/services/document/embeddingService";
 
 /**
  * Analyse un document pour déterminer pourquoi il n'a pas d'embedding
@@ -41,17 +42,17 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string): Promise
     }
     // Vérifier si le document est un PDF 
     else if (document.type === 'application/pdf') {
-      analysis = "Le document est un PDF dont le texte n'a pas été correctement extrait. Les PDFs peuvent contenir du texte sous forme d'image nécessitant l'OCR.";
+      analysis = "Le document est un PDF dont le texte n'a pas été correctement extrait ou est trop complexe pour un embedding standard. Un traitement optimisé peut être tenté.";
       canFix = true;
     }
     // Vérifier si le contenu est trop grand
-    else if (document.content.length > 100000) {
-      analysis = `Le document a un contenu très volumineux (${document.content.length} caractères) qui peut dépasser les limites de l'API d'embedding.`;
+    else if (document.content.length > 10000) {
+      analysis = `Le document a un contenu très volumineux (${document.content.length} caractères) qui peut dépasser les limites de l'API d'embedding. Un embedding avec un texte tronqué peut être tenté.`;
       canFix = true;
     }
     // Autre cas
     else {
-      analysis = "Le document a du contenu qui semble valide mais l'embedding n'a pas été généré, possiblement en raison d'une erreur temporaire ou d'un problème avec l'API d'embedding.";
+      analysis = "Le document a du contenu qui semble valide mais l'embedding n'a pas été généré, possiblement en raison d'une erreur temporaire ou d'un problème avec l'API d'embedding. Une nouvelle tentative peut être effectuée.";
       canFix = true;
     }
     
@@ -72,6 +73,35 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string): Promise
       documentInfo: null,
       analysis: `Exception lors de l'analyse: ${error instanceof Error ? error.message : String(error)}`,
       canFix: false
+    };
+  }
+};
+
+/**
+ * Tente de réparer le document en générant un embedding avec des paramètres optimisés
+ */
+export const fixDocumentEmbedding = async (documentId: string): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  try {
+    const result = await forceGenerateEmbedding(documentId);
+    
+    if (result) {
+      return {
+        success: true,
+        message: "Embedding généré avec succès en utilisant des paramètres optimisés"
+      };
+    } else {
+      return {
+        success: false,
+        message: "Échec de la génération de l'embedding malgré les paramètres optimisés"
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: `Erreur lors de la tentative de réparation: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 };
@@ -120,11 +150,11 @@ export const analyzeAllDocumentsWithoutEmbeddings = async (): Promise<{
       }
       // PDF 
       else if (doc.type === 'application/pdf') {
-        issue = "PDF non extractible";
+        issue = "PDF complexe";
         canFix = true;
       }
       // Contenu trop volumineux
-      else if (doc.content.length > 100000) {
+      else if (doc.content.length > 10000) {
         issue = "Contenu trop volumineux";
         canFix = true;
       }

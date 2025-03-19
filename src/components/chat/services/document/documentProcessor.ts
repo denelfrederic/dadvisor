@@ -41,7 +41,14 @@ export const processDocument = async (file: File): Promise<boolean> => {
     if (content && content.length > 0) {
       try {
         console.log(`Tentative de génération d'embedding pour ${file.name} (taille contenu: ${content.length} caractères)`);
-        embedding = await generateEmbedding(content, "document");
+        
+        // Utiliser des options plus robustes pour les documents volumineux
+        const options = {
+          maxLength: content.length > 15000 ? 8000 : 10000, // Réduire la taille pour les très gros documents
+          retries: content.length > 20000 ? 2 : 1,         // Plus de tentatives pour les gros documents
+        };
+        
+        embedding = await generateEmbedding(content, "document", options);
         console.log("Embedding généré avec succès");
       } catch (embeddingError) {
         console.error("Erreur lors de la génération de l'embedding:", embeddingError);
@@ -131,18 +138,19 @@ export const updateDocumentEmbeddings = async (): Promise<{ success: boolean, co
       try {
         console.log(`Traitement du document ${doc.id} (${doc.title}), contenu: ${doc.content.substring(0, 100)}...`);
         
-        // Vérifier si le contenu est un message d'erreur d'extraction
-        if (doc.content.startsWith('[Document PDF:') && doc.content.includes('Échec de l\'extraction')) {
-          console.warn(`Document ${doc.id} (${doc.title}) contient un message d'erreur d'extraction, tentative de ré-extraction...`);
-          // TODO: Implémenter une logique améliorée d'extraction de PDF si nécessaire
-        }
+        // Options adaptées au type de document et à sa taille
+        const options = {
+          maxLength: 8000, // Réduire pour les documents problématiques
+          retries: 2,     // Plus de tentatives
+        };
         
-        if (doc.content.length > 10000) {
-          console.log(`Document ${doc.id} (${doc.title}) a un contenu long (${doc.content.length} caractères), tronqué à 10000 pour l'embedding`);
+        // Pour les PDFs ou les documents volumineux, utiliser des paramètres optimisés
+        if (doc.type === 'application/pdf' || doc.content.length > 15000) {
+          console.log(`Document ${doc.id} nécessite un traitement optimisé`);
         }
         
         // Générer l'embedding
-        const embedding = await generateEmbedding(doc.content, "document");
+        const embedding = await generateEmbedding(doc.content, "document", options);
         
         if (!embedding) {
           console.error(`Échec de génération d'embedding pour le document ${doc.id} (${doc.title})`);

@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, AlertTriangle, Check, RefreshCw } from "lucide-react";
+import { FileText, AlertTriangle, Check, RefreshCw, FileCode } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFileSize } from "./utils";
 import { generateEmbedding } from "../chat/services/document/embeddingService";
-import { analyzeDocumentEmbeddingIssue } from "./report/utils/documentEmbeddingAnalyzer";
+import { analyzeDocumentEmbeddingIssue, fixDocumentEmbedding } from "./report/utils/documentEmbeddingAnalyzer";
 
 interface DocumentDetailDialogProps {
   documentId: string | null;
@@ -65,6 +65,7 @@ const DocumentDetailDialog = ({ documentId, isOpen, onClose }: DocumentDetailDia
     }
   };
 
+  // Mise à jour standard de l'embedding
   const updateEmbedding = async () => {
     if (!document || !document.content) return;
     
@@ -101,6 +102,33 @@ const DocumentDetailDialog = ({ documentId, isOpen, onClose }: DocumentDetailDia
       });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'embedding:", error);
+      setUpdateResult({
+        success: false,
+        message: `Erreur: ${error instanceof Error ? error.message : String(error)}`
+      });
+    } finally {
+      setUpdatingEmbedding(false);
+    }
+  };
+  
+  // Réparation optimisée pour les cas difficiles
+  const fixEmbedding = async () => {
+    if (!documentId) return;
+    
+    setUpdatingEmbedding(true);
+    setUpdateResult(null);
+    
+    try {
+      const result = await fixDocumentEmbedding(documentId);
+      
+      if (result.success) {
+        // Recharger le document pour voir les changements
+        await loadDocument();
+      }
+      
+      setUpdateResult(result);
+    } catch (error) {
+      console.error("Erreur lors de la réparation de l'embedding:", error);
       setUpdateResult({
         success: false,
         message: `Erreur: ${error instanceof Error ? error.message : String(error)}`
@@ -211,23 +239,43 @@ const DocumentDetailDialog = ({ documentId, isOpen, onClose }: DocumentDetailDia
                 </div>
               )}
               
-              <Button 
-                onClick={updateEmbedding} 
-                disabled={updatingEmbedding || !document.content}
-                className="w-full"
-              >
-                {updatingEmbedding ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Génération en cours...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Générer l'embedding
-                  </>
-                )}
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={updateEmbedding} 
+                  disabled={updatingEmbedding || !document.content}
+                  variant="outline"
+                >
+                  {updatingEmbedding ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Génération en cours...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Génération standard
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={fixEmbedding} 
+                  disabled={updatingEmbedding || !document.content}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {updatingEmbedding ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Génération optimisée...
+                    </>
+                  ) : (
+                    <>
+                      <FileCode className="h-4 w-4 mr-2" />
+                      Génération optimisée
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </TabsContent>
