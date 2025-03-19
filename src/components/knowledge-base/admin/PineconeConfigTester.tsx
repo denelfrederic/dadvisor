@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertCircle, CheckCircle, RefreshCw, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import LoadingSpinner from "@/components/wallet/LoadingSpinner";
 
 const PineconeConfigTester = () => {
   const [isTesting, setIsTesting] = useState(false);
@@ -147,7 +148,7 @@ const PineconeConfigTester = () => {
         >
           {isTesting ? (
             <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              <LoadingSpinner size="sm" className="mr-2" color="primary" />
               Test en cours...
             </>
           ) : (
