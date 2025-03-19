@@ -1,12 +1,13 @@
 
-import { updateDocumentEmbeddings } from "./documentUpdateService";
+import { updateDocumentEmbeddings } from "./document";
 import { updateEntriesEmbeddings } from "./entry";
+import { LogCallback } from "./document/types";
 
 /**
- * Combined service to update both document and knowledge entry embeddings
+ * Service combiné pour mettre à jour les embeddings des documents et des entrées de connaissance
  */
 export const updateAllEmbeddings = async (
-  onProgress?: (message: string) => void
+  onProgress?: LogCallback
 ) => {
   onProgress?.("Démarrage de la mise à jour complète des embeddings...");
   
