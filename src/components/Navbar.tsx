@@ -61,22 +61,22 @@ const Navbar = () => {
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         scrolled 
-          ? "bg-white/80 backdrop-blur-md shadow-sm py-3" 
-          : "bg-transparent py-5"
+          ? "bg-white/80 backdrop-blur-md shadow-sm py-2" 
+          : "bg-transparent py-3"
       }`}
     >
       <div className="container mx-auto flex justify-between items-center px-4 md:px-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2">
+        <Link to="/" className="flex items-center">
           <img 
             src="/lovable-uploads/8c04feb5-4e71-478f-9b9d-105fbaba9a69.png" 
             alt="DADVISOR" 
-            className="h-24"
+            className="h-16 md:h-20"
           />
         </Link>
         
         {/* Liens de navigation - version desktop */}
-        <div className="hidden md:flex space-x-6 items-center">
+        <div className="hidden md:flex space-x-4 lg:space-x-6 items-center">
           <NavLink to="/" label="Accueil" currentPath={location.pathname} />
           <NavLink to="/questionnaire" label="Questionnaire" currentPath={location.pathname} />
           <NavLink to="/portfolios" label="Portefeuilles" currentPath={location.pathname} />
@@ -86,13 +86,15 @@ const Navbar = () => {
           {user ? (
             <Button 
               variant="outline" 
-              className="ml-4 hover:bg-dadvisor-lightblue" 
+              className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm" 
               onClick={handleAccountManagement}
             >
-              Connecté comme "{user.email}"
+              <span className="truncate max-w-[120px] lg:max-w-[200px]">
+                {user.email}
+              </span>
             </Button>
           ) : (
-            <Button asChild className="ml-4">
+            <Button asChild className="ml-2">
               <Link to="/auth">Connexion</Link>
             </Button>
           )}

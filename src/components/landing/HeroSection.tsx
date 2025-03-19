@@ -26,14 +26,14 @@ const HeroSection = ({
       opacity: 0.7
     }}></div>
       
-      <div className="container mx-auto px-4 pt-20 md:pt-0">
+      <div className="container mx-auto px-4 pt-32 md:pt-24 lg:pt-0">
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
           {/* Conteneur principal avec animation d'entrée - Côté texte */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.6, delay: 0.2 }} 
-            className="text-center lg:text-left mb-8 lg:mb-0 lg:w-1/2"
+            className="text-center lg:text-left mb-8 lg:mb-0 lg:w-1/2 z-10"
           >
             {/* Badge supérieur avec animation */}
             <motion.div 
@@ -47,7 +47,7 @@ const HeroSection = ({
             
             {/* Titre principal avec animation */}
             <motion.h1 
-              className="text-4xl md:text-6xl font-bold mb-6 leading-tight" 
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight" 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.3 }}
@@ -58,7 +58,7 @@ const HeroSection = ({
             
             {/* Description avec animation */}
             <motion.p 
-              className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed" 
+              className="text-base md:text-lg lg:text-xl text-muted-foreground mb-8 leading-relaxed" 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.4 }}
@@ -87,7 +87,7 @@ const HeroSection = ({
             initial={{ opacity: 0, scale: 0.95 }} 
             animate={{ opacity: 1, scale: 1 }} 
             transition={{ duration: 0.8, delay: 0.6 }} 
-            className="lg:w-1/2"
+            className="lg:w-1/2 hidden md:block"
           >
             <div className="relative rounded-2xl overflow-hidden shadow-dadvisor">
               <img 
