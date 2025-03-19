@@ -1,11 +1,15 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DocumentStats from "../DocumentStats";
 import DocumentTypesList from "../DocumentTypesList";
+import DocumentTable from "../report/DocumentTable";
+import DocumentDetailDialog from "../DocumentDetailDialog";
 import { clearDocumentDatabase, exportDocuments } from "../../chat/services/document/documentManagement";
+import { supabase } from "@/integrations/supabase/client";
+import { DocumentIndexationStatus } from "../hooks/useIndexationReport";
 
 interface ManageTabProps {
   stats: {
@@ -18,12 +22,57 @@ interface ManageTabProps {
 
 const ManageTab = ({ stats, refreshStats }: ManageTabProps) => {
   const [isExporting, setIsExporting] = useState(false);
+  const [documents, setDocuments] = useState<DocumentIndexationStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  // Charger la liste des documents
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        // Transformer les données pour correspondre au format DocumentIndexationStatus
+        const formattedData = data.map(doc => ({
+          id: doc.id,
+          title: doc.title || 'Sans titre',
+          type: doc.type || 'Inconnu',
+          size: doc.size || 0,
+          created_at: doc.created_at,
+          hasEmbedding: !!doc.embedding,
+          pineconeIndexed: doc.pinecone_indexed === true,
+          status: doc.pinecone_indexed ? 'Indexé' : 'Non indexé'
+        }));
+        
+        setDocuments(formattedData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des documents:", error);
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger la liste des documents."
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDocuments();
+  }, [toast]);
 
   const handleClearDatabase = async () => {
     if (confirm("Voulez-vous vraiment supprimer tous les documents de la base locale ?")) {
       await clearDocumentDatabase();
       await refreshStats();
+      setDocuments([]);
       toast({
         title: "Base de données vidée",
         description: "Tous les documents ont été supprimés de la base locale."
@@ -72,11 +121,32 @@ const ManageTab = ({ stats, refreshStats }: ManageTabProps) => {
     }
   };
 
+  const handleViewDetails = (documentId: string) => {
+    setSelectedDocumentId(documentId);
+    setIsDetailDialogOpen(true);
+  };
+
+  const handleCloseDetailDialog = () => {
+    setIsDetailDialogOpen(false);
+    setSelectedDocumentId(null);
+  };
+
   return (
     <div className="space-y-4">
       <DocumentStats stats={stats} />
 
       {stats.count > 0 && <DocumentTypesList types={stats.types} />}
+      
+      {/* Liste des documents avec la possibilité de voir les détails */}
+      {stats.count > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-medium mb-2">Liste des documents</h3>
+          <DocumentTable 
+            documents={documents} 
+            onViewDetails={handleViewDetails}
+          />
+        </div>
+      )}
 
       <div className="flex gap-2 justify-end">
         <Button 
@@ -96,6 +166,13 @@ const ManageTab = ({ stats, refreshStats }: ManageTabProps) => {
           Vider la base
         </Button>
       </div>
+      
+      {/* Boîte de dialogue des détails du document */}
+      <DocumentDetailDialog
+        documentId={selectedDocumentId}
+        isOpen={isDetailDialogOpen}
+        onClose={handleCloseDetailDialog}
+      />
     </div>
   );
 };

@@ -19,9 +19,11 @@ import ManageTab from "./tabs/ManageTab";
 interface DocumentManagerProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: string;
 }
 
-const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
+const DocumentManager = ({ isOpen, onClose, initialTab = "upload" }: DocumentManagerProps) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [stats, setStats] = useState({ count: 0, types: {}, totalSize: 0 });
 
   const refreshStats = async () => {
@@ -34,6 +36,13 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
       refreshStats();
     }
   }, [isOpen]);
+  
+  // Mettre à jour l'onglet actif si initialTab change
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const handleUploadComplete = () => {
     refreshStats();
@@ -49,7 +58,7 @@ const DocumentManager = ({ isOpen, onClose }: DocumentManagerProps) => {
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="upload">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="upload">
               <FileText className="h-4 w-4 mr-2" />
