@@ -26,52 +26,75 @@ const PineconeConfig = () => {
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    const checkApiStatus = async () => {
-      try {
-        console.log("Vérification des clés API...");
-        const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
-          body: { action: 'check-keys' }
-        });
-        
-        if (error) {
-          console.error("Error checking API status:", error);
-          setApiStatus({
-            loading: false,
-            error: `Erreur lors de la vérification des clés API: ${error.message}`,
-            missingKeys: []
-          });
-          return;
-        }
-        
-        console.log("Réponse reçue:", data);
-        
+  // Version synchronisée de la vérification de l'état pour déblocage forcé
+  const forceCheckStatus = async () => {
+    setApiStatus(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      // Tentative d'appel à la fonction Edge
+      console.log("Tentative de connexion à la fonction Edge...");
+      const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
+        body: { action: 'check-keys' }
+      });
+      
+      console.log("Réponse reçue de la fonction Edge:", { data, error });
+      
+      if (error) {
+        console.error("Erreur lors de l'appel à la fonction Edge:", error);
         setApiStatus({
           loading: false,
-          error: data?.error || null,
-          missingKeys: data?.missingKeys || []
-        });
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error("Failed to check API status:", errorMessage);
-        
-        setApiStatus({
-          loading: false,
-          error: `Erreur: ${errorMessage}`,
+          error: `Erreur lors de l'appel à la fonction Edge: ${error.message}`,
           missingKeys: []
         });
         
         toast({
-          title: "Erreur de connexion",
-          description: "Impossible de vérifier l'état de l'API Pinecone. Veuillez réessayer.",
+          title: "Erreur d'API",
+          description: `Problème avec la fonction Edge: ${error.message}`,
           variant: "destructive"
         });
+        return;
       }
-    };
+      
+      // Vérifier si la réponse contient les données attendues
+      if (!data) {
+        console.error("Réponse vide de la fonction Edge");
+        setApiStatus({
+          loading: false,
+          error: "La fonction Edge a retourné une réponse vide",
+          missingKeys: []
+        });
+        return;
+      }
+      
+      setApiStatus({
+        loading: false,
+        error: data?.error || null,
+        missingKeys: data?.missingKeys || []
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("Échec de la vérification du statut API:", errorMessage);
+      
+      setApiStatus({
+        loading: false,
+        error: `Erreur de connexion: ${errorMessage}`,
+        missingKeys: []
+      });
+      
+      toast({
+        title: "Erreur de connexion",
+        description: "Impossible de communiquer avec la fonction Edge. Vérifiez les logs Supabase.",
+        variant: "destructive"
+      });
+    }
+  };
 
+  useEffect(() => {
+    console.log("Composant PineconeConfig monté");
+    
     // Ajouter un timeout de sécurité pour éviter le blocage infini
     const timeoutId = setTimeout(() => {
       if (apiStatus.loading) {
+        console.log("Timeout déclenché - déblocage forcé");
         setApiStatus({
           loading: false,
           error: "Le délai d'attente a expiré. La fonction Edge peut être indisponible.",
@@ -80,19 +103,23 @@ const PineconeConfig = () => {
         
         toast({
           title: "Délai d'attente expiré",
-          description: "Vérifiez que la fonction Edge est correctement déployée.",
+          description: "Vérifiez que la fonction Edge est correctement déployée dans la console Supabase.",
           variant: "destructive"
         });
       }
-    }, 10000); // 10 secondes de timeout
+    }, 5000); // Réduit à 5 secondes pour un déblocage plus rapide
 
-    checkApiStatus();
+    // Lancer la vérification de statut
+    forceCheckStatus();
 
     // Nettoyer le timeout si le composant est démonté
-    return () => clearTimeout(timeoutId);
+    return () => {
+      console.log("Nettoyage du composant PineconeConfig");
+      clearTimeout(timeoutId);
+    };
   }, [toast]);
 
-  // Afficher un indicateur de chargement explicite
+  // Afficher un indicateur de chargement explicite avec bouton de déblocage
   if (apiStatus.loading) {
     return (
       <div className="min-h-screen bg-gradient-radial py-10 px-4">
@@ -115,6 +142,16 @@ const PineconeConfig = () => {
             <div className="bg-card rounded-lg p-6 border shadow-sm text-center">
               <ProfileLoading />
               <p className="mt-4 text-muted-foreground">Vérification de la configuration Pinecone...</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  console.log("Annulation du chargement et affichage forcé");
+                  setApiStatus(prev => ({...prev, loading: false}));
+                }}
+              >
+                Forcer l'affichage
+              </Button>
             </div>
           </div>
         </div>
@@ -149,6 +186,20 @@ const PineconeConfig = () => {
           <PineconePrerequisites />
           
           <TroubleshootingGuide />
+          
+          <div className="flex justify-end mt-4">
+            <Button 
+              onClick={forceCheckStatus}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C10.6868 22 9.38647 21.7357 8.17317 21.2541" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 12L5 15M2 12L5 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Actualiser le statut
+            </Button>
+          </div>
         </div>
       </div>
     </div>

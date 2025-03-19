@@ -1,7 +1,7 @@
 
 // Diagnostic functions for testing Pinecone connection
 
-import { PINECONE_API_KEY, PINECONE_BASE_URL, PINECONE_ENVIRONMENT, PINECONE_INDEX } from "./config.ts";
+import { PINECONE_API_KEY, PINECONE_BASE_URL, PINECONE_ENVIRONMENT, PINECONE_INDEX, OPENAI_API_KEY, addLog } from "./config.ts";
 
 // Test the Pinecone configuration
 export async function testPineconeConnection() {

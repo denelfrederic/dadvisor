@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Import configuration and helpers
-import { corsHeaders, OPENAI_API_KEY, PINECONE_API_KEY } from "./config.ts";
+import { corsHeaders, OPENAI_API_KEY, PINECONE_API_KEY, addLog } from "./config.ts";
 import { testPineconeConnection, checkApiKeys } from "./diagnostics.ts";
 import { generateEmbeddingWithOpenAI, generateEmbeddingWithE5 } from "./embedding.ts";
 import { upsertToPinecone, queryPinecone } from "./pinecone.ts";
@@ -15,8 +15,24 @@ serve(async (req) => {
   }
   
   try {
-    console.log(`Nouvelle requête ${req.method} reçue`);
-    const reqBody = await req.json();
+    const reqData = await req.text();
+    console.log(`Nouvelle requête ${req.method} reçue: ${reqData.substring(0, 200)}...`);
+    
+    let reqBody;
+    try {
+      reqBody = JSON.parse(reqData);
+    } catch (parseError) {
+      console.error("Erreur de parsing JSON:", parseError);
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Erreur de parsing JSON: ${parseError.message}`,
+        rawData: reqData.substring(0, 500)
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     const { action, documentId, documentContent, documentTitle, documentType, query } = reqBody;
     
     console.log(`Action demandée: ${action}, Document ID: ${documentId || 'N/A'}`);
@@ -25,6 +41,8 @@ serve(async (req) => {
     if (action === 'check-keys') {
       console.log("Vérification des clés API...");
       const apiStatus = checkApiKeys();
+      console.log("Résultat de la vérification:", apiStatus);
+      
       return new Response(JSON.stringify(apiStatus), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -191,13 +209,19 @@ serve(async (req) => {
       
       default:
         console.error(`Action inconnue: ${action}`);
-        throw new Error(`Unknown action: ${action}`);
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Action inconnue: ${action}`
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
     }
   } catch (error) {
     console.error('Error in Pinecone function:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: `Erreur serveur: ${error.message || String(error)}`
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
