@@ -44,7 +44,7 @@ const DocumentReport = () => {
           className="px-6"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          {isLoading ? 'Analyse en cours...' : 'Générer le rapport'}
+          {isLoading ? 'Analyse...' : 'Générer le rapport'}
         </Button>
       </div>
 
