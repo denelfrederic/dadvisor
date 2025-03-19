@@ -2,19 +2,17 @@
 // Service pour interagir avec Pinecone
 
 import { PINECONE_API_KEY, PINECONE_BASE_URL, ALTERNATIVE_PINECONE_URL, PINECONE_INDEX } from "../config.ts";
-import { logMessage, logError, logVectorInfo } from "../utils/logging.ts";
 
 /**
  * Insère un vecteur dans Pinecone
  */
 export async function upsertToPinecone(id: string, vector: number[], metadata: any): Promise<any> {
   if (!PINECONE_API_KEY) {
-    logMessage("Clé API Pinecone manquante", "error");
+    console.error("Clé API Pinecone manquante");
     throw new Error('Missing Pinecone API key');
   }
   
-  logMessage(`Insertion dans Pinecone pour document ID: ${id}, avec metadata: ${JSON.stringify(metadata)}`);
-  logVectorInfo(id, vector);
+  console.log(`Insertion dans Pinecone pour document ID: ${id}, avec metadata: ${JSON.stringify(metadata)}`);
   
   try {
     const vectorData = {
@@ -29,7 +27,7 @@ export async function upsertToPinecone(id: string, vector: number[], metadata: a
     };
     
     // Logs détaillés pour le debugging
-    logMessage(`Tentative d'insertion à l'URL: ${PINECONE_BASE_URL}/vectors/upsert`);
+    console.log(`Tentative d'insertion à l'URL: ${PINECONE_BASE_URL}/vectors/upsert`);
     
     // Requête avec un timeout plus long (30 secondes)
     const controller = new AbortController();
@@ -54,26 +52,26 @@ export async function upsertToPinecone(id: string, vector: number[], metadata: a
       
       if (!response.ok) {
         // Logging détaillé de l'erreur
-        logMessage(`Erreur API Pinecone (${response.status}): ${responseText}`, "error");
+        console.error(`Erreur API Pinecone (${response.status}): ${responseText}`);
         
         // Essai avec URL alternative
-        logMessage("Première tentative échouée, essai avec une URL alternative...", "warn");
+        console.log("Première tentative échouée, essai avec une URL alternative...");
         return await tryAlternativePineconeStructure(vectorData);
       }
       
       const result = responseText ? JSON.parse(responseText) : {};
-      logMessage(`Insertion Pinecone réussie`);
+      console.log(`Insertion Pinecone réussie`);
       return result;
     } catch (error) {
       clearTimeout(timeoutId);
-      logError("Erreur lors de la première tentative d'insertion", error);
+      console.error("Erreur lors de la première tentative d'insertion", error instanceof Error ? error.message : String(error));
       
       // Essai avec URL alternative en cas d'erreur
-      logMessage("Tentative avec structure alternative suite à une exception...", "warn");
+      console.log("Tentative avec structure alternative suite à une exception...");
       return await tryAlternativePineconeStructure(vectorData);
     }
   } catch (error) {
-    logError('Error upserting to Pinecone', error);
+    console.error('Error upserting to Pinecone', error instanceof Error ? error.message : String(error));
     throw error;
   }
 }
@@ -91,7 +89,7 @@ async function tryAlternativePineconeStructure(vectorData: any): Promise<any> {
     }
   };
   
-  logMessage(`Tentative avec URL alternative: ${ALTERNATIVE_PINECONE_URL}/upsert`);
+  console.log(`Tentative avec URL alternative: ${ALTERNATIVE_PINECONE_URL}/upsert`);
   
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -111,22 +109,22 @@ async function tryAlternativePineconeStructure(vectorData: any): Promise<any> {
     clearTimeout(timeoutId);
     
     const responseText = await response.text();
-    logMessage(`Réponse alternative (${response.status}): ${responseText.substring(0, 500)}`);
+    console.log(`Réponse alternative (${response.status}): ${responseText.substring(0, 500)}`);
     
     if (!response.ok) {
-      logMessage(`Alternative également échouée (${response.status}): ${responseText}`, "error");
+      console.log(`Alternative également échouée (${response.status}): ${responseText}`);
       
       // En dernier recours, tenter une troisième structure d'URL
-      logMessage("Dernière tentative avec structure d'API legacy...", "warn");
+      console.log("Dernière tentative avec structure d'API legacy...");
       return await tryLegacyPineconeEndpoint(vectorData);
     }
     
     const result = responseText ? JSON.parse(responseText) : {};
-    logMessage("Tentative alternative réussie!");
+    console.log("Tentative alternative réussie!");
     return result;
   } catch (error) {
     clearTimeout(timeoutId);
-    logError("Erreur lors de la tentative alternative", error);
+    console.error("Erreur lors de la tentative alternative", error instanceof Error ? error.message : String(error));
     
     // Dernier essai avec structure legacy
     return await tryLegacyPineconeEndpoint(vectorData);
@@ -140,7 +138,7 @@ async function tryLegacyPineconeEndpoint(vectorData: any): Promise<any> {
   // Format compatible avec les anciennes versions de l'API
   const legacyUrl = `https://api.pinecone.io/v1/vectors/upsert?environment=${PINECONE_INDEX}`;
   
-  logMessage(`Dernière tentative avec URL legacy: ${legacyUrl}`);
+  console.log(`Dernière tentative avec URL legacy: ${legacyUrl}`);
   
   try {
     const response = await fetch(legacyUrl, {
@@ -153,18 +151,18 @@ async function tryLegacyPineconeEndpoint(vectorData: any): Promise<any> {
     });
     
     const responseText = await response.text();
-    logMessage(`Réponse legacy (${response.status}): ${responseText.substring(0, 500)}`);
+    console.log(`Réponse legacy (${response.status}): ${responseText.substring(0, 500)}`);
     
     if (!response.ok) {
-      logMessage(`Tentative legacy également échouée (${response.status}): ${responseText}`, "error");
+      console.log(`Tentative legacy également échouée (${response.status}): ${responseText}`);
       throw new Error(`Toutes les tentatives d'insertion dans Pinecone ont échoué (${response.status}): ${responseText}`);
     }
     
     const result = responseText ? JSON.parse(responseText) : {};
-    logMessage("Tentative legacy réussie!");
+    console.log("Tentative legacy réussie!");
     return result;
   } catch (error) {
-    logError("Échec de toutes les tentatives d'insertion dans Pinecone", error);
+    console.error("Échec de toutes les tentatives d'insertion dans Pinecone", error instanceof Error ? error.message : String(error));
     throw new Error(`Échec de toutes les tentatives d'insertion dans Pinecone: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -174,11 +172,11 @@ async function tryLegacyPineconeEndpoint(vectorData: any): Promise<any> {
  */
 export async function queryPinecone(vector: number[], topK = 5): Promise<any> {
   if (!PINECONE_API_KEY) {
-    logMessage("Clé API Pinecone manquante", "error");
+    console.error("Clé API Pinecone manquante");
     throw new Error('Missing Pinecone API key');
   }
   
-  logMessage(`Recherche dans Pinecone pour ${topK} résultats`);
+  console.log(`Recherche dans Pinecone pour ${topK} résultats`);
   
   try {
     const response = await fetch(`${PINECONE_BASE_URL}/query`, {
@@ -198,16 +196,15 @@ export async function queryPinecone(vector: number[], topK = 5): Promise<any> {
     
     if (!response.ok) {
       const error = await response.text();
-      logMessage(`Erreur API Pinecone Query (${response.status}): ${error}`, "error");
+      console.error(`Erreur API Pinecone Query (${response.status}): ${error}`);
       throw new Error(`Pinecone API error: ${error}`);
     }
     
     const result = await response.json();
-    logMessage(`Recherche Pinecone réussie, ${result.matches?.length || 0} résultats trouvés`);
+    console.log(`Recherche Pinecone réussie, ${result.matches?.length || 0} résultats trouvés`);
     return result;
   } catch (error) {
-    logError('Error querying Pinecone', error);
+    console.error('Error querying Pinecone', error instanceof Error ? error.message : String(error));
     throw error;
   }
 }
-

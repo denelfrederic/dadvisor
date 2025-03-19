@@ -14,6 +14,9 @@ export const PINECONE_NAMESPACE = 'documents'; // Namespace par défaut
 export const PINECONE_HOST = 'dadvisor-3q5v9g1.svc.aped-4627-b74a.pinecone.io';
 export const PINECONE_BASE_URL = `https://${PINECONE_HOST}`;
 
+// URL alternative pour les anciennes versions de l'API
+export const ALTERNATIVE_PINECONE_URL = 'https://api.pinecone.io/v1/indexes/dadvisor';
+
 // Timeout de requête (en millisecondes) - augmenté pour éviter les expirations
 export const REQUEST_TIMEOUT = 45000; // 45 secondes
 
@@ -87,7 +90,7 @@ export const testPineconeConnection = async () => {
       data
     };
   } catch (error) {
-    console.error("Erreur lors du test de connexion:", error);
+    console.error("Erreur lors du test de connexion:", error instanceof Error ? error.message : String(error));
     return {
       success: false,
       message: `Exception: ${error instanceof Error ? error.message : String(error)}`,
