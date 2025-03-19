@@ -29,9 +29,14 @@ export const generateEntryEmbedding = async (text: string): Promise<number[] | n
       throw new Error(`Échec de la génération de l'embedding: ${error.message}`);
     }
     
-    if (!data || !data.embedding || !Array.isArray(data.embedding)) {
+    if (!data || !data.embedding) {
       console.error("La structure de l'embedding retourné est invalide:", data);
       throw new Error("Structure d'embedding invalide retournée par l'API");
+    }
+    
+    if (!Array.isArray(data.embedding)) {
+      console.error("L'embedding retourné n'est pas un tableau:", data.embedding);
+      throw new Error("L'embedding retourné n'est pas un tableau");
     }
     
     // Vérifier les dimensions (devrait être 384 avec le modèle actuel)

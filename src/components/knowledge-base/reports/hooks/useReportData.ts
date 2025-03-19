@@ -30,9 +30,11 @@ export const useReportData = () => {
       
       if (docs && docs.length > 0) {
         // Count documents with valid embeddings
-        docsWithEmbeddings = docs.filter(doc => 
-          doc.embedding && isValidEmbedding(doc.embedding)
-        ).length;
+        for (const doc of docs) {
+          if (doc.embedding && isValidEmbedding(doc.embedding)) {
+            docsWithEmbeddings++;
+          }
+        }
       }
       
       // Build combined report

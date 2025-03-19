@@ -62,7 +62,11 @@ export const useEmbeddingsUpdate = () => {
     try {
       const result = await updateKnowledgeEntries(
         // Convert progress to integer
-        (progressValue) => setProgress(Math.round(progressValue)),
+        (progressValue) => {
+          const intProgress = Math.round(progressValue);
+          setProgress(intProgress);
+          console.log(`Progression mise à jour: ${intProgress}%`);
+        },
         addLog
       );
       
@@ -100,7 +104,11 @@ export const useEmbeddingsUpdate = () => {
     try {
       const result = await updateAllEmbeddings(
         // Convert progress to integer
-        (progressValue) => setProgress(Math.round(progressValue)),
+        (progressValue) => {
+          const intProgress = Math.round(progressValue);
+          setProgress(intProgress);
+          console.log(`Progression mise à jour: ${intProgress}%`);
+        },
         addLog
       );
       

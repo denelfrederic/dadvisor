@@ -56,6 +56,7 @@ serve(async (req) => {
     
     // Vérifier que l'embedding est bien un tableau
     if (!Array.isArray(embedding)) {
+      console.error(`Invalid embedding format received: ${typeof embedding}`);
       throw new Error(`Invalid embedding format received: ${typeof embedding}`);
     }
     
