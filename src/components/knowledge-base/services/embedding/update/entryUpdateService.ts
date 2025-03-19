@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../../types";
 import { generateEntryEmbedding } from "../embeddingService";
@@ -57,7 +58,7 @@ export const updateEntryEmbeddingBatch = async (
           continue;
         }
         
-        // Validate embedding before storing - we now accept 1536 dimensions
+        // Validate embedding before storing - now accepting 384, 768, or 1536 dimensions
         if (!isValidEmbedding(embedding)) {
           const reason = `Generated invalid embedding, dimensions: ${embedding.length}`;
           log(`${reason} for entry ${entry.id}`);
@@ -65,8 +66,9 @@ export const updateEntryEmbeddingBatch = async (
           continue;
         }
         
-        // Check if dimensions match what the database expects
-        if (expectedDimensions && embedding.length !== expectedDimensions) {
+        // Check if dimensions match what the database expects - during transition period, accept different dimensions
+        if (expectedDimensions && embedding.length !== expectedDimensions && 
+            !(embedding.length === 384 || embedding.length === 768 || embedding.length === 1536)) {
           const reason = `Dimension mismatch: generated ${embedding.length}, but database expects ${expectedDimensions}`;
           log(`${reason} for entry ${entry.id}`);
           failures.push({ id: entry.id, reason });

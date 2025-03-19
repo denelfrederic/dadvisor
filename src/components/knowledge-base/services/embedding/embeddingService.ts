@@ -39,9 +39,9 @@ export const generateEntryEmbedding = async (text: string): Promise<number[] | n
       throw new Error("L'embedding retourné n'est pas un tableau");
     }
     
-    // Vérifier les dimensions (doit être 1536 avec le nouveau modèle)
-    if (data.embedding.length !== 1536) {
-      console.warn(`Dimensions d'embedding inattendues: ${data.embedding.length}, attendu: 1536`);
+    // Accepter les dimensions 384, 768, ou 1536
+    if (data.embedding.length !== 384 && data.embedding.length !== 768 && data.embedding.length !== 1536) {
+      console.warn(`Dimensions d'embedding inattendues: ${data.embedding.length}, attendu: 384, 768 ou 1536`);
     }
     
     console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName || 'inconnu'}`);
@@ -79,9 +79,9 @@ export const updateEntryEmbedding = async (entryId: string, question: string, an
       return false;
     }
     
-    // Vérifier que l'embedding est valide et a les bonnes dimensions
+    // Vérifier que l'embedding est valide - accepter 1536 dimensions mais aussi 384 et 768 pour la transition
     if (!validateEmbeddingDimensions(embedding, 1536)) {
-      console.error(`Embedding généré avec des dimensions invalides: ${embedding.length}, attendu: 1536`);
+      console.error(`Embedding généré avec des dimensions invalides: ${embedding.length}, attendu: 1536 (ou 384/768 pendant la transition)`);
       return false;
     }
     

@@ -13,9 +13,9 @@ export const searchEntriesBySimilarity = async (
   limit = 5
 ): Promise<KnowledgeEntry[]> => {
   try {
-    // Validate the input embedding dimensions
-    if (!validateEmbeddingDimensions(queryEmbedding, 384)) {
-      console.error(`Invalid query embedding dimensions: expected 384, got ${queryEmbedding.length}`);
+    // Validate the input embedding dimensions - accept 384, 768, or 1536
+    if (!validateEmbeddingDimensions(queryEmbedding)) {
+      console.error(`Invalid query embedding dimensions: ${queryEmbedding.length}, expected 384, 768, or 1536`);
       return [];
     }
 

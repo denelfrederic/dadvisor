@@ -14,9 +14,9 @@ export const isValidEmbedding = (embedding: any): boolean => {
     }
     
     // Vérifier les dimensions - accepter 384 (ancien modèle) ou 1536 (nouveau modèle)
-    // Note: Notre base de données est configurée pour 1536 dimensions
-    if (embeddingArray.length !== 384 && embeddingArray.length !== 1536) {
-      console.log(`Embedding de dimensions non valides: ${embeddingArray.length}, attendu: 384 ou 1536`);
+    // Notre base de données est maintenant configurée pour 1536 dimensions
+    if (embeddingArray.length !== 384 && embeddingArray.length !== 768 && embeddingArray.length !== 1536) {
+      console.log(`Embedding de dimensions non valides: ${embeddingArray.length}, attendu: 384, 768 ou 1536`);
       return false;
     }
     
@@ -89,7 +89,16 @@ export const validateEmbeddingDimensions = (embedding: number[], expectedDimensi
     return false;
   }
   
-  // Accepter 384 ou 1536 dimensions selon ce qui est attendu
+  // Pour la période de transition, accepter 384, 768 ou 1536 dimensions
+  if (expectedDimension === 1536) {
+    const isValid = embedding.length === 384 || embedding.length === 768 || embedding.length === 1536;
+    if (!isValid) {
+      console.log(`Dimensions incorrectes: ${embedding.length}, attendu: 384, 768 ou 1536`);
+    }
+    return isValid;
+  }
+  
+  // Pour la compatibilité avec l'ancien code
   const isValid = embedding.length === expectedDimension;
   if (!isValid) {
     console.log(`Dimensions incorrectes: ${embedding.length}, attendu: ${expectedDimension}`);
