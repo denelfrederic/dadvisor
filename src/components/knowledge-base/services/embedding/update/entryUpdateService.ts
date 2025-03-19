@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../../types";
 import { generateEntryEmbedding } from "../embeddingService";
@@ -27,26 +26,17 @@ export const updateEntryEmbeddingBatch = async (
     let expectedDimensions: number | null = null;
     try {
       // Use a custom SQL query to get the column type modifier
-      const { data: typeResult, error: typeError } = await supabase
-        .from('knowledge_entries')
-        .select('embedding')
-        .limit(1)
-        .single();
+      const { data: schemaInfo, error: schemaError } = await supabase
+        .rpc('get_column_type_modifier', { 
+          table_name: 'knowledge_entries', 
+          column_name: 'embedding' 
+        });
       
-      if (typeError) {
-        log(`Could not determine embedding column type: ${typeError.message}`);
-      } else if (typeResult) {
-        // Check if any entry has a valid embedding to infer dimensions
-        const { data: schemaInfo } = await supabase
-          .rpc('get_column_type_modifier', { 
-            table_name: 'knowledge_entries', 
-            column_name: 'embedding' 
-          }) as { data: string };
-        
-        if (schemaInfo) {
-          expectedDimensions = parseInt(schemaInfo, 10);
-          log(`Database expects embedding dimensions: ${expectedDimensions}`);
-        }
+      if (schemaError) {
+        log(`Could not determine embedding column type: ${schemaError.message}`);
+      } else if (schemaInfo) {
+        expectedDimensions = parseInt(schemaInfo as string, 10);
+        log(`Database expects embedding dimensions: ${expectedDimensions}`);
       }
     } catch (error) {
       log(`Could not determine expected embedding dimensions: ${error instanceof Error ? error.message : String(error)}`);
@@ -67,7 +57,7 @@ export const updateEntryEmbeddingBatch = async (
           continue;
         }
         
-        // Validate embedding before storing
+        // Validate embedding before storing - we now accept 1536 dimensions
         if (!isValidEmbedding(embedding)) {
           const reason = `Generated invalid embedding, dimensions: ${embedding.length}`;
           log(`${reason} for entry ${entry.id}`);

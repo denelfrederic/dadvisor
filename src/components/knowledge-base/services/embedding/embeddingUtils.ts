@@ -13,10 +13,10 @@ export const isValidEmbedding = (embedding: any): boolean => {
       return false;
     }
     
-    // Vérifier les dimensions - accepter 384 (modèle actuel)
-    // Note: Nous utilisons maintenant uniquement le modèle de 384 dimensions
-    if (embeddingArray.length !== 384) {
-      console.log(`Embedding de dimensions non valides: ${embeddingArray.length}, attendu: 384`);
+    // Vérifier les dimensions - accepter 384 (ancien modèle) ou 1536 (nouveau modèle)
+    // Note: Notre base de données est configurée pour 1536 dimensions
+    if (embeddingArray.length !== 384 && embeddingArray.length !== 1536) {
+      console.log(`Embedding de dimensions non valides: ${embeddingArray.length}, attendu: 384 ou 1536`);
       return false;
     }
     
@@ -83,12 +83,13 @@ export const processEntryForEmbedding = (question: string, answer: string): stri
 };
 
 // Fonction pour valider les dimensions d'un embedding
-export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 384): boolean => {
+export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 1536): boolean => {
   if (!Array.isArray(embedding)) {
     console.log("L'embedding n'est pas un tableau");
     return false;
   }
   
+  // Accepter 384 ou 1536 dimensions selon ce qui est attendu
   const isValid = embedding.length === expectedDimension;
   if (!isValid) {
     console.log(`Dimensions incorrectes: ${embedding.length}, attendu: ${expectedDimension}`);

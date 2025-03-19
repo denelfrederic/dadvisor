@@ -30,7 +30,7 @@ export const generateEmbedding = async (text: string, modelType = "document"): P
     
     console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName}`);
     
-    // Vérifier que l'embedding est valide
+    // Vérifier que l'embedding est valide - accepter 1536 dimensions
     if (!isValidEmbedding(data.embedding)) {
       console.error("Embedding généré n'est pas valide:", data.embedding.slice(0, 5), "...");
       throw new Error("L'embedding généré n'est pas valide");
