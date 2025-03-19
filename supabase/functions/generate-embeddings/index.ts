@@ -5,7 +5,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const HUGGINGFACE_API_KEY = Deno.env.get('HUGGINGFACE_API_KEY');
 
 // Modèles spécifiques pour les différents types d'embedding avec les dimensions correctes
-const DOCUMENT_MODEL = 'sentence-transformers/all-mpnet-base-v2'; // 768 dimensions
+const DOCUMENT_MODEL = 'sentence-transformers/all-MiniLM-L12-v2'; // 384 dimensions (plus rapide)
 const KNOWLEDGE_ENTRY_MODEL = 'sentence-transformers/all-MiniLM-L12-v2'; // 384 dimensions
 
 const corsHeaders = {

@@ -1,53 +1,91 @@
 
+import { parseEmbedding, prepareEmbeddingForStorage, isValidEmbedding } from "./embeddingUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { prepareEmbeddingForStorage, isValidEmbedding, processEntryForEmbedding } from "./embeddingUtils";
 
 /**
- * Generate embedding for a knowledge base entry with consistent dimensions
+ * Génère un embedding pour une entrée de la base de connaissances.
+ * @param text Le texte pour lequel générer l'embedding
+ * @returns Un tableau de nombres représentant l'embedding
  */
 export const generateEntryEmbedding = async (text: string): Promise<number[] | null> => {
   try {
-    const combinedText = text.trim();
-    if (!combinedText) return null;
+    if (!text || text.trim().length === 0) {
+      console.error("Le texte ne peut pas être vide pour la génération d'embedding");
+      return null;
+    }
     
-    console.log(`Generating knowledge entry embedding for text of length: ${combinedText.length}`);
-
+    console.log(`Génération d'embedding pour une entrée de connaissance, longueur du texte: ${text.length}`);
+    
     // Appel à notre fonction edge pour générer l'embedding
     const { data, error } = await supabase.functions.invoke("generate-embeddings", {
       body: { 
-        text: combinedText,
-        modelType: "knowledge-entry" // Spécifie que c'est pour une entrée de connaissance
+        text: text.substring(0, 10000), // Limiter la taille du texte
+        modelType: "knowledge-entry"
       }
     });
     
     if (error) {
-      console.error("Error generating embedding:", error);
-      return null;
+      console.error("Erreur lors de la génération de l'embedding:", error);
+      throw new Error(`Échec de la génération de l'embedding: ${error.message}`);
     }
     
-    if (!data || !data.embedding || !Array.isArray(data.embedding) || data.embedding.length === 0) {
-      console.error("L'embedding généré est invalide ou vide:", data);
-      return null;
+    if (!data || !data.embedding || !Array.isArray(data.embedding)) {
+      console.error("La structure de l'embedding retourné est invalide:", data);
+      throw new Error("Structure d'embedding invalide retournée par l'API");
     }
     
-    // Vérifier explicitement que l'embedding est valide
-    if (!isValidEmbedding(data.embedding)) {
-      console.error("L'embedding généré n'est pas valide:", 
-                    Array.isArray(data.embedding) ? data.embedding.slice(0, 5) : data.embedding);
-      return null;
-    }
+    console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName || 'inconnu'}`);
     
-    console.log(`Knowledge entry embedding generated successfully: ${data.embedding.length} dimensions, model: ${data.modelName || 'unknown'}`);
     return data.embedding;
   } catch (error) {
-    console.error("Error generating embedding:", error);
-    return null;
+    console.error("Exception lors de la génération de l'embedding:", error);
+    throw error;
   }
 };
 
 /**
- * Check if embedding dimensions match expected dimensions for knowledge entries
+ * Met à jour les embeddings pour une entrée existante dans la base de données.
  */
-export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 384): boolean => {
-  return embedding && Array.isArray(embedding) && embedding.length === expectedDimension;
+export const updateEntryEmbedding = async (entryId: string, question: string, answer: string): Promise<boolean> => {
+  try {
+    // Vérifier si l'entrée existe
+    const { data: existingEntry, error: fetchError } = await supabase
+      .from('knowledge_entries')
+      .select('id')
+      .eq('id', entryId)
+      .single();
+    
+    if (fetchError || !existingEntry) {
+      console.error("Entrée non trouvée:", fetchError);
+      return false;
+    }
+    
+    // Générer l'embedding pour le texte combiné (question + réponse)
+    const combinedText = `Question: ${question}\nRéponse: ${answer}`;
+    const embedding = await generateEntryEmbedding(combinedText);
+    
+    if (!embedding) {
+      console.error("Impossible de générer l'embedding");
+      return false;
+    }
+    
+    // Convertir l'embedding en format de stockage
+    const embeddingStorage = prepareEmbeddingForStorage(embedding);
+    
+    // Mettre à jour l'entrée dans la base de données
+    const { error: updateError } = await supabase
+      .from('knowledge_entries')
+      .update({ embedding: embeddingStorage })
+      .eq('id', entryId);
+    
+    if (updateError) {
+      console.error("Erreur lors de la mise à jour de l'embedding:", updateError);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de l'embedding:", error);
+    return false;
+  }
 };

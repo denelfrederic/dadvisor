@@ -33,12 +33,29 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       // Compter les entrées avec embeddings valides
       for (const entry of entries) {
         try {
+          // Afficher plus d'informations pour le débogage
+          if (entry.embedding) {
+            const embeddingInfo = typeof entry.embedding === 'string' 
+              ? `String length: ${entry.embedding.length}` 
+              : `Array length: ${Array.isArray(entry.embedding) ? entry.embedding.length : 'not array'}`;
+            console.log(`Entry ${entry.id.substring(0, 8)} embedding info: ${embeddingInfo}`);
+            
+            if (typeof entry.embedding === 'string' && entry.embedding.length > 20) {
+              try {
+                const parsed = JSON.parse(entry.embedding);
+                console.log(`Embedding parsed successfully for ${entry.id.substring(0, 8)}, type: ${typeof parsed}, is array: ${Array.isArray(parsed)}, length: ${Array.isArray(parsed) ? parsed.length : 'N/A'}`);
+              } catch (e) {
+                console.log(`Failed to parse embedding for ${entry.id.substring(0, 8)}: ${e.message}`);
+              }
+            }
+          }
+          
           const hasValidEmbedding = isValidEmbedding(entry.embedding);
           if (hasValidEmbedding) {
             withEmbeddings++;
-            console.log(`Entry ${entry.id} has valid embedding`);
+            console.log(`Entry ${entry.id.substring(0, 8)} has valid embedding`);
           } else {
-            console.log(`Entry ${entry.id} does not have a valid embedding:`, 
+            console.log(`Entry ${entry.id.substring(0, 8)} does not have a valid embedding:`, 
               typeof entry.embedding, 
               entry.embedding ? (typeof entry.embedding === 'string' ? entry.embedding.substring(0, 30) + '...' : 'non-string') : 'null'
             );
@@ -101,12 +118,20 @@ export const generateCombinedReport = async (): Promise<{
       
       for (const doc of documents) {
         try {
+          // Afficher plus d'informations pour le débogage
+          if (doc.embedding) {
+            const embeddingInfo = typeof doc.embedding === 'string' 
+              ? `String length: ${doc.embedding.length}` 
+              : `Array length: ${Array.isArray(doc.embedding) ? doc.embedding.length : 'not array'}`;
+            console.log(`Document ${doc.id.substring(0, 8)} embedding info: ${embeddingInfo}`);
+          }
+          
           const hasValidEmbedding = isValidEmbedding(doc.embedding);
           if (hasValidEmbedding) {
             docWithEmbeddings++;
-            console.log(`Document ${doc.id} has valid embedding`);
+            console.log(`Document ${doc.id.substring(0, 8)} has valid embedding`);
           } else {
-            console.log(`Document ${doc.id} does not have a valid embedding:`, 
+            console.log(`Document ${doc.id.substring(0, 8)} does not have a valid embedding:`, 
               typeof doc.embedding, 
               doc.embedding ? (typeof doc.embedding === 'string' ? doc.embedding.substring(0, 30) + '...' : 'non-string') : 'null'
             );

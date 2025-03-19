@@ -51,6 +51,14 @@ const KnowledgeBaseReport = () => {
         // Compter les entrées avec embeddings valides
         for (const entry of entries) {
           try {
+            // Afficher une partie de l'embedding pour debug
+            if (entry.embedding) {
+              const embeddingInfo = typeof entry.embedding === 'string' 
+                ? `String length: ${entry.embedding.length}` 
+                : `Array length: ${Array.isArray(entry.embedding) ? entry.embedding.length : 'not array'}`;
+              console.log(`Entry ${entry.id.substring(0, 8)} embedding info: ${embeddingInfo}`);
+            }
+            
             const hasValidEmbedding = entry.embedding && isValidEmbedding(entry.embedding);
             if (hasValidEmbedding) {
               withEmbeddings++;
@@ -102,6 +110,44 @@ const KnowledgeBaseReport = () => {
     }
   };
 
+  const checkRawEmbeddings = async () => {
+    console.log("Vérification des embeddings bruts dans la base de données...");
+    try {
+      const { data, error } = await supabase
+        .from('knowledge_entries')
+        .select('id, embedding')
+        .limit(3);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        data.forEach(entry => {
+          console.log(`Entrée ID: ${entry.id}`);
+          if (entry.embedding) {
+            console.log(`Type d'embedding: ${typeof entry.embedding}`);
+            if (typeof entry.embedding === 'string') {
+              try {
+                const parsed = JSON.parse(entry.embedding);
+                console.log(`Embedding parsé: ${Array.isArray(parsed) ? `Tableau de longueur ${parsed.length}` : 'Non tableau'}`);
+                console.log(`Premiers éléments:`, parsed.slice(0, 5));
+              } catch (e) {
+                console.log(`Impossible de parser l'embedding: ${e.message}`);
+              }
+            } else {
+              console.log(`Embedding brut:`, entry.embedding);
+            }
+          } else {
+            console.log(`Pas d'embedding pour cette entrée`);
+          }
+        });
+      } else {
+        console.log("Aucune entrée trouvée");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification des embeddings:", error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -126,8 +172,8 @@ const KnowledgeBaseReport = () => {
         />
       )}
       
-      {/* Bouton de débogage */}
-      <div className="text-xs text-gray-400 mt-2">
+      {/* Boutons de débogage */}
+      <div className="text-xs text-gray-400 mt-2 flex space-x-2">
         <Button 
           variant="ghost" 
           size="sm" 
@@ -135,7 +181,15 @@ const KnowledgeBaseReport = () => {
             console.log("Rapport actuel de la base de connaissances:", report);
           }}
         >
-          Afficher les données dans la console
+          Afficher le rapport dans la console
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={checkRawEmbeddings}
+        >
+          Vérifier les embeddings bruts
         </Button>
       </div>
     </div>

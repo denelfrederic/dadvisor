@@ -20,6 +20,8 @@ export const updateEntryEmbeddingBatch = async (
       try {
         // Generate new embedding from combined question and answer
         const combinedText = processEntryForEmbedding(entry.question, entry.answer);
+        console.log(`Generating embedding for entry ${entry.id.substring(0, 8)}, text length: ${combinedText.length}`);
+        
         const embedding = await generateEntryEmbedding(combinedText);
         
         if (!embedding) {
@@ -27,6 +29,7 @@ export const updateEntryEmbeddingBatch = async (
           continue;
         }
         
+        console.log(`Generated embedding for entry ${entry.id.substring(0, 8)}, dimensions: ${embedding.length}`);
         const embeddingString = prepareEmbeddingForStorage(embedding);
         
         // Update the entry in the database
@@ -43,6 +46,7 @@ export const updateEntryEmbeddingBatch = async (
           continue;
         }
         
+        console.log(`Successfully updated embedding for entry ${entry.id.substring(0, 8)}`);
         successCount++;
       } catch (entryError) {
         console.error(`Erreur lors de la mise à jour de l'entrée ${entry.id}:`, entryError);
@@ -86,11 +90,10 @@ export const updateKnowledgeEntries = async (
 
     log("Fetching knowledge entries without embeddings...");
     
-    // Get entries that don't have embeddings - using only IS NULL condition to avoid syntax errors
+    // Get entries that don't have embeddings or have invalid embeddings
     const { data: entries, error } = await supabase
       .from('knowledge_entries')
-      .select('*')
-      .is('embedding', null);  // Use only IS NULL to avoid type issues
+      .select('*');
 
     if (error) {
       log(`Error fetching entries: ${error.message}`);
@@ -101,17 +104,25 @@ export const updateKnowledgeEntries = async (
       log("No entries found without embeddings");
       return { success: true, processed: 0, succeeded: 0 };
     }
+    
+    // Filter entries without valid embeddings
+    const entriesToUpdate = entries.filter(entry => !entry.embedding || typeof entry.embedding === 'string' && entry.embedding.length < 10);
+    
+    if (entriesToUpdate.length === 0) {
+      log("All entries already have embeddings");
+      return { success: true, processed: 0, succeeded: 0 };
+    }
 
-    log(`Found ${entries.length} entries without embeddings. Starting update...`);
+    log(`Found ${entriesToUpdate.length} entries without embeddings. Starting update...`);
     
     // Update the entries in batches
-    const result = await updateEntryEmbeddingBatch(entries, progressCallback);
+    const result = await updateEntryEmbeddingBatch(entriesToUpdate, progressCallback);
     
-    log(`Finished updating ${entries.length} entries`);
+    log(`Finished updating ${entriesToUpdate.length} entries`);
     
     return { 
       success: true, 
-      processed: entries.length,
+      processed: entriesToUpdate.length,
       succeeded: result.succeeded
     };
   } catch (error) {
