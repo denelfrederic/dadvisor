@@ -1,58 +1,90 @@
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from "@/components/ui/toaster"
+import { AuthProvider } from "./context/AuthContext";
+import { ScrollToTop } from "./components/ScrollToTop";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminCheck } from "./components/AdminCheck";
+import { ProfileCheck } from "./components/ProfileCheck";
 
-// Import pages
-import Index from './pages/Index';
-import Auth from './pages/Auth';
-import AuthCallback from './pages/AuthCallback';
-import ProfileAnalysis from './pages/ProfileAnalysis';
-import Account from './pages/Account';
-import Questionnaire from './pages/Questionnaire';
-import Investment from './pages/Investment';
-import Portfolios from './pages/Portfolios';
-import Wallet from './pages/Wallet';
-import NotFound from './pages/NotFound';
-import AdminCheck from './pages/AdminCheck';
-import Assistant_Admin from './pages/Assistant_Admin';
-
-// Import contexts
-import { AuthProvider } from './contexts/auth';
-import { QuestionnaireProvider } from './contexts/questionnaire';
-
-// Import components
-import ScrollToTop from './components/ScrollToTop';
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
+import Account from "./pages/Account";
+import Wallet from "./pages/Wallet";
+import Questionnaire from "./pages/Questionnaire";
+import ProfileAnalysis from "./pages/ProfileAnalysis";
+import Portfolios from "./pages/Portfolios";
+import Investment from "./pages/Investment";
+import Assistant_Admin from "./pages/Assistant_Admin";
+import NotFound from "./pages/NotFound";
+import IndexedDocuments from "./pages/IndexedDocuments";
 
 function App() {
   return (
     <div className="App">
+      <ScrollToTop />
       <AuthProvider>
-        <BrowserRouter>
-          <QuestionnaireProvider>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/profile-analysis" element={<ProfileAnalysis />} />
-              {/* Redirection de /profile vers /profile-analysis */}
-              <Route path="/profile" element={<Navigate to="/profile-analysis" replace />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/questionnaire" element={<Questionnaire />} />
-              <Route path="/investment" element={<Investment />} />
-              <Route path="/portfolios" element={<Portfolios />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/admin-check" element={<AdminCheck />} />
-              <Route path="/adminllm" element={<Assistant_Admin />} />
-              {/* Redirection de /assistant vers /adminllm */}
-              <Route path="/assistant" element={<Navigate to="/adminllm" replace />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </QuestionnaireProvider>
-        </BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wallet"
+            element={
+              <ProtectedRoute>
+                <Wallet />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/questionnaire" element={<Questionnaire />} />
+          <Route
+            path="/profile"
+            element={
+              <ProfileCheck>
+                <ProfileAnalysis />
+              </ProfileCheck>
+            }
+          />
+          <Route path="/portfolios" element={<Portfolios />} />
+          <Route path="/investment" element={<Investment />} />
+          <Route
+            path="/adminllm"
+            element={
+              <AdminCheck>
+                <Assistant_Admin />
+              </AdminCheck>
+            }
+          />
+          <Route
+            path="/assistant_admin"
+            element={
+              <AdminCheck>
+                <Assistant_Admin />
+              </AdminCheck>
+            }
+          />
+          <Route
+            path="/documents/indexed"
+            element={
+              <AdminCheck>
+                <IndexedDocuments />
+              </AdminCheck>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </AuthProvider>
+      <Toaster />
     </div>
   );
 }
