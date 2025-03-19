@@ -24,7 +24,8 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
         solutions: [
           "Vérifiez que la clé API Pinecone est correctement configurée dans les secrets Supabase",
           "Vérifiez que l'index Pinecone configuré existe bien dans votre compte",
-          "Assurez-vous que votre clé API a les droits suffisants pour accéder à cet index"
+          "Assurez-vous que votre clé API a les droits suffisants pour accéder à cet index",
+          "Vérifiez si vous avez atteint les limites de quota de votre compte Pinecone"
         ]
       };
     }
@@ -80,6 +81,17 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
               <li key={index}>{solution}</li>
             ))}
           </ul>
+          
+          {errorSummary.includes("403") && (
+            <div className="mt-3 pt-2 border-t border-destructive/20">
+              <p className="font-semibold mb-1">Informations sur les quotas :</p>
+              <ul className="list-disc pl-5 space-y-1.5">
+                <li>Les plans gratuits de Pinecone ont des limites strictes sur le nombre de requêtes</li>
+                <li>Vérifiez si vous avez dépassé votre quota mensuel dans la console Pinecone</li>
+                <li>Si nécessaire, envisagez de passer à un plan supérieur ou d'attendre le renouvellement du quota</li>
+              </ul>
+            </div>
+          )}
           
           {errorSummary.includes("Pinecone") && (
             <div className="mt-3 pt-2 border-t border-destructive/20">
