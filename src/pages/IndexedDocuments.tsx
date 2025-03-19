@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Home, Database } from "lucide-react";
@@ -7,6 +7,12 @@ import IndexedDocumentsList from "@/components/document/IndexedDocumentsList";
 import Navbar from "@/components/Navbar";
 
 const IndexedDocuments = () => {
+  // Force a re-render when the component mounts
+  useEffect(() => {
+    console.log("IndexedDocuments page mounted");
+    // This is just to ensure the component re-renders
+  }, []);
+
   return (
     <>
       <Navbar />

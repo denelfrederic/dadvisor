@@ -24,6 +24,7 @@ const IndexedDocumentsList = () => {
     setError(null);
     
     try {
+      console.log("Récupération des documents indexés...");
       // Récupérer tous les documents indexés dans Pinecone
       const { data, error } = await supabase
         .from('documents')
@@ -31,8 +32,12 @@ const IndexedDocumentsList = () => {
         .eq('pinecone_indexed', true)
         .order('created_at', { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur Supabase:", error);
+        throw error;
+      }
       
+      console.log("Documents récupérés:", data);
       setDocuments(data || []);
       console.log(`${data?.length || 0} documents indexés récupérés`);
     } catch (err: any) {
@@ -45,6 +50,7 @@ const IndexedDocumentsList = () => {
   };
 
   useEffect(() => {
+    console.log("IndexedDocumentsList mounted");
     fetchIndexedDocuments();
   }, []);
 
