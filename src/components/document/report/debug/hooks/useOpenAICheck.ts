@@ -21,11 +21,18 @@ export const useOpenAICheck = (addLog: (message: string) => void) => {
     try {
       addLog("Vérification de la configuration OpenAI...");
       
+      // Ajouter un timestamp pour éviter la mise en cache
+      const timestamp = new Date().getTime();
+      
       const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
-        body: { action: 'check-openai' }
+        body: { 
+          action: 'check-openai',
+          _timestamp: timestamp // Éviter la mise en cache
+        }
       });
       
       if (error) {
+        console.error("Erreur lors de la vérification OpenAI:", error);
         addLog(`ERREUR: ${error.message}`);
         setOpenaiStatus({ success: false, error: error.message });
         return;
@@ -35,6 +42,7 @@ export const useOpenAICheck = (addLog: (message: string) => void) => {
       setOpenaiStatus(data);
       
     } catch (error) {
+      console.error("Exception lors de la vérification OpenAI:", error);
       addLog(`EXCEPTION: ${error instanceof Error ? error.message : String(error)}`);
       setOpenaiStatus({ 
         success: false, 
@@ -55,23 +63,35 @@ export const useOpenAICheck = (addLog: (message: string) => void) => {
     try {
       addLog(`Génération d'un embedding pour le texte: "${testText.substring(0, 50)}..."`);
       
+      // Ajouter un timestamp pour éviter la mise en cache
+      const timestamp = new Date().getTime();
+      
       const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
         body: { 
           action: 'generate-embedding',
-          text: testText
+          text: testText,
+          _timestamp: timestamp // Éviter la mise en cache
         }
       });
       
       if (error) {
+        console.error("Erreur lors de la génération d'embedding:", error);
         addLog(`ERREUR: ${error.message}`);
         setTestResult({ success: false, error: error.message });
         return;
       }
       
-      addLog(`Embedding généré avec succès (${data.dimensions} dimensions)`);
+      if (!data) {
+        addLog(`ERREUR: Pas de données reçues du serveur`);
+        setTestResult({ success: false, error: "Pas de données reçues du serveur" });
+        return;
+      }
+      
+      addLog(`Embedding généré avec succès (${data.dimensions || "?"} dimensions)`);
       setTestResult(data);
       
     } catch (error) {
+      console.error("Exception lors de la génération d'embedding:", error);
       addLog(`EXCEPTION: ${error instanceof Error ? error.message : String(error)}`);
       setTestResult({ 
         success: false, 

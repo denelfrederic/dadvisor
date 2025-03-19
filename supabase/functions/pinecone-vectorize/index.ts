@@ -21,24 +21,38 @@ const corsedResponse = (response: any, status = 200) => {
 };
 
 serve(async (req: Request) => {
+  // Gérer les requêtes OPTIONS (CORS)
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { action, ...body } = await req.json();
+    // Récupérer les données de la requête
+    const requestData = await req.json().catch(error => {
+      console.error("Erreur lors de la lecture du corps de la requête:", error);
+      return { action: null };
+    });
+    
+    const { action, ...body } = requestData;
 
+    // Vérifier si une action est spécifiée
     if (!action) {
       return corsedResponse({ success: false, error: "Action manquante" }, 400);
     }
     
+    console.log(`Traitement de l'action "${action}"...`);
+    
+    // Traiter les différentes actions
     if (action === 'config') {
       try {
         const config = await getPineconeConfig();
         return corsedResponse(config);
       } catch (error) {
         console.error("Erreur lors de la récupération de la configuration Pinecone:", error);
-        return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
+        return corsedResponse({ 
+          success: false, 
+          error: error instanceof Error ? error.message : String(error) 
+        }, 500);
       }
     }
     
@@ -48,7 +62,10 @@ serve(async (req: Request) => {
         return corsedResponse(connectionStatus);
       } catch (error) {
         console.error("Erreur lors du test de connexion à Pinecone:", error);
-        return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
+        return corsedResponse({ 
+          success: false, 
+          error: error instanceof Error ? error.message : String(error) 
+        }, 500);
       }
     }
     
@@ -57,10 +74,17 @@ serve(async (req: Request) => {
         const { documentId, documentContent, documentTitle, documentType } = body;
         
         if (!documentId || !documentContent) {
-          return corsedResponse({ success: false, error: "Document ID et contenu sont requis" }, 400);
+          return corsedResponse({ 
+            success: false, 
+            error: "Document ID et contenu sont requis" 
+          }, 400);
         }
         
-        const indexResult = await indexDocumentInPinecone(documentId, documentContent, documentTitle, documentType);
+        const indexResult = await indexDocumentInPinecone(
+          documentId, 
+          documentContent,
+          { title: documentTitle, type: documentType }
+        );
         
         if (!indexResult.success) {
           return corsedResponse(indexResult, 500);
@@ -73,13 +97,17 @@ serve(async (req: Request) => {
         });
       } catch (error) {
         console.error("Erreur lors de l'indexation du document dans Pinecone:", error);
-        return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
+        return corsedResponse({ 
+          success: false, 
+          error: error instanceof Error ? error.message : String(error) 
+        }, 500);
       }
     }
     
-    // Ajoutez ces blocs de code pour gérer les nouvelles actions
+    // Actions pour OpenAI
     if (action === 'check-openai') {
       try {
+        console.log("Vérification de la configuration OpenAI...");
         const status = await checkOpenAIStatus();
         return corsedResponse(status);
       } catch (error) {
@@ -102,12 +130,19 @@ serve(async (req: Request) => {
           }, 400);
         }
         
+        console.log(`Génération de l'embedding pour le texte: "${text.substring(0, 30)}..."`);
         const result = await generateTestEmbedding(text);
+        
+        if (!result.success) {
+          return corsedResponse(result, 500);
+        }
+        
         return corsedResponse({ 
           success: true, 
           embedding: result.embedding,
           model: result.modelName,
-          dimensions: result.embedding.length
+          dimensions: result.embedding.length,
+          usage: result.usage
         });
       } catch (error) {
         console.error("Erreur lors de la génération de l'embedding de test:", error);
@@ -121,6 +156,9 @@ serve(async (req: Request) => {
     return corsedResponse({ success: false, error: "Action inconnue" }, 400);
   } catch (error) {
     console.error("Erreur inattendue:", error);
-    return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
+    return corsedResponse({ 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error) 
+    }, 500);
   }
 });

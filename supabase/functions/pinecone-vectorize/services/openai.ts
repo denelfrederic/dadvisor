@@ -1,125 +1,120 @@
 
-// Service pour la génération d'embeddings avec OpenAI
 import { OPENAI_API_KEY } from "../config.ts";
 
 /**
- * Configuration d'OpenAI
- */
-const OPENAI_API_URL = "https://api.openai.com/v1";
-const EMBEDDING_MODEL = "text-embedding-ada-002";
-const DEFAULT_DIMENSIONS = 1536; // Dimensions du modèle embedding-ada-002
-
-/**
- * Headers pour les requêtes OpenAI
- */
-const OPENAI_HEADERS = {
-  "Content-Type": "application/json",
-  "Authorization": `Bearer ${OPENAI_API_KEY}`
-};
-
-/**
- * Vérifie si la configuration OpenAI est valide
- * @returns Un objet indiquant si la configuration est valide
+ * Vérifie la configuration OpenAI
+ * @returns Résultat de la vérification
  */
 export async function checkOpenAIStatus(): Promise<any> {
   try {
     console.log("Vérification de la configuration OpenAI...");
     
+    // Vérifier si la clé API est configurée
     if (!OPENAI_API_KEY) {
-      return { 
-        success: false, 
-        error: "Clé API OpenAI manquante",
-        timestamp: new Date().toISOString()
+      console.error("Clé API OpenAI manquante");
+      return {
+        success: false,
+        error: "La clé API OpenAI n'est pas configurée"
       };
     }
     
-    // Test simple avec le endpoint models
-    const response = await fetch(`${OPENAI_API_URL}/models`, {
-      method: 'GET',
-      headers: OPENAI_HEADERS
+    // Faire une requête simple pour vérifier l'accès à l'API
+    const modelResponse = await fetch("https://api.openai.com/v1/models", {
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      }
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Erreur API OpenAI (${response.status}): ${errorText}`);
-      return { 
-        success: false, 
-        error: `Erreur API: ${response.status} ${errorText}`,
-        status: response.status,
-        timestamp: new Date().toISOString()
+    if (!modelResponse.ok) {
+      const errorText = await modelResponse.text();
+      console.error(`Erreur OpenAI (${modelResponse.status}): ${errorText}`);
+      
+      // Gérer les erreurs d'authentification
+      if (modelResponse.status === 401) {
+        return {
+          success: false,
+          error: "Clé API OpenAI invalide ou expirée"
+        };
+      }
+      
+      // Autres erreurs
+      return {
+        success: false,
+        error: `Erreur API OpenAI (${modelResponse.status}): ${errorText}`
       };
     }
     
-    const data = await response.json();
+    const models = await modelResponse.json();
     
-    // Vérifie si le modèle d'embedding requis est disponible
-    const hasEmbeddingModel = data.data.some((model: any) => model.id === EMBEDDING_MODEL);
+    // Vérifier si un modèle d'embedding est disponible
+    const embeddingModels = models.data.filter((model: any) => 
+      model.id.includes("text-embedding"));
+    
+    if (embeddingModels.length === 0) {
+      return {
+        success: true,
+        model: "Aucun modèle d'embedding trouvé"
+      };
+    }
+    
+    // Préférer le modèle text-embedding-3-small s'il est disponible
+    const preferredModel = embeddingModels.find((model: any) => 
+      model.id === "text-embedding-3-small") || embeddingModels[0];
     
     return {
       success: true,
-      model: EMBEDDING_MODEL,
-      hasEmbeddingModel,
-      timestamp: new Date().toISOString()
+      model: preferredModel.id
     };
   } catch (error) {
     console.error("Erreur lors de la vérification OpenAI:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString()
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
     };
   }
 }
 
 /**
- * Génère un embedding pour un texte
- * @param text Le texte à transformer en embedding
- * @returns Un vecteur d'embedding
+ * Génère un embedding pour un texte donné
+ * @param text Texte pour lequel générer un embedding
+ * @returns Embedding généré
  */
 export async function generateEmbeddingWithOpenAI(text: string): Promise<number[]> {
   try {
-    console.log(`Génération d'embedding pour un texte de ${text.length} caractères`);
+    console.log(`Génération d'embedding pour: "${text.substring(0, 30)}..."`);
     
-    // Validation de la clé API
     if (!OPENAI_API_KEY) {
-      throw new Error("Clé API OpenAI manquante");
+      console.error("Clé API OpenAI manquante");
+      throw new Error("Clé API OpenAI non configurée");
     }
     
-    // Préparation du corps de la requête
-    const requestBody = JSON.stringify({
-      model: EMBEDDING_MODEL,
-      input: text
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        input: text,
+        model: "text-embedding-3-small"
+      })
     });
     
-    // Envoi de la requête à l'API OpenAI
-    const response = await fetch(`${OPENAI_API_URL}/embeddings`, {
-      method: 'POST',
-      headers: OPENAI_HEADERS,
-      body: requestBody
-    });
-    
-    // Vérification des erreurs
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Erreur API OpenAI pour embedding (${response.status}): ${errorText}`);
-      throw new Error(`Erreur API OpenAI: ${response.status} ${errorText}`);
+      console.error(`Erreur OpenAI (${response.status}): ${errorText}`);
+      throw new Error(`Erreur API OpenAI (${response.status}): ${errorText}`);
     }
     
-    // Traitement de la réponse
     const result = await response.json();
     
-    // Extraction du vecteur d'embedding
-    const embedding = result.data?.[0]?.embedding;
-    
-    // Vérification de la validité du résultat
-    if (!embedding || !Array.isArray(embedding)) {
-      console.error("Réponse OpenAI invalide:", result);
-      throw new Error("Réponse d'embedding invalide de l'API OpenAI");
+    if (!result.data || !result.data[0] || !result.data[0].embedding) {
+      console.error("Format de réponse OpenAI inattendu:", result);
+      throw new Error("Format de réponse OpenAI inattendu");
     }
     
-    console.log(`Embedding généré avec succès (${embedding.length} dimensions)`);
-    
-    return embedding;
+    return result.data[0].embedding;
   } catch (error) {
     console.error("Erreur lors de la génération d'embedding:", error);
     throw error;
@@ -127,72 +122,58 @@ export async function generateEmbeddingWithOpenAI(text: string): Promise<number[
 }
 
 /**
- * Génère un embedding de test pour un texte
- * Similaire à generateEmbeddingWithOpenAI mais retourne plus d'informations
- * @param text Le texte à transformer en embedding
- * @returns Un objet contenant le vecteur d'embedding et des métadonnées
+ * Génère un embedding de test
+ * @param text Texte pour lequel générer un embedding
+ * @returns Résultat du test avec l'embedding
  */
 export async function generateTestEmbedding(text: string): Promise<any> {
   try {
-    console.log(`Génération d'embedding de test pour: "${text.substring(0, 50)}..."`);
+    console.log(`Génération d'embedding de test pour: "${text.substring(0, 30)}..."`);
     
-    // Validation de la clé API
     if (!OPENAI_API_KEY) {
+      console.error("Clé API OpenAI manquante");
       return {
         success: false,
-        error: "Clé API OpenAI manquante"
+        error: "Clé API OpenAI non configurée"
       };
     }
     
-    // Préparation du corps de la requête
-    const requestBody = JSON.stringify({
-      model: EMBEDDING_MODEL,
-      input: text
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        input: text,
+        model: "text-embedding-3-small"
+      })
     });
     
-    // Envoi de la requête à l'API OpenAI
-    const response = await fetch(`${OPENAI_API_URL}/embeddings`, {
-      method: 'POST',
-      headers: OPENAI_HEADERS,
-      body: requestBody
-    });
-    
-    // Vérification des erreurs
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Erreur API OpenAI pour embedding de test (${response.status}): ${errorText}`);
+      console.error(`Erreur OpenAI (${response.status}): ${errorText}`);
       return {
         success: false,
-        error: `Erreur API OpenAI: ${response.status} ${errorText}`,
-        status: response.status
+        error: `Erreur API OpenAI (${response.status}): ${errorText}`
       };
     }
     
-    // Traitement de la réponse
     const result = await response.json();
     
-    // Extraction du vecteur d'embedding
-    const embedding = result.data?.[0]?.embedding;
-    
-    // Vérification de la validité du résultat
-    if (!embedding || !Array.isArray(embedding)) {
-      console.error("Réponse OpenAI invalide:", result);
+    if (!result.data || !result.data[0] || !result.data[0].embedding) {
+      console.error("Format de réponse OpenAI inattendu:", result);
       return {
         success: false,
-        error: "Réponse d'embedding invalide de l'API OpenAI"
+        error: "Format de réponse OpenAI inattendu"
       };
     }
     
-    console.log(`Embedding de test généré avec succès (${embedding.length} dimensions)`);
-    
-    // Retourne l'embedding avec des informations supplémentaires
     return {
       success: true,
-      embedding: embedding,
-      modelName: EMBEDDING_MODEL,
-      dimensions: embedding.length,
-      usage: result.usage,
-      timestamp: new Date().toISOString()
+      embedding: result.data[0].embedding,
+      modelName: result.model || "text-embedding-3-small",
+      usage: result.usage
     };
   } catch (error) {
     console.error("Erreur lors de la génération d'embedding de test:", error);
