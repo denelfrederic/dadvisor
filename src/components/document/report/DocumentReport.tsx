@@ -110,7 +110,7 @@ const DocumentReport: React.FC = () => {
         </div>
       )}
 
-      {/* Outil de diagnostic Pinecone */}
+      {/* Outil de diagnostic Pinecone amélioré */}
       <DebugInfo onGetInfo={handleGetDebugInfo} />
 
       <SystemLogs 
