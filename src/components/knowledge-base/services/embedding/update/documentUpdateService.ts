@@ -32,6 +32,7 @@ export const updateDocuments = async (
     onLog?.(`${documents.length} documents à indexer trouvés.`);
     
     let successCount = 0;
+    let errorDetails = [];
     
     // Traiter chaque document
     for (const doc of documents) {
@@ -50,12 +51,16 @@ export const updateDocuments = async (
         });
         
         if (pineconeError) {
-          onLog?.(`Erreur lors de l'appel à Pinecone pour ${doc.title}: ${pineconeError.message}`);
+          const errorMsg = `Erreur lors de l'appel à Pinecone pour ${doc.title}: ${pineconeError.message}`;
+          onLog?.(errorMsg);
+          errorDetails.push(errorMsg);
           continue;
         }
         
-        if (!pineconeData.success) {
-          onLog?.(`Échec de vectorisation pour ${doc.title}: ${pineconeData.error || 'Erreur inconnue'}`);
+        if (!pineconeData || !pineconeData.success) {
+          const errorMsg = `Échec de vectorisation pour ${doc.title}: ${pineconeData?.error || 'Erreur inconnue'}`;
+          onLog?.(errorMsg);
+          errorDetails.push(errorMsg);
           continue;
         }
         
@@ -69,18 +74,32 @@ export const updateDocuments = async (
           .eq('id', doc.id);
         
         if (updateError) {
-          onLog?.(`Erreur lors de la mise à jour du document ${doc.title}: ${updateError.message}`);
+          const errorMsg = `Erreur lors de la mise à jour du document ${doc.title}: ${updateError.message}`;
+          onLog?.(errorMsg);
+          errorDetails.push(errorMsg);
           continue;
         }
         
         successCount++;
         onLog?.(`Document "${doc.title}" indexé avec succès!`);
       } catch (docError) {
-        onLog?.(`Exception lors du traitement de ${doc.title}: ${docError instanceof Error ? docError.message : String(docError)}`);
+        const errorMsg = `Exception lors du traitement de ${doc.title}: ${docError instanceof Error ? docError.message : String(docError)}`;
+        onLog?.(errorMsg);
+        errorDetails.push(errorMsg);
       }
     }
     
-    onLog?.(`Indexation terminée. ${successCount}/${documents.length} documents indexés avec succès.`);
+    const summaryMsg = `Indexation terminée. ${successCount}/${documents.length} documents indexés avec succès.`;
+    onLog?.(summaryMsg);
+    
+    if (successCount === 0 && errorDetails.length > 0) {
+      return { 
+        success: false, 
+        count: successCount,
+        error: `Aucun document n'a pu être indexé. Erreur principale: ${errorDetails[0]}`
+      };
+    }
+    
     return { success: true, count: successCount };
   } catch (error) {
     const errorMsg = `Erreur lors de la mise à jour des documents: ${error instanceof Error ? error.message : String(error)}`;

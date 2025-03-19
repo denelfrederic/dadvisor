@@ -31,6 +31,7 @@ export const useEmbeddingsUpdate = () => {
     addLog("Début de l'indexation Pinecone des documents...");
     
     try {
+      // Call the updateDocuments function with the addLog callback
       const result = await updateDocuments(addLog);
       
       if (result.success) {
@@ -48,7 +49,7 @@ export const useEmbeddingsUpdate = () => {
         }
         toast({
           title: "Erreur",
-          description: "Une erreur est survenue lors de l'indexation Pinecone.",
+          description: result.error || "Une erreur est survenue lors de l'indexation Pinecone.",
           variant: "destructive"
         });
       }
@@ -73,6 +74,7 @@ export const useEmbeddingsUpdate = () => {
     errorSummary,
     updateDocumentEmbeddings,
     clearLogs,
-    exportLogs
+    exportLogs,
+    addLog
   };
 };
