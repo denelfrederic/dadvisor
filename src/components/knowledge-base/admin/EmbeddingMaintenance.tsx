@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useEmbeddingsUpdate } from "../search/hooks/useEmbeddingsUpdate";
-import { Database, BookOpen, Brain, RefreshCcw, AlertCircle } from "lucide-react";
+import { Database, BookOpen, Brain, RefreshCcw, AlertCircle, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -113,6 +113,7 @@ const EmbeddingMaintenance = () => {
         
         {!isUpdating && logs.length > 0 && !errorSummary && (
           <Alert>
+            <Info className="h-4 w-4" />
             <AlertTitle>Opération terminée</AlertTitle>
             <AlertDescription>
               La mise à jour des embeddings est terminée. Consultez les logs pour plus de détails.

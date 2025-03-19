@@ -174,6 +174,13 @@ export type Database = {
             }
             Returns: unknown
           }
+      get_column_type_modifier: {
+        Args: {
+          table_name: string
+          column_name: string
+        }
+        Returns: string
+      }
       halfvec_avg: {
         Args: {
           "": number[]

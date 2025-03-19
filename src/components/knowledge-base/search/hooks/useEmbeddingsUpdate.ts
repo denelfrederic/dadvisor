@@ -100,7 +100,7 @@ export const useEmbeddingsUpdate = () => {
           toast({
             title: "Mise à jour terminée avec des avertissements",
             description: `${result.succeeded}/${result.processed} entrées ont pu être mises à jour.`,
-            variant: "warning"
+            variant: "destructive"  // Changed from "warning" to "destructive" as it's the only allowed variant
           });
         } else {
           toast({
