@@ -31,7 +31,7 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
             <NavLink to="/questionnaire" label="Questionnaire" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/portfolios" label="Portefeuilles" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/wallet" label="Wallet" currentPath={currentPath} onClick={onClose} />
-            <NavLink to="/adminllm" label="Administration IA" currentPath={currentPath} onClick={onClose} />
+            {/* Suppression du lien Administration IA */}
           </div>
           
           <div className="mt-auto px-6 pb-8 pt-4">
