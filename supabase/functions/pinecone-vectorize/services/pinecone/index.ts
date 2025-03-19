@@ -2,6 +2,7 @@
 import { PINECONE_API_KEY, getPineconeUrl, PINECONE_INDEX, PINECONE_NAMESPACE } from "../../config.ts";
 import { PINECONE_HEADERS, getPineconeOperationUrl } from "./config.ts";
 import { generateEmbeddingWithOpenAI } from "../openai.ts";
+import { logMessage, logError } from "../../utils/logging.ts";
 
 /**
  * Teste la connexion à Pinecone
@@ -66,11 +67,14 @@ export async function testPineconeConnection(): Promise<any> {
     }
     
     console.log(`URL de test complète: ${testUrl}`);
+    console.log(`En-têtes utilisés: ${JSON.stringify({
+      ...PINECONE_HEADERS,
+      'Api-Key': 'XXXXX' // Masquer la clé API pour la sécurité
+    })}`);
     
     try {
       // Test simple avec HEAD pour vérifier si le domaine est valide
       console.log(`Envoi de la requête de test à ${testUrl}...`);
-      console.log(`En-têtes: ${JSON.stringify(PINECONE_HEADERS)}`);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
@@ -111,7 +115,8 @@ export async function testPineconeConnection(): Promise<any> {
           status: response.status,
           timestamp: new Date().toISOString(),
           url: testUrl,
-          indexName: indexName
+          indexName: indexName,
+          headers: Object.keys(PINECONE_HEADERS) // Liste des en-têtes utilisés sans valeurs
         };
       }
     } catch (fetchError) {
@@ -144,8 +149,8 @@ export async function testPineconeConnection(): Promise<any> {
 }
 
 /**
- * Récupère la configuration Pinecone
- * @returns La configuration Pinecone
+ * Récupère la configuration Pinecone actuelle et effectue des vérifications
+ * @returns La configuration Pinecone avec détails de diagnostic
  */
 export async function getPineconeConfig(): Promise<any> {
   try {
@@ -157,7 +162,7 @@ export async function getPineconeConfig(): Promise<any> {
     
     console.log(`Résultat de la validation: ${JSON.stringify(configValidation)}`);
     
-    // Informations sur l'environnement
+    // Informations sur l'environnement et les clés API
     const apiKeysInfo = {
       hasPineconeKey: Boolean(PINECONE_API_KEY),
       pineconeKeyLength: PINECONE_API_KEY ? PINECONE_API_KEY.length : 0,
@@ -166,9 +171,25 @@ export async function getPineconeConfig(): Promise<any> {
     
     console.log(`API keys disponibles: Pinecone: ${apiKeysInfo.hasPineconeKey ? "Oui" : "Non"}, OpenAI: ${apiKeysInfo.openAiKey ? "Oui" : "Non"}`);
     
+    // Vérifier l'URL Pinecone
+    const pineconeUrl = getPineconeUrl();
+    let urlStatus = "non configurée";
+    
+    if (pineconeUrl) {
+      if (pineconeUrl.includes("pinecone.io")) {
+        urlStatus = "format valide";
+      } else {
+        urlStatus = "format potentiellement invalide";
+      }
+    }
+    
     return {
       ...configValidation,
       apiStatus: apiKeysInfo,
+      urlCheck: {
+        url: pineconeUrl,
+        status: urlStatus
+      },
       environmentCheck: {
         denoVersion: Deno.version.deno,
         v8Version: Deno.version.v8,
@@ -237,6 +258,16 @@ export async function indexDocumentInPinecone(
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Erreur Pinecone pour upsert (${response.status}): ${errorText}`);
+      
+      // Diagnostic spécifique pour les erreurs courantes
+      if (response.status === 403) {
+        console.error("ERREUR 403: Accès refusé à Pinecone. Vérifiez votre clé API et les permissions.");
+      } else if (response.status === 404) {
+        console.error("ERREUR 404: Index Pinecone non trouvé. Vérifiez le nom de l'index dans la configuration.");
+      } else if (response.status === 400) {
+        console.error("ERREUR 400: Requête invalide. Vérifiez le format de vos données.");
+      }
+      
       throw new Error(`Erreur Pinecone: ${response.status} ${errorText}`);
     }
     

@@ -38,6 +38,17 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
           </div>
         )}
         
+        {(errorSummary.includes("403") || errorSummary.includes("Forbidden")) && (
+          <div className="mt-2 text-xs">
+            <p><strong>Erreur d'autorisation (403 Forbidden):</strong></p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Vérifiez que la clé API Pinecone est correctement configurée et valide.</li>
+              <li>Vérifiez que l'index Pinecone configuré existe bien dans votre compte.</li>
+              <li>Vérifiez que votre clé API a les droits suffisants pour accéder à cet index.</li>
+            </ul>
+          </div>
+        )}
+        
         <Button
           variant="outline"
           size="sm"

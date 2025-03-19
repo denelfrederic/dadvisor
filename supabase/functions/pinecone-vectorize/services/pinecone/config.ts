@@ -54,13 +54,45 @@ export function getPineconeOperationUrl(operation: string): string {
   // Logging détaillé
   console.log(`Construction de l'URL d'opération: baseUrl=${normalizedUrl}, operation=${operation}, indexName=${indexName}`);
   
-  // Construire l'URL complète avec l'index
-  if (indexName) {
-    const operationUrl = `${normalizedUrl}vectors/${operation}`;
-    console.log(`URL d'opération générée: ${operationUrl}`);
+  // Format de l'URL selon la version de l'API Pinecone
+  // Pour l'API récente (serverless)
+  if (normalizedUrl.includes("serverless")) {
+    const operationUrl = `${normalizedUrl}${operation}`;
+    console.log(`URL générée (serverless): ${operationUrl}`);
     return operationUrl;
-  } else {
-    console.warn("Aucun index défini, tentative d'utilisation de l'URL sans spécifier l'index");
-    return `${normalizedUrl}${operation}`;
+  } 
+  // Pour l'API standard
+  else {
+    const operationUrl = `${normalizedUrl}vectors/${operation}`;
+    console.log(`URL générée (standard): ${operationUrl}`);
+    return operationUrl;
+  }
+}
+
+/**
+ * Diagnostic d'erreurs Pinecone courantes
+ * @param status Code de statut HTTP
+ * @param message Message d'erreur
+ * @returns Diagnostic amélioré
+ */
+export function diagnosePineconeError(status: number, message: string): string {
+  switch (status) {
+    case 400:
+      return `Requête invalide (400): ${message}. Vérifiez le format des données envoyées à Pinecone.`;
+    case 401:
+      return `Non autorisé (401): ${message}. Vérifiez votre clé API Pinecone.`;
+    case 403:
+      return `Accès interdit (403): ${message}. Votre clé API n'a pas les permissions nécessaires ou l'index est inaccessible.`;
+    case 404:
+      return `Ressource non trouvée (404): ${message}. Vérifiez que l'index "${getPineconeIndex()}" existe dans votre compte Pinecone.`;
+    case 429:
+      return `Trop de requêtes (429): ${message}. Vous avez dépassé la limite de requêtes de votre compte Pinecone.`;
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return `Erreur serveur Pinecone (${status}): ${message}. Problème temporaire, réessayez plus tard.`;
+    default:
+      return `Erreur Pinecone (${status}): ${message}`;
   }
 }

@@ -23,7 +23,8 @@ export const vectorizeDocument = async (
     
     onLog?.(`Préparation du contenu (${truncatedContent.length}/${contentLength} caractères)...`);
     
-    // Appeler la fonction edge Pinecone
+    // Appeler la fonction edge Pinecone avec un timestamp pour éviter la mise en cache
+    onLog?.("Appel à l'API Pinecone via l'edge function...");
     const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
       body: {
         action: 'vectorize',
@@ -31,19 +32,43 @@ export const vectorizeDocument = async (
         documentContent: truncatedContent,
         documentTitle: doc.title,
         documentType: doc.type,
-        _timestamp: new Date().getTime() // Éviter la mise en cache
+        _timestamp: new Date().getTime() // Éviter le cache
       }
     });
     
     if (pineconeError) {
-      const errorMsg = `Erreur lors de l'appel à Pinecone pour ${doc.title}: ${pineconeError.message}`;
+      const errorMsg = `Erreur lors de l'appel à l'API Pinecone pour ${doc.title}: ${pineconeError.message}`;
       onLog?.(errorMsg);
+      
+      // Log détaillé pour diagnostic
+      onLog?.(`Détails de l'erreur: ${JSON.stringify(pineconeError)}`);
+      
+      // Tentative de diagnostic de l'erreur 403
+      if (pineconeError.message.includes("403") || (pineconeData && pineconeData.error && pineconeData.error.includes("403"))) {
+        onLog?.("ERREUR 403 DÉTECTÉE: Problème d'autorisation avec Pinecone. Vérifiez que:");
+        onLog?.("1. La clé API Pinecone est correctement configurée dans les secrets Supabase");
+        onLog?.("2. L'index Pinecone existe et est accessible avec cette clé API");
+        onLog?.("3. L'URL de l'API Pinecone est correcte et accessible");
+      }
+      
       return false;
     }
     
     if (!pineconeData || !pineconeData.success) {
       const errorMsg = `Échec de vectorisation pour ${doc.title}: ${pineconeData?.error || 'Erreur inconnue'}`;
       onLog?.(errorMsg);
+      
+      // Diagnostic pour les erreurs Pinecone
+      if (pineconeData && pineconeData.error) {
+        if (pineconeData.error.includes("Forbidden") || pineconeData.error.includes("403")) {
+          onLog?.("ERREUR D'AUTORISATION: Accès refusé à Pinecone. Vérifiez les clés API et permissions.");
+        } else if (pineconeData.error.includes("timeout") || pineconeData.error.includes("ETIMEDOUT")) {
+          onLog?.("ERREUR DE TIMEOUT: Le serveur Pinecone n'a pas répondu à temps. Vérifiez la connectivité réseau.");
+        } else if (pineconeData.error.includes("not found") || pineconeData.error.includes("404")) {
+          onLog?.("ERREUR 404: Index Pinecone non trouvé. Vérifiez le nom de l'index dans la configuration.");
+        }
+      }
+      
       return false;
     }
     
