@@ -1,3 +1,4 @@
+
 import React, { ReactNode, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ const AdminCheck: React.FC<AdminCheckProps> = ({ children }) => {
       return;
     }
 
-    setLoading(true);
+    setCheckLoading(true);
     try {
       const profileResult = await checkUserProfile(email);
       setResult(profileResult);
@@ -62,7 +63,7 @@ const AdminCheck: React.FC<AdminCheckProps> = ({ children }) => {
         description: `Une erreur est survenue: ${error instanceof Error ? error.message : String(error)}`
       });
     } finally {
-      setLoading(false);
+      setCheckLoading(false);
     }
   };
 
