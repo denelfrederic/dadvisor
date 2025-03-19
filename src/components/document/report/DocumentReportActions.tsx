@@ -1,76 +1,63 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Loader2, Brain, Database } from "lucide-react";
-import { Link } from "react-router-dom";
+import { RefreshCw, Download, FilePlus } from "lucide-react";
 
 interface DocumentReportActionsProps {
-  onRefresh: () => void;
+  onRefresh?: () => void;
+  onExport?: () => void;
   onUpdateEmbeddings?: () => void;
-  isLoading: boolean;
+  isLoading?: boolean;
   isUpdatingEmbeddings?: boolean;
+  showExport?: boolean;
   showUpdateEmbeddings?: boolean;
 }
 
-const DocumentReportActions = ({
-  onRefresh,
+const DocumentReportActions: React.FC<DocumentReportActionsProps> = ({ 
+  onRefresh, 
+  onExport,
   onUpdateEmbeddings,
-  isLoading,
-  isUpdatingEmbeddings,
-  showUpdateEmbeddings = false,
-}: DocumentReportActionsProps) => {
+  isLoading = false,
+  isUpdatingEmbeddings = false,
+  showExport = false,
+  showUpdateEmbeddings = false
+}) => {
   return (
-    <div className="flex items-center gap-2">
-      {showUpdateEmbeddings && onUpdateEmbeddings && (
-        <Button
+    <div className="flex gap-2">
+      {onRefresh && (
+        <Button 
+          onClick={onRefresh} 
+          disabled={isLoading}
           variant="outline"
           size="sm"
-          onClick={onUpdateEmbeddings}
-          disabled={isUpdatingEmbeddings}
         >
-          {isUpdatingEmbeddings ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Génération en cours...
-            </>
-          ) : (
-            <>
-              <Brain className="h-4 w-4 mr-2" />
-              Générer Embeddings
-            </>
-          )}
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          {isLoading ? 'Analyse...' : 'Actualiser le rapport'}
         </Button>
       )}
       
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onRefresh}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Actualisation...
-          </>
-        ) : (
-          <>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualiser
-          </>
-        )}
-      </Button>
+      {showExport && onExport && (
+        <Button 
+          onClick={onExport} 
+          variant="outline"
+          size="sm"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exporter CSV
+        </Button>
+      )}
       
-      <Button
-        variant="outline"
-        size="sm"
-        asChild
-      >
-        <Link to="/documents/indexed">
-          <Database className="h-4 w-4 mr-2" />
-          Voir documents indexés
-        </Link>
-      </Button>
+      {showUpdateEmbeddings && onUpdateEmbeddings && (
+        <Button
+          onClick={onUpdateEmbeddings}
+          disabled={isUpdatingEmbeddings || isLoading}
+          variant="outline"
+          size="sm"
+        >
+          <FilePlus className="h-4 w-4 mr-2" />
+          {isUpdatingEmbeddings ? 'Génération...' : 'Générer embeddings manquants'}
+        </Button>
+      )}
     </div>
   );
 };
