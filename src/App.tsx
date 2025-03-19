@@ -9,6 +9,7 @@ import AdminCheck from './pages/AdminCheck';
 import Assistant_Admin from './pages/Assistant_Admin';
 import DocumentDetailDialog from './components/document/DocumentDetailDialog';
 import PineconeConfig from "./pages/PineconeConfig";
+import DocumentDetail from './components/document/DocumentDetail';
 
 function App() {
   return (
@@ -22,7 +23,7 @@ function App() {
               <Assistant_Admin />
             </AdminCheck>
           } />
-          <Route path="/document/:id" element={<DocumentDetailDialog documentId={null} isOpen={true} onClose={() => {}} />} />
+          <Route path="/document/:id" element={<DocumentDetail />} />
           <Route path="/pinecone-config" element={
             <AdminCheck>
               <PineconeConfig />
