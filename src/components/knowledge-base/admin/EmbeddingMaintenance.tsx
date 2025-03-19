@@ -1,10 +1,10 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useEmbeddingsUpdate } from "../search/hooks/useEmbeddingsUpdate";
-import { Database, BookOpen, Brain, RefreshCcw } from "lucide-react";
+import { Database, BookOpen, Brain, RefreshCcw, AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -13,6 +13,7 @@ const EmbeddingMaintenance = () => {
     isUpdating, 
     progress, 
     logs, 
+    errorSummary,
     updateDocumentEmbeddings, 
     updateKnowledgeEntryEmbeddings,
     updateAllEmbeddings
@@ -88,6 +89,16 @@ const EmbeddingMaintenance = () => {
           </div>
         )}
         
+        {errorSummary && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erreur détectée</AlertTitle>
+            <AlertDescription>
+              {errorSummary}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {logs.length > 0 && (
           <ScrollArea className="h-48 border rounded-md p-2">
             <div className="space-y-1">
@@ -100,7 +111,7 @@ const EmbeddingMaintenance = () => {
           </ScrollArea>
         )}
         
-        {!isUpdating && logs.length > 0 && (
+        {!isUpdating && logs.length > 0 && !errorSummary && (
           <Alert>
             <AlertTitle>Opération terminée</AlertTitle>
             <AlertDescription>

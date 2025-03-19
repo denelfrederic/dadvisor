@@ -11,6 +11,7 @@ export const useEmbeddingsUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
+  const [errorSummary, setErrorSummary] = useState<string | null>(null);
   const { toast } = useToast();
 
   const addLog = useCallback((message: string) => {
@@ -21,6 +22,7 @@ export const useEmbeddingsUpdate = () => {
   const updateDocumentEmbeddingsWithProgress = useCallback(async () => {
     setIsUpdating(true);
     setProgress(0);
+    setErrorSummary(null);
     addLog("Début de la mise à jour des embeddings des documents...");
     
     try {
@@ -35,7 +37,10 @@ export const useEmbeddingsUpdate = () => {
         });
       } else {
         addLog("Échec de la mise à jour des embeddings des documents.");
-        if (result.error) addLog(`Erreur: ${result.error}`);
+        if (result.error) {
+          addLog(`Erreur: ${result.error}`);
+          setErrorSummary(result.error);
+        }
         toast({
           title: "Erreur",
           description: "Une erreur est survenue lors de la mise à jour des embeddings.",
@@ -43,7 +48,9 @@ export const useEmbeddingsUpdate = () => {
         });
       }
     } catch (error) {
-      addLog(`Erreur: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      addLog(`Erreur: ${errorMsg}`);
+      setErrorSummary(errorMsg);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la mise à jour des embeddings.",
@@ -57,6 +64,7 @@ export const useEmbeddingsUpdate = () => {
   const updateKnowledgeEntryEmbeddings = useCallback(async () => {
     setIsUpdating(true);
     setProgress(0);
+    setErrorSummary(null);
     addLog("Début de la mise à jour des embeddings des entrées de connaissances...");
     
     try {
@@ -73,11 +81,38 @@ export const useEmbeddingsUpdate = () => {
       setProgress(100);
       
       if (result.success) {
-        toast({
-          title: "Mise à jour terminée",
-          description: `${result.succeeded}/${result.processed} entrées de connaissances ont été enrichies avec des embeddings.`
-        });
+        if (result.failures && result.failures.length > 0) {
+          // Group failures by reason
+          const reasonCounts: Record<string, number> = {};
+          result.failures.forEach(f => {
+            reasonCounts[f.reason] = (reasonCounts[f.reason] || 0) + 1;
+          });
+          
+          // Find the most common error
+          const mostCommonError = Object.entries(reasonCounts)
+            .sort((a, b) => b[1] - a[1])[0];
+            
+          if (mostCommonError) {
+            const [reason, count] = mostCommonError;
+            setErrorSummary(`Principale erreur (${count}/${result.failures.length}): ${reason}`);
+          }
+          
+          toast({
+            title: "Mise à jour terminée avec des avertissements",
+            description: `${result.succeeded}/${result.processed} entrées ont pu être mises à jour.`,
+            variant: "warning"
+          });
+        } else {
+          toast({
+            title: "Mise à jour terminée",
+            description: `${result.succeeded}/${result.processed} entrées de connaissances ont été enrichies avec des embeddings.`
+          });
+        }
       } else {
+        if (result.error) {
+          addLog(`Erreur globale: ${result.error}`);
+          setErrorSummary(result.error);
+        }
         toast({
           title: "Erreur",
           description: "Une erreur est survenue lors de la mise à jour des embeddings.",
@@ -85,7 +120,9 @@ export const useEmbeddingsUpdate = () => {
         });
       }
     } catch (error) {
-      addLog(`Erreur globale: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      addLog(`Erreur globale: ${errorMsg}`);
+      setErrorSummary(errorMsg);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la mise à jour des embeddings.",
@@ -99,6 +136,7 @@ export const useEmbeddingsUpdate = () => {
   const updateAllEmbeddingsWithProgress = useCallback(async () => {
     setIsUpdating(true);
     setProgress(0);
+    setErrorSummary(null);
     addLog("Début de la mise à jour de tous les embeddings (documents et base de connaissances)...");
     
     try {
@@ -114,12 +152,24 @@ export const useEmbeddingsUpdate = () => {
       
       setProgress(100);
       
-      toast({
-        title: "Mise à jour terminée",
-        description: `Mise à jour des embeddings terminée pour documents et entrées de connaissances.`
-      });
+      if (result.success) {
+        toast({
+          title: "Mise à jour terminée",
+          description: `Mise à jour des embeddings terminée pour documents et entrées de connaissances.`
+        });
+      } else if (result.error) {
+        addLog(`Erreur globale: ${result.error}`);
+        setErrorSummary(result.error);
+        toast({
+          title: "Erreur",
+          description: "Une erreur est survenue lors de la mise à jour des embeddings.",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
-      addLog(`Erreur globale: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      addLog(`Erreur globale: ${errorMsg}`);
+      setErrorSummary(errorMsg);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la mise à jour des embeddings.",
@@ -134,6 +184,7 @@ export const useEmbeddingsUpdate = () => {
     isUpdating,
     progress,
     logs,
+    errorSummary,
     updateDocumentEmbeddings: updateDocumentEmbeddingsWithProgress,
     updateKnowledgeEntryEmbeddings,
     updateAllEmbeddings: updateAllEmbeddingsWithProgress

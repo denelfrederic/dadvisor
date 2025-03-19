@@ -9,33 +9,68 @@ import { prepareEmbeddingForStorage, processEntryForEmbedding, isValidEmbedding 
  */
 export const updateEntryEmbeddingBatch = async (
   entries: KnowledgeEntry[],
-  progressCallback?: (progress: number) => void
-): Promise<{succeeded: number, total: number}> => {
+  progressCallback?: (progress: number) => void,
+  logCallback?: (message: string) => void
+): Promise<{succeeded: number, total: number, failures: {id: string, reason: string}[]}> => {
   const totalEntries = entries.length;
   let processedEntries = 0;
   let successCount = 0;
+  const failures: {id: string, reason: string}[] = [];
+  
+  const log = (message: string) => {
+    console.log(message);
+    if (logCallback) logCallback(message);
+  };
   
   try {
+    // First, try to get the expected embedding dimensions from the database schema
+    let expectedDimensions: number | null = null;
+    try {
+      const { data: schemaData } = await supabase.rpc('get_column_type_modifier', { 
+        table_name: 'knowledge_entries', 
+        column_name: 'embedding' 
+      });
+      
+      if (schemaData) {
+        expectedDimensions = parseInt(schemaData, 10);
+        log(`Database expects embedding dimensions: ${expectedDimensions}`);
+      }
+    } catch (error) {
+      log(`Could not determine expected embedding dimensions: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
     for (const entry of entries) {
       try {
         // Generate new embedding from combined question and answer
         const combinedText = processEntryForEmbedding(entry.question, entry.answer);
-        console.log(`Generating embedding for entry ${entry.id.substring(0, 8)}, text length: ${combinedText.length}`);
+        log(`Generating embedding for entry ${entry.id.substring(0, 8)}, text length: ${combinedText.length}`);
         
         const embedding = await generateEntryEmbedding(combinedText);
         
         if (!embedding) {
-          console.error(`Failed to generate embedding for entry ${entry.id}`);
+          const reason = "Failed to generate embedding (null result)";
+          log(`${reason} for entry ${entry.id}`);
+          failures.push({ id: entry.id, reason });
           continue;
         }
         
         // Validate embedding before storing
         if (!isValidEmbedding(embedding)) {
-          console.error(`Generated invalid embedding for entry ${entry.id}, dimensions: ${embedding.length}`);
+          const reason = `Generated invalid embedding, dimensions: ${embedding.length}`;
+          log(`${reason} for entry ${entry.id}`);
+          failures.push({ id: entry.id, reason });
           continue;
         }
         
-        console.log(`Generated embedding for entry ${entry.id.substring(0, 8)}, dimensions: ${embedding.length}`);
+        // Check if dimensions match what the database expects
+        if (expectedDimensions && embedding.length !== expectedDimensions) {
+          const reason = `Dimension mismatch: generated ${embedding.length}, but database expects ${expectedDimensions}`;
+          log(`${reason} for entry ${entry.id}`);
+          failures.push({ id: entry.id, reason });
+          continue;
+        }
+        
+        log(`Generated embedding for entry ${entry.id.substring(0, 8)}, dimensions: ${embedding.length}`);
         const embeddingString = prepareEmbeddingForStorage(embedding);
         
         // Update the entry in the database
@@ -48,14 +83,18 @@ export const updateEntryEmbeddingBatch = async (
           .eq('id', entry.id);
         
         if (error) {
-          console.error(`Erreur lors de la mise à jour de l'entrée ${entry.id}:`, error);
+          const reason = `Database error: ${error.message}`;
+          log(`${reason} for entry ${entry.id}`);
+          failures.push({ id: entry.id, reason });
           continue;
         }
         
-        console.log(`Successfully updated embedding for entry ${entry.id.substring(0, 8)}`);
+        log(`Successfully updated embedding for entry ${entry.id.substring(0, 8)}`);
         successCount++;
       } catch (entryError) {
-        console.error(`Erreur lors de la mise à jour de l'entrée ${entry.id}:`, entryError);
+        const errorMessage = entryError instanceof Error ? entryError.message : String(entryError);
+        log(`Error updating entry ${entry.id}: ${errorMessage}`);
+        failures.push({ id: entry.id, reason: `Exception: ${errorMessage}` });
       } finally {
         // Update progress regardless of success or failure
         processedEntries++;
@@ -67,8 +106,24 @@ export const updateEntryEmbeddingBatch = async (
       }
     }
     
-    console.log(`${successCount}/${totalEntries} entrées mises à jour avec succès.`);
-    return {succeeded: successCount, total: totalEntries};
+    log(`${successCount}/${totalEntries} entrées mises à jour avec succès.`);
+    if (failures.length > 0) {
+      log(`Échecs: ${failures.length} entrées ont échoué. Raisons principales:`);
+      
+      // Group failures by reason to see patterns
+      const reasonCounts: Record<string, number> = {};
+      failures.forEach(f => {
+        reasonCounts[f.reason] = (reasonCounts[f.reason] || 0) + 1;
+      });
+      
+      Object.entries(reasonCounts)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([reason, count]) => {
+          log(`- ${reason}: ${count} entrées`);
+        });
+    }
+    
+    return {succeeded: successCount, total: totalEntries, failures};
   } catch (error) {
     console.error('Error updating entry embeddings in batch:', error);
     throw error;
@@ -88,6 +143,7 @@ export const updateKnowledgeEntries = async (
   success: boolean; 
   processed: number; 
   succeeded: number; 
+  failures?: {id: string, reason: string}[];
   error?: string 
 }> => {
   try {
@@ -137,14 +193,15 @@ export const updateKnowledgeEntries = async (
     log(`Found ${entriesToUpdate.length} entries without valid embeddings. Starting update...`);
     
     // Update the entries in batches
-    const result = await updateEntryEmbeddingBatch(entriesToUpdate, progressCallback);
+    const result = await updateEntryEmbeddingBatch(entriesToUpdate, progressCallback, logCallback);
     
     log(`Finished updating ${entriesToUpdate.length} entries, ${result.succeeded} succeeded`);
     
     return { 
       success: true, 
       processed: entriesToUpdate.length,
-      succeeded: result.succeeded
+      succeeded: result.succeeded,
+      failures: result.failures
     };
   } catch (error) {
     console.error("Error in updateKnowledgeEntries:", error);
