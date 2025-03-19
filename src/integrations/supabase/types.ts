@@ -15,6 +15,7 @@ export type Database = {
           created_at: string | null
           embedding: string | null
           id: string
+          pinecone_indexed: boolean | null
           size: number | null
           source: string | null
           title: string
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string | null
           embedding?: string | null
           id?: string
+          pinecone_indexed?: boolean | null
           size?: number | null
           source?: string | null
           title: string
@@ -39,6 +41,7 @@ export type Database = {
           created_at?: string | null
           embedding?: string | null
           id?: string
+          pinecone_indexed?: boolean | null
           size?: number | null
           source?: string | null
           title?: string
