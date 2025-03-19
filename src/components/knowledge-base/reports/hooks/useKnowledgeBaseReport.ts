@@ -44,6 +44,7 @@ export const useKnowledgeBaseReport = () => {
           try {
             // Afficher une partie de l'embedding pour debug
             if (entry.embedding) {
+              // Sécuriser l'accès à la propriété length en vérifiant le type
               const embeddingInfo = typeof entry.embedding === 'string' 
                 ? `String length: ${entry.embedding.length}` 
                 : `Array length: ${Array.isArray(entry.embedding) ? entry.embedding.length : 'not array'}`;
