@@ -5,6 +5,7 @@ import { RefreshCw, Check, AlertCircle, Download } from "lucide-react";
 import { useEmbeddingsUpdate } from "../../knowledge-base/search/hooks/useEmbeddingsUpdate";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SystemLogs from "./SystemLogs";
+import DebugInfo from "./DebugInfo";
 
 const DocumentReport: React.FC = () => {
   const { 
@@ -15,8 +16,13 @@ const DocumentReport: React.FC = () => {
     exportLogs,
     errorSummary,
     progress,
-    retryLastOperation
+    retryLastOperation,
+    addLog
   } = useEmbeddingsUpdate();
+  
+  const handleGetDebugInfo = () => {
+    addLog("Récupération des informations de diagnostic Pinecone...");
+  };
   
   return (
     <div className="space-y-6">
@@ -103,6 +109,9 @@ const DocumentReport: React.FC = () => {
           ></div>
         </div>
       )}
+
+      {/* Outil de diagnostic Pinecone */}
+      <DebugInfo onGetInfo={handleGetDebugInfo} />
 
       <SystemLogs 
         logs={logs}

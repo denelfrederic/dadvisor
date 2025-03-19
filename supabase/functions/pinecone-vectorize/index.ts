@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Import des modules refactorisés
-import { validateConfig } from "./config.ts";
+import { PINECONE_API_KEY, OPENAI_API_KEY, PINECONE_BASE_URL, ALTERNATIVE_PINECONE_URL, PINECONE_INDEX, PINECONE_ENVIRONMENT, PINECONE_PROJECT, validateConfig } from "./config.ts";
 import { generateEmbeddingWithOpenAI, generateEmbeddingWithE5 } from "./services/openai.ts";
 import { upsertToPinecone, queryPinecone } from "./services/pinecone.ts";
 import { corsHeaders, handleCorsOptions, createErrorResponse, createSuccessResponse } from "./utils/cors.ts";
@@ -41,6 +41,59 @@ serve(async (req) => {
     }
     
     switch (action) {
+      case 'config': {
+        // Action de diagnostic pour vérifier la configuration
+        const configInfo = {
+          apiKeys: {
+            pinecone: !!Deno.env.get('PINECONE_API_KEY'),
+            openai: !!Deno.env.get('OPENAI_API_KEY')
+          },
+          urls: {
+            main: PINECONE_BASE_URL,
+            alternative: ALTERNATIVE_PINECONE_URL
+          },
+          settings: {
+            index: PINECONE_INDEX,
+            environment: PINECONE_ENVIRONMENT,
+            project: PINECONE_PROJECT
+          },
+          timestamp: new Date().toISOString()
+        };
+        
+        // Test de connexion simple à Pinecone
+        try {
+          const pingResponse = await fetch(`${PINECONE_BASE_URL}/describe_index_stats`, {
+            method: 'GET',
+            headers: {
+              'Api-Key': PINECONE_API_KEY || '',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          });
+          
+          configInfo.pingTest = {
+            status: pingResponse.status,
+            ok: pingResponse.ok,
+            statusText: pingResponse.statusText
+          };
+          
+          if (pingResponse.ok) {
+            try {
+              const statsData = await pingResponse.json();
+              configInfo.indexStats = statsData;
+            } catch (e) {
+              configInfo.parseError = "Impossible de parser les statistiques d'index";
+            }
+          }
+        } catch (pingError) {
+          configInfo.pingTest = {
+            error: pingError instanceof Error ? pingError.message : String(pingError)
+          };
+        }
+        
+        return createSuccessResponse(configInfo);
+      }
+        
       case 'vectorize': {
         // Génération d'embedding pour le contenu du document
         if (!documentContent || !documentId) {
