@@ -21,28 +21,6 @@ export interface IndexationReport {
   recentDocuments: DocumentIndexationStatus[];
 }
 
-/**
- * Verifies if an embedding is valid by checking if it's an array with numeric values
- */
-const isValidEmbedding = (embedding: any): boolean => {
-  if (!embedding) return false;
-  
-  try {
-    // If embedding is a string, try to parse it
-    const embeddingValue = typeof embedding === 'string' 
-      ? JSON.parse(embedding) 
-      : embedding;
-      
-    // Check if it's an array with at least one numeric element
-    return Array.isArray(embeddingValue) && 
-           embeddingValue.length > 0 && 
-           embeddingValue.every(val => typeof val === 'number');
-  } catch (error) {
-    console.error("Error validating embedding:", error);
-    return false;
-  }
-};
-
 export const useIndexationReport = () => {
   const [report, setReport] = useState<IndexationReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -98,8 +76,8 @@ export const useIndexationReport = () => {
         const type = doc.type || "inconnu";
         documentsByType[type] = (documentsByType[type] || 0) + 1;
         
-        // Vérifier si l'embedding existe et est valide
-        const hasEmbedding = isValidEmbedding(doc.embedding);
+        // Check if embedding exists by checking if it's not null
+        const hasEmbedding = !!doc.embedding;
         
         // Compter documents avec embedding
         if (hasEmbedding) {
@@ -120,7 +98,7 @@ export const useIndexationReport = () => {
         id: doc.id,
         title: doc.title || "Sans titre",
         type: doc.type || "inconnu",
-        hasEmbedding: isValidEmbedding(doc.embedding),
+        hasEmbedding: !!doc.embedding,
         created_at: doc.created_at,
         size: doc.size || 0
       }));
