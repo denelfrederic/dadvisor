@@ -50,7 +50,9 @@ export const useKnowledgeBaseReport = () => {
               if (typeof entry.embedding === 'string') {
                 embeddingInfo = `String length: ${entry.embedding.length}`;
               } else if (Array.isArray(entry.embedding)) {
-                embeddingInfo = `Array length: ${entry.embedding.length}`;
+                // Explicitly check for array and cast to ensure TypeScript knows it's an array
+                const embeddingArray = entry.embedding as unknown[];
+                embeddingInfo = `Array length: ${embeddingArray.length}`;
               } else {
                 // Safely handle object type without accessing length property
                 embeddingInfo = `Type: ${typeof entry.embedding}`;
