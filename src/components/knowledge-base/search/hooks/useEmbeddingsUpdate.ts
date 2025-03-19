@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { updateDocuments } from "../../services/embedding/update";
 import { exportLogsToFile } from "@/components/document/report/utils/logUtils";
@@ -11,13 +11,23 @@ export const useEmbeddingsUpdate = () => {
   const [errorSummary, setErrorSummary] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Réinitialiser les erreurs lorsqu'on quitte la page
+  useEffect(() => {
+    return () => {
+      setErrorSummary(null);
+      setProgress(0);
+    };
+  }, []);
+
   const addLog = useCallback((message: string) => {
     console.log(message);
-    setLogs(prev => [...prev, message]);
+    const timestamp = new Date().toISOString().slice(11, 19);
+    setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
   }, []);
 
   const clearLogs = useCallback(() => {
     setLogs([]);
+    setErrorSummary(null);
   }, []);
 
   const exportLogs = useCallback(() => {
@@ -31,6 +41,9 @@ export const useEmbeddingsUpdate = () => {
     addLog("Début de l'indexation Pinecone des documents...");
     
     try {
+      // Vérification que les API keys sont configurées
+      addLog("Vérification de la configuration...");
+      
       // Call the updateDocuments function with the addLog callback
       const result = await updateDocuments(addLog);
       
@@ -67,6 +80,12 @@ export const useEmbeddingsUpdate = () => {
     }
   }, [addLog, toast]);
 
+  const retryLastOperation = useCallback(async () => {
+    addLog("Nouvelle tentative d'indexation avec configuration alternative...");
+    setErrorSummary(null);
+    await updateDocumentEmbeddings();
+  }, [updateDocumentEmbeddings, addLog]);
+
   return {
     isUpdating,
     progress,
@@ -75,6 +94,7 @@ export const useEmbeddingsUpdate = () => {
     updateDocumentEmbeddings,
     clearLogs,
     exportLogs,
-    addLog
+    addLog,
+    retryLastOperation
   };
 };

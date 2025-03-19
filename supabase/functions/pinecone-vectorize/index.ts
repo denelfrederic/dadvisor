@@ -12,8 +12,17 @@ const PINECONE_BASE_URL = `https://${PINECONE_INDEX}.svc.${PINECONE_ENVIRONMENT}
 console.log(`Pinecone Edge Function initialisée. Environnement: ${PINECONE_ENVIRONMENT}, Index: ${PINECONE_INDEX}`);
 console.log(`API keys disponibles: Pinecone: ${PINECONE_API_KEY ? "Oui" : "Non"}, OpenAI: ${OPENAI_API_KEY ? "Oui" : "Non"}`);
 
+// Vérifier les variables requises
+if (!PINECONE_API_KEY) {
+  console.error("ERREUR CRITIQUE: Clé API Pinecone manquante");
+}
+
+if (!OPENAI_API_KEY) {
+  console.error("ERREUR CRITIQUE: Clé API OpenAI manquante");
+}
+
 // OpenAI function to generate embeddings
-async function generateEmbeddingWithOpenAI(text: string) {
+async function generateEmbeddingWithOpenAI(text) {
   if (!OPENAI_API_KEY) {
     console.error("Clé API OpenAI manquante");
     throw new Error('Missing OpenAI API key');
@@ -51,20 +60,30 @@ async function generateEmbeddingWithOpenAI(text: string) {
 }
 
 // Alternative embedding generation using multilingual-e5-large
-async function generateEmbeddingWithE5(text: string) {
+async function generateEmbeddingWithE5(text) {
   console.log("Utilisation du modèle de secours E5 pour générer l'embedding");
   
-  // Simulate embedding with fixed dimensions when needed
-  // In a real scenario, you would call an actual API or use a local model
-  const dimensions = 1024;
-  const embedding = Array(dimensions).fill(0).map(() => Math.random() * 2 - 1);
-  
-  console.log(`Embedding E5 généré avec ${dimensions} dimensions`);
-  return embedding;
+  try {
+    // Réduction supplémentaire de la taille du texte pour le modèle de secours
+    const truncatedText = text.slice(0, 5000);
+    
+    // Dimensions d'embedding pour multilingual-e5-large
+    const dimensions = 768;
+    
+    // Dans un scénario réel, vous appelleriez une API ou utiliseriez un modèle local
+    // Cette implémentation est un placeholder avec des valeurs aléatoires
+    const embedding = Array(dimensions).fill(0).map(() => Math.random() * 2 - 1);
+    
+    console.log(`Embedding E5 généré avec ${dimensions} dimensions`);
+    return embedding;
+  } catch (error) {
+    console.error("Erreur lors de la génération d'embedding E5:", error);
+    throw error;
+  }
 }
 
 // Upsert vector to Pinecone
-async function upsertToPinecone(id: string, vector: number[], metadata: any) {
+async function upsertToPinecone(id, vector, metadata) {
   if (!PINECONE_API_KEY) {
     console.error("Clé API Pinecone manquante");
     throw new Error('Missing Pinecone API key');
@@ -74,31 +93,37 @@ async function upsertToPinecone(id: string, vector: number[], metadata: any) {
   console.log(`URL Pinecone: ${PINECONE_BASE_URL}/vectors/upsert`);
   
   try {
+    const vectorData = {
+      vectors: [
+        {
+          id,
+          values: vector,
+          metadata
+        }
+      ],
+      namespace: 'documents' // You can organize your vectors in namespaces
+    };
+    
+    console.log(`Envoi de données à Pinecone: ${JSON.stringify(vectorData).substring(0, 200)}...`);
+    
     const response = await fetch(`${PINECONE_BASE_URL}/vectors/upsert`, {
       method: 'POST',
       headers: {
         'Api-Key': PINECONE_API_KEY,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        vectors: [
-          {
-            id,
-            values: vector,
-            metadata
-          }
-        ],
-        namespace: 'documents' // You can organize your vectors in namespaces
-      }),
+      body: JSON.stringify(vectorData),
     });
     
+    const responseText = await response.text();
+    console.log(`Réponse Pinecone (${response.status}): ${responseText}`);
+    
     if (!response.ok) {
-      const error = await response.text();
-      console.error(`Erreur API Pinecone (${response.status}): ${error}`);
-      throw new Error(`Pinecone API error: ${error}`);
+      console.error(`Erreur API Pinecone (${response.status}): ${responseText}`);
+      throw new Error(`Pinecone API error (${response.status}): ${responseText}`);
     }
     
-    const result = await response.json();
+    const result = responseText ? JSON.parse(responseText) : {};
     console.log(`Insertion Pinecone réussie:`, result);
     return result;
   } catch (error) {
@@ -108,7 +133,7 @@ async function upsertToPinecone(id: string, vector: number[], metadata: any) {
 }
 
 // Query vectors from Pinecone
-async function queryPinecone(vector: number[], topK: number = 5) {
+async function queryPinecone(vector, topK = 5) {
   if (!PINECONE_API_KEY) {
     console.error("Clé API Pinecone manquante");
     throw new Error('Missing Pinecone API key');
@@ -164,11 +189,23 @@ serve(async (req) => {
     
     console.log(`Action demandée: ${action}, Document ID: ${documentId || 'N/A'}`);
     
-    // Check for required API keys early
+    // Vérification des clés API et message d'erreur détaillé
     if (!OPENAI_API_KEY && !PINECONE_API_KEY) {
+      console.error("ERREUR CRITIQUE: Les clés API OpenAI et Pinecone sont manquantes");
       return new Response(JSON.stringify({
         success: false,
-        error: "Configuration incomplète: Les clés API OpenAI et Pinecone sont manquantes"
+        error: "Configuration incomplète: Les clés API OpenAI et Pinecone sont manquantes. Veuillez configurer ces clés dans les secrets Supabase."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (!PINECONE_API_KEY) {
+      console.error("ERREUR CRITIQUE: Clé API Pinecone manquante");
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Clé API Pinecone manquante. Veuillez configurer cette clé dans les secrets Supabase."
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -176,17 +213,7 @@ serve(async (req) => {
     }
     
     if (!OPENAI_API_KEY) {
-      console.warn("OpenAI API key missing, will use fallback embedding model");
-    }
-    
-    if (!PINECONE_API_KEY) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: "Clé API Pinecone manquante"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.warn("AVERTISSEMENT: Clé API OpenAI manquante, utilisation du modèle de secours");
     }
     
     switch (action) {

@@ -6,7 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 export const useEmbeddingUpdater = () => {
   const [updatingEmbedding, setUpdatingEmbedding] = useState(false);
   const [updateResult, setUpdateResult] = useState<{success: boolean; message: string} | null>(null);
+  const [updateLogs, setUpdateLogs] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const addLog = (message: string) => {
+    console.log(message);
+    setUpdateLogs(prev => [...prev, message]);
+  };
 
   // Vectoriser avec Pinecone
   const updateEmbedding = async (document: any) => {
@@ -21,36 +27,44 @@ export const useEmbeddingUpdater = () => {
     
     setUpdatingEmbedding(true);
     setUpdateResult(null);
+    setUpdateLogs([]);
     
     try {
-      console.log(`Tentative d'indexation Pinecone pour le document ${document.id} (${document.title})`);
+      addLog(`Début de l'indexation Pinecone pour le document ${document.id} (${document.title})`);
+      
+      // Pour les documents volumineux, tronquer le contenu
+      const contentLength = document.content.length;
+      const maxLength = contentLength > 15000 ? 6000 : 8000;
+      const truncatedContent = document.content.substring(0, maxLength);
+      
+      addLog(`Contenu préparé: ${truncatedContent.length}/${contentLength} caractères`);
       
       // Appeler l'edge function Pinecone
-      console.log("Début de l'appel à l'API Pinecone via l'edge function");
+      addLog("Appel à l'API Pinecone via l'edge function...");
       const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
         body: {
           action: 'vectorize',
           documentId: document.id,
-          documentContent: document.content.substring(0, 8000), // Limiter la taille pour éviter les problèmes
+          documentContent: truncatedContent,
           documentTitle: document.title,
           documentType: document.type
         }
       });
       
       if (pineconeError) {
-        console.error(`Erreur lors de l'appel à l'API Pinecone:`, pineconeError);
+        addLog(`Erreur lors de l'appel à l'API Pinecone: ${pineconeError.message}`);
         throw new Error(`Erreur lors de l'appel à l'API Pinecone: ${pineconeError.message}`);
       }
       
       if (!pineconeData || !pineconeData.success) {
-        console.error("Données retournées par Pinecone:", pineconeData);
+        addLog(`Échec d'indexation avec Pinecone: ${pineconeData?.error || "Erreur inconnue"}`);
         throw new Error(pineconeData?.error || "Échec d'indexation avec Pinecone");
       }
       
-      console.log(`Document ${document.id} indexé avec succès dans Pinecone:`, pineconeData);
+      addLog(`Document indexé avec succès dans Pinecone`);
       
       // Mettre à jour le document dans Supabase pour indiquer qu'il est indexé dans Pinecone
-      console.log("Mise à jour du document dans Supabase avec pinecone_indexed=true");
+      addLog("Mise à jour du document dans Supabase...");
       const { error: updateError } = await supabase
         .from('documents')
         .update({ 
@@ -60,11 +74,11 @@ export const useEmbeddingUpdater = () => {
         .eq('id', document.id);
       
       if (updateError) {
-        console.error(`Erreur lors de la mise à jour du document dans Supabase:`, updateError);
+        addLog(`Erreur lors de la mise à jour du document dans Supabase: ${updateError.message}`);
         throw new Error(`Erreur lors de la mise à jour du document: ${updateError.message}`);
       }
       
-      console.log(`Document ${document.id} mis à jour avec succès dans Supabase (pinecone_indexed=true)`);
+      addLog(`Document mis à jour avec succès dans Supabase (pinecone_indexed=true)`);
       
       setUpdateResult({
         success: true,
@@ -76,7 +90,7 @@ export const useEmbeddingUpdater = () => {
         description: "Document indexé avec succès dans Pinecone"
       });
     } catch (error) {
-      console.error("Erreur lors de l'indexation avec Pinecone:", error);
+      addLog(`Erreur finale: ${error instanceof Error ? error.message : String(error)}`);
       const errorMessage = error instanceof Error ? error.message : String(error);
       
       setUpdateResult({
@@ -100,9 +114,10 @@ export const useEmbeddingUpdater = () => {
     
     setUpdatingEmbedding(true);
     setUpdateResult(null);
+    setUpdateLogs([]);
     
     try {
-      console.log(`Tentative d'indexation alternative pour le document ${document.id}`);
+      addLog(`Tentative d'indexation alternative pour le document ${document.id}`);
       toast({
         title: "Information",
         description: "Tentative d'indexation alternative en cours..."
@@ -110,6 +125,7 @@ export const useEmbeddingUpdater = () => {
       
       // Utiliser un contenu plus court pour l'indexation
       const shortenedContent = document.content.substring(0, 4000);
+      addLog(`Utilisation d'un contenu réduit (${shortenedContent.length} caractères)`);
       
       const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
         body: {
@@ -122,8 +138,12 @@ export const useEmbeddingUpdater = () => {
       });
       
       if (pineconeError || !pineconeData?.success) {
-        throw new Error(pineconeError?.message || pineconeData?.error || "Échec de l'indexation alternative");
+        const errorMsg = pineconeError?.message || pineconeData?.error || "Échec de l'indexation alternative";
+        addLog(`Erreur: ${errorMsg}`);
+        throw new Error(errorMsg);
       }
+      
+      addLog("Vectorisation alternative réussie, mise à jour Supabase...");
       
       // Mettre à jour le document dans Supabase
       const { error: updateError } = await supabase
@@ -135,8 +155,11 @@ export const useEmbeddingUpdater = () => {
         .eq('id', document.id);
       
       if (updateError) {
+        addLog(`Erreur de mise à jour Supabase: ${updateError.message}`);
         throw new Error(`Erreur de mise à jour Supabase: ${updateError.message}`);
       }
+      
+      addLog("Document mis à jour avec succès");
       
       setUpdateResult({
         success: true,
@@ -149,7 +172,7 @@ export const useEmbeddingUpdater = () => {
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("Erreur lors de l'indexation alternative:", errorMessage);
+      addLog(`Erreur finale: ${errorMessage}`);
       
       setUpdateResult({
         success: false,
@@ -169,6 +192,7 @@ export const useEmbeddingUpdater = () => {
   return {
     updatingEmbedding,
     updateResult,
+    updateLogs,
     setUpdateResult,
     updateEmbedding,
     fixEmbedding

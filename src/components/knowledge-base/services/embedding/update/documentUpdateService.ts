@@ -39,12 +39,19 @@ export const updateDocuments = async (
       try {
         onLog?.(`Indexation de "${doc.title}" (${doc.id.substring(0, 8)})...`);
         
+        // Tronquer le contenu pour les grands documents
+        const contentLength = doc.content?.length || 0;
+        const maxLength = contentLength > 15000 ? 6000 : 8000;
+        const truncatedContent = doc.content.substring(0, maxLength);
+        
+        onLog?.(`Préparation du contenu (${truncatedContent.length}/${contentLength} caractères)...`);
+        
         // Appeler la fonction edge Pinecone
         const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
           body: {
             action: 'vectorize',
             documentId: doc.id,
-            documentContent: doc.content.substring(0, 8000), // Limiter la taille pour les gros documents
+            documentContent: truncatedContent,
             documentTitle: doc.title,
             documentType: doc.type
           }
@@ -63,6 +70,8 @@ export const updateDocuments = async (
           errorDetails.push(errorMsg);
           continue;
         }
+        
+        onLog?.(`Vectorisation réussie, mise à jour du document dans Supabase...`);
         
         // Marquer le document comme indexé dans Pinecone
         const { error: updateError } = await supabase
