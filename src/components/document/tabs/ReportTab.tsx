@@ -1,9 +1,29 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import DocumentReport from "../report/DocumentReport";
 import { FileText } from "lucide-react";
+import { useIndexationReport } from "../hooks/useIndexationReport";
+import * as manualTest from "../tests/manualTest";
 
 const ReportTab = () => {
+  const { report } = useIndexationReport();
+  
+  // For debugging purposes: make the report available in the window object
+  // so our manual tests can access it
+  useEffect(() => {
+    if (report) {
+      (window as any).__documentReport = report;
+    }
+    
+    // Also expose the manual test functions
+    (window as any).testDocumentReporting = manualTest;
+    
+    return () => {
+      // Clean up
+      delete (window as any).__documentReport;
+    };
+  }, [report]);
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-2">
