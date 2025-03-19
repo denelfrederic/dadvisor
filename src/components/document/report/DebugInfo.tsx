@@ -1,13 +1,18 @@
 
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, Bug, Wrench, RefreshCw, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Bug } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Composants extraits
+import ConfigTab from "./debug/ConfigTab";
+import ConnectionTestTab from "./debug/ConnectionTestTab";
+import LogsTab from "./debug/LogsTab";
+import ConnectionAlert from "./debug/ConnectionAlert";
+import DebugActions from "./debug/DebugActions";
+import DebugFooter from "./debug/DebugFooter";
 
 interface DebugInfoProps {
   onGetInfo: () => void;
@@ -137,65 +142,18 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
           <Bug className="h-4 w-4" />
           Diagnostic Pinecone
         </h3>
-        <div className="flex gap-2">
-          <Button 
-            onClick={getPineconeConfig} 
-            variant="outline" 
-            size="sm"
-            disabled={pineconeStatus === 'loading'}
-          >
-            {pineconeStatus === 'loading' ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Wrench className="h-4 w-4 mr-2" />
-            )}
-            Vérifier config
-          </Button>
-          <Button
-            onClick={testPineconeConnection}
-            variant="outline"
-            size="sm"
-            disabled={pineconeStatus === 'loading'}
-          >
-            {connectionTest?.success ? (
-              <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-            ) : connectionTest ? (
-              <XCircle className="h-4 w-4 mr-2 text-red-500" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Tester connexion
-          </Button>
-          <Button
-            onClick={clearLogs}
-            variant="outline"
-            size="sm"
-            disabled={detailedLogs.length === 0}
-          >
-            Effacer logs
-          </Button>
-        </div>
+        
+        <DebugActions 
+          onGetConfig={getPineconeConfig}
+          onTestConnection={testPineconeConnection}
+          onClearLogs={clearLogs}
+          pineconeStatus={pineconeStatus}
+          connectionTest={connectionTest}
+          hasLogs={detailedLogs.length > 0}
+        />
       </div>
       
-      {connectionTest && !connectionTest.success && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Échec du test</AlertTitle>
-          <AlertDescription>
-            {connectionTest.message || "Impossible de se connecter à Pinecone"}
-            {connectionTest.error && (
-              <div className="mt-2 text-xs">
-                <strong>Détails de l'erreur:</strong> {connectionTest.error}
-              </div>
-            )}
-            {connectionTest.details && (
-              <div className="mt-2 text-xs">
-                <strong>Réponse du serveur:</strong> {connectionTest.details}
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
+      <ConnectionAlert connectionTest={connectionTest} />
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-2">
@@ -205,63 +163,25 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
         </TabsList>
         
         <TabsContent value="config">
-          {diagnosticInfo ? (
-            <ScrollArea className="h-[200px] border rounded-md p-2 bg-black/90 text-white font-mono">
-              <div className="space-y-1 text-xs">
-                <pre className="whitespace-pre-wrap">
-                  {JSON.stringify(diagnosticInfo, null, 2)}
-                </pre>
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-20 text-center p-4 text-gray-400 border rounded-md">
-              <p className="text-sm">Cliquez sur "Vérifier config" pour diagnostiquer la configuration Pinecone</p>
-            </div>
-          )}
+          <ConfigTab 
+            diagnosticInfo={diagnosticInfo} 
+            pineconeStatus={pineconeStatus} 
+          />
         </TabsContent>
         
         <TabsContent value="test">
-          {connectionTest ? (
-            <ScrollArea className="h-[200px] border rounded-md p-2 bg-black/90 text-white font-mono">
-              <div className="space-y-1 text-xs">
-                <pre className="whitespace-pre-wrap">
-                  {JSON.stringify(connectionTest, null, 2)}
-                </pre>
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-20 text-center p-4 text-gray-400 border rounded-md">
-              <p className="text-sm">Cliquez sur "Tester connexion" pour vérifier l'accès à Pinecone</p>
-            </div>
-          )}
+          <ConnectionTestTab connectionTest={connectionTest} />
         </TabsContent>
         
         <TabsContent value="logs">
-          <ScrollArea className="h-[200px] border rounded-md p-2 bg-black/90 text-white font-mono">
-            {detailedLogs.length > 0 ? (
-              <div className="space-y-1 text-xs">
-                {detailedLogs.map((log, index) => (
-                  <div key={index} className="whitespace-pre-wrap">{log}</div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-20 text-center p-4 text-gray-400">
-                <p className="text-sm">Aucun log disponible. Exécutez une action pour générer des logs.</p>
-              </div>
-            )}
-          </ScrollArea>
+          <LogsTab detailedLogs={detailedLogs} />
         </TabsContent>
       </Tabs>
       
-      <div className="mt-4 text-xs text-muted-foreground">
-        <p>Utilisez cet outil pour vérifier la configuration de connexion à Pinecone et diagnostiquer les problèmes d'indexation.</p>
-        {diagnosticInfo && diagnosticInfo.valid === false && (
-          <p className="text-red-500 mt-1">⚠️ La configuration actuelle est invalide. Vérifiez que la clé API Pinecone est configurée correctement.</p>
-        )}
-        {connectionTest && !connectionTest.success && (
-          <p className="text-orange-500 mt-1">💡 Conseil: vérifiez que l'URL Pinecone et le format de requête sont corrects pour votre version de l'API Pinecone.</p>
-        )}
-      </div>
+      <DebugFooter 
+        diagnosticInfo={diagnosticInfo} 
+        connectionTest={connectionTest} 
+      />
     </Card>
   );
 };
