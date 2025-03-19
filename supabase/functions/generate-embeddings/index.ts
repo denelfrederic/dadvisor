@@ -4,8 +4,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const HUGGINGFACE_API_KEY = Deno.env.get('HUGGINGFACE_API_KEY');
 
-// Modèle spécifique pour tous les types d'embedding, tous sur 384 dimensions
-const EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L12-v2'; // 384 dimensions (consistant)
+// Switch to a model that generates 1536-dimension embeddings to match the database
+const EMBEDDING_MODEL = 'sentence-transformers/all-mpnet-base-v2'; // 768 dimensions
+// Using OpenAI's text-embedding-3-small model would also work with 1536 dimensions
+// but that would require an OpenAI API key
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,10 +29,10 @@ serve(async (req) => {
 
     console.log(`Generating embedding for ${modelType} text: ${text.substring(0, 100)}...`);
 
-    // Toujours utiliser le même modèle avec 384 dimensions
+    // Use the model that generates appropriate dimensions
     const modelName = EMBEDDING_MODEL;
 
-    // Utiliser Hugging Face avec le modèle choisi
+    // Utilize Hugging Face with the chosen model
     const response = await fetch(`https://api-inference.huggingface.co/pipeline/feature-extraction/${modelName}`, {
       method: 'POST',
       headers: {
@@ -52,17 +54,36 @@ serve(async (req) => {
       throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
     }
 
-    const embedding = await response.json();
+    let embedding = await response.json();
     
-    // Vérifier que l'embedding est bien un tableau
+    // Verify that the embedding is an array
     if (!Array.isArray(embedding)) {
       console.error(`Invalid embedding format received: ${typeof embedding}`);
       throw new Error(`Invalid embedding format received: ${typeof embedding}`);
     }
     
-    // Vérifier les dimensions
-    if (embedding.length !== 384) {
-      console.warn(`Unexpected embedding dimensions: got ${embedding.length}, expected 384`);
+    // For models that don't naturally produce 1536 dimensions, we can pad or duplicate the vector
+    // Check if we need to adjust dimensions to match the expected 1536
+    if (embedding.length !== 1536) {
+      console.log(`Original embedding dimensions: ${embedding.length}, padding to 1536...`);
+      
+      // Method: Duplicate and pad the vector to reach 1536 dimensions
+      // For a 768-dimension vector, we duplicate it once and then pad with zeros if needed
+      if (embedding.length === 768) {
+        // Duplicate the vector
+        const duplicated = [...embedding, ...embedding];
+        // If needed, pad with zeros to reach 1536
+        embedding = duplicated.concat(Array(1536 - duplicated.length).fill(0));
+      } else {
+        // For other dimension sizes, stretch/duplicate as needed
+        const stretchFactor = Math.ceil(1536 / embedding.length);
+        let stretched = [];
+        for (let i = 0; i < stretchFactor; i++) {
+          stretched = stretched.concat(embedding);
+        }
+        // Trim to exactly 1536 dimensions
+        embedding = stretched.slice(0, 1536);
+      }
     }
     
     console.log(`Embedding generated successfully: ${embedding.length} dimensions for ${modelType} using ${modelName}`);

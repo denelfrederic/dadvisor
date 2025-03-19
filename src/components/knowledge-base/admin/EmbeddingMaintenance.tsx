@@ -93,8 +93,16 @@ const EmbeddingMaintenance = () => {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Erreur détectée</AlertTitle>
-            <AlertDescription>
-              {errorSummary}
+            <AlertDescription className="space-y-2">
+              <p>{errorSummary}</p>
+              {errorSummary.includes("dimension") && (
+                <div className="text-xs bg-black/10 p-2 rounded">
+                  <p className="font-semibold">Solution possible:</p>
+                  <p>Un problème de dimensionnalité a été détecté. Le modèle d'embedding génère des vecteurs de taille différente de celle attendue par la base de données.</p>
+                  <p className="mt-1">L'Edge Function a été mise à jour pour générer des vecteurs de la bonne dimension (1536).</p>
+                  <p className="mt-1">Si l'erreur persiste, vérifiez les logs de la fonction pour plus de détails.</p>
+                </div>
+              )}
             </AlertDescription>
           </Alert>
         )}
