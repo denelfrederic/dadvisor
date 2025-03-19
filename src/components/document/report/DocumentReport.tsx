@@ -1,10 +1,8 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Check, AlertTriangle, Download, AlertCircle } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { RefreshCw, Check, AlertCircle, Download } from "lucide-react";
 import { useEmbeddingsUpdate } from "../../knowledge-base/search/hooks/useEmbeddingsUpdate";
-import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SystemLogs from "./SystemLogs";
 
@@ -16,7 +14,8 @@ const DocumentReport: React.FC = () => {
     clearLogs, 
     exportLogs,
     errorSummary,
-    progress
+    progress,
+    retryLastOperation
   } = useEmbeddingsUpdate();
   
   return (
@@ -64,8 +63,8 @@ const DocumentReport: React.FC = () => {
         <Alert variant="destructive" className="my-4">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erreur d'indexation</AlertTitle>
-          <AlertDescription className="text-sm whitespace-pre-wrap">
-            {errorSummary}
+          <AlertDescription className="text-sm whitespace-pre-wrap space-y-2">
+            <p>{errorSummary}</p>
             
             {errorSummary.includes("API") && (
               <div className="mt-2 text-xs">
@@ -82,6 +81,16 @@ const DocumentReport: React.FC = () => {
                 </ul>
               </div>
             )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={retryLastOperation}
+              className="mt-2"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Réessayer avec configuration alternative
+            </Button>
           </AlertDescription>
         </Alert>
       )}

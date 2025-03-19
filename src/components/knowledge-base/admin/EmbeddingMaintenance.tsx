@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useEmbeddingsUpdate } from "../search/hooks/useEmbeddingsUpdate";
-import { Database, RefreshCcw, AlertCircle, Info } from "lucide-react";
+import { Database, RefreshCcw, AlertCircle, Info, Download } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -15,7 +15,9 @@ const EmbeddingMaintenance = () => {
     logs, 
     errorSummary,
     updateDocumentEmbeddings, 
-    clearLogs
+    clearLogs,
+    exportLogs,
+    retryLastOperation
   } = useEmbeddingsUpdate();
 
   // Format progress as an integer
@@ -59,8 +61,19 @@ const EmbeddingMaintenance = () => {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Erreur détectée</AlertTitle>
-            <AlertDescription>
-              {errorSummary}
+            <AlertDescription className="space-y-2">
+              <p>{errorSummary}</p>
+              
+              {/* Bouton de solution alternative */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={retryLastOperation}
+                className="mt-2"
+              >
+                <RefreshCcw className="h-4 w-4 mr-2" />
+                Réessayer avec configuration alternative
+              </Button>
             </AlertDescription>
           </Alert>
         )}
@@ -90,14 +103,26 @@ const EmbeddingMaintenance = () => {
         <p className="text-xs text-muted-foreground">
           L'indexation via Pinecone permet d'améliorer la recherche sémantique
         </p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={clearLogs}
-          disabled={logs.length === 0}
-        >
-          Effacer les logs
-        </Button>
+        <div className="flex gap-2">
+          {logs.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportLogs}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exporter les logs
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={clearLogs}
+            disabled={logs.length === 0}
+          >
+            Effacer les logs
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

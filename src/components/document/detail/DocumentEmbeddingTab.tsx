@@ -10,7 +10,7 @@ interface DocumentEmbeddingTabProps {
   updateResult: { success: boolean; message: string } | null;
   updatingEmbedding: boolean;
   onUpdateEmbedding: () => void;
-  onFixEmbedding?: () => void; // Add this missing prop with optional type
+  onFixEmbedding?: () => void;
   onReloadDocument: () => void;
 }
 
@@ -118,7 +118,7 @@ const DocumentEmbeddingTab = ({
         )}
       </Button>
 
-      {/* Only render the Fix button if onFixEmbedding is provided */}
+      {/* Bouton de solution alternative */}
       {onFixEmbedding && updateResult && !updateResult.success && (
         <Button 
           onClick={onFixEmbedding}
