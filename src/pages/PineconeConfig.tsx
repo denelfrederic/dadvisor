@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -23,6 +22,7 @@ const PineconeConfig = () => {
   useEffect(() => {
     const checkApiStatus = async () => {
       try {
+        console.log("Vérification des clés API...");
         const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
           body: { action: 'check-keys' }
         });
@@ -36,6 +36,8 @@ const PineconeConfig = () => {
           });
           return;
         }
+        
+        console.log("Réponse reçue:", data);
         
         setApiStatus({
           loading: false,

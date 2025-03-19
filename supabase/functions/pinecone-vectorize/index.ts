@@ -313,6 +313,8 @@ serve(async (req) => {
         missingKeys.push("OPENAI_API_KEY");
       }
       
+      console.log(`Clés manquantes: ${missingKeys.length > 0 ? missingKeys.join(", ") : "Aucune"}`);
+      
       return new Response(JSON.stringify({
         missingKeys,
         error: missingKeys.length > 0 

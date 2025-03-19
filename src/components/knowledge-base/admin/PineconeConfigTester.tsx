@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertCircle, CheckCircle, RefreshCw, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const PineconeConfigTester = () => {
   const [isTesting, setIsTesting] = useState(false);
@@ -15,6 +16,7 @@ const PineconeConfigTester = () => {
     error?: string;
     details?: Record<string, any>;
   } | null>(null);
+  const { toast } = useToast();
 
   const addLog = (message: string) => {
     console.log(message);
@@ -48,33 +50,45 @@ const PineconeConfigTester = () => {
           success: false,
           error: `Erreur lors de l'appel de la fonction Edge: ${error.message}`
         });
+        toast({
+          title: "Erreur",
+          description: `Échec du test Pinecone: ${error.message}`,
+          variant: "destructive"
+        });
         return;
       }
       
-      if (!data.success) {
-        addLog(`Test de configuration échoué: ${data.error}`);
+      if (!data || !data.success) {
+        const errorMsg = data?.error || "Échec du test de configuration";
+        addLog(`Test de configuration échoué: ${errorMsg}`);
         setTestResult({
           success: false,
-          error: data.error,
-          details: data.details || {}
+          error: errorMsg,
+          details: data?.details || {}
         });
         
-        if (data.details?.apiKeyStatus === 'missing') {
+        if (data?.details?.apiKeyStatus === 'missing') {
           addLog("❌ La clé API Pinecone n'est pas configurée dans les secrets Supabase");
         }
         
-        if (data.details?.environment) {
+        if (data?.details?.environment) {
           addLog(`ℹ️ Environnement Pinecone configuré: ${data.details.environment}`);
         }
         
-        if (data.details?.index) {
+        if (data?.details?.index) {
           addLog(`ℹ️ Index Pinecone configuré: ${data.details.index}`);
         }
         
-        if (data.details?.connectionError) {
+        if (data?.details?.connectionError) {
           addLog(`❌ Erreur de connexion: ${data.details.connectionError}`);
           addLog("Vérifiez que l'index et l'environnement sont corrects");
         }
+        
+        toast({
+          title: "Configuration incomplète",
+          description: errorMsg,
+          variant: "destructive"
+        });
       } else {
         addLog("✅ Connexion à Pinecone réussie!");
         addLog(`✅ Environnement: ${data.details.environment}`);
@@ -93,6 +107,11 @@ const PineconeConfigTester = () => {
           success: true,
           details: data.details
         });
+        
+        toast({
+          title: "Succès",
+          description: "La connexion à Pinecone fonctionne correctement",
+        });
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
@@ -100,6 +119,11 @@ const PineconeConfigTester = () => {
       setTestResult({
         success: false,
         error: errorMessage
+      });
+      toast({
+        title: "Erreur",
+        description: `Une erreur est survenue: ${errorMessage}`,
+        variant: "destructive"
       });
     } finally {
       setIsTesting(false);
@@ -185,6 +209,14 @@ const PineconeConfigTester = () => {
           onClick={clearLogs}
         >
           Effacer les logs
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.reload()}
+        >
+          Rafraîchir la page
         </Button>
       </CardFooter>
     </Card>
