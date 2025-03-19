@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
   try {
-    console.log(`Analyse des problèmes d'embedding pour le document ${documentId}...`);
+    console.log(`Analyse du document ${documentId} pour indexation Pinecone...`);
     
     // Récupérer le document
     const { data: document, error } = await supabase
@@ -13,7 +13,7 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
       .single();
     
     if (error) {
-      console.error("Erreur lors de la récupération du document pour analyse:", error);
+      console.error("Erreur lors de la récupération du document:", error);
       return {
         success: false,
         analysis: "Impossible d'analyser le document: erreur de récupération des données.",
@@ -30,78 +30,25 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
     
     console.log(`Document récupéré: ${document.title}, type: ${document.type}, taille: ${document.size || 'non spécifiée'}`);
     
-    // Analyser la présence d'embedding
+    // Analyser uniquement le statut Pinecone
     let analysis = "";
-    let embeddings = {
-      exists: false,
-      type: "aucun",
-      length: 0,
-      quality: "inconnue",
-    };
-    
     let pineconeStatus = {
       indexed: document.pinecone_indexed === true,
       attempted: false
     };
     
-    if (document.embedding) {
-      embeddings.exists = true;
-      
-      if (typeof document.embedding === 'string') {
-        // C'est un string JSON ou une représentation sérialisée
-        embeddings.type = "string";
-        embeddings.length = document.embedding.length;
-        
-        // Essayer de parser si c'est un JSON
-        try {
-          const parsed = JSON.parse(document.embedding);
-          if (Array.isArray(parsed)) {
-            embeddings.type = "array JSON";
-            embeddings.length = parsed.length;
-            embeddings.quality = parsed.length > 0 ? "valide" : "vide";
-          }
-        } catch (e) {
-          // Ce n'est pas du JSON parsable
-          embeddings.quality = "format inconnu";
-        }
-      } else if (Array.isArray(document.embedding)) {
-        // C'est déjà un tableau
-        embeddings.type = "array";
-        // Type assertion to avoid 'never' type error
-        const embeddingArray = document.embedding as unknown[];
-        embeddings.length = embeddingArray.length;
-        embeddings.quality = embeddingArray.length > 0 ? "valide" : "vide";
-      } else if (typeof document.embedding === 'object' && document.embedding !== null) {
-        // C'est un objet - peut-être PgVector?
-        embeddings.type = "objet";
-        embeddings.quality = "format inconnu";
-        
-        // Même si c'est un objet, essayons de déterminer s'il a une propriété length ou size
-        const objLength = (document.embedding as any).length || (document.embedding as any).size || 0;
-        embeddings.length = typeof objLength === 'number' ? objLength : 0;
-      }
-      
-      analysis = `Le document possède un embedding de type "${embeddings.type}" avec ${embeddings.length} éléments. Qualité: ${embeddings.quality}.`;
-      
-      if (document.pinecone_indexed) {
-        analysis += " Le document est correctement indexé dans Pinecone pour la recherche sémantique.";
-      } else {
-        analysis += " Le document n'est PAS indexé dans Pinecone malgré la présence d'un embedding.";
-      }
+    if (document.pinecone_indexed === true) {
+      analysis = "Le document est correctement indexé dans Pinecone pour la recherche sémantique.";
     } else {
-      analysis = "Le document ne possède pas d'embedding.";
+      analysis = "Le document n'est PAS indexé dans Pinecone.";
       
       // Analyser pourquoi
       if (!document.content || document.content.trim() === '') {
         analysis += " Le document n'a pas de contenu textuel.";
       } else if (document.content.length > 25000) {
-        analysis += ` Le document est très volumineux (${document.content.length} caractères) ce qui peut causer des problèmes de génération d'embedding.`;
+        analysis += ` Le document est très volumineux (${document.content.length} caractères) ce qui peut causer des problèmes d'indexation.`;
       } else {
-        analysis += " Une tentative de génération d'embedding avec Pinecone est recommandée.";
-      }
-      
-      if (document.pinecone_indexed === true) {
-        analysis += " ATTENTION: Le document est marqué comme indexé dans Pinecone mais ne possède pas d'embedding local, ce qui est incohérent.";
+        analysis += " Une indexation avec Pinecone est recommandée.";
       }
     }
     
@@ -110,7 +57,6 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
     return {
       success: true,
       analysis,
-      embeddings,
       pinecone: pineconeStatus,
       document: {
         id: document.id,

@@ -1,11 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  updateDocuments, 
-  updateKnowledgeEntries, 
-  updateAllEmbeddings 
-} from "../../services/embedding/update";
+import { updateDocuments } from "../../services/embedding/update";
 import { exportLogsToFile } from "@/components/document/report/utils/logUtils";
 
 export const useEmbeddingsUpdate = () => {
@@ -28,31 +24,31 @@ export const useEmbeddingsUpdate = () => {
     exportLogsToFile(logs);
   }, [logs]);
 
-  const updateDocumentEmbeddingsWithProgress = useCallback(async () => {
+  const updateDocumentEmbeddings = useCallback(async () => {
     setIsUpdating(true);
     setProgress(0);
     setErrorSummary(null);
-    addLog("Début de la mise à jour des embeddings des documents...");
+    addLog("Début de l'indexation Pinecone des documents...");
     
     try {
       const result = await updateDocuments(addLog);
       
       if (result.success) {
-        addLog(`${result.count} documents mis à jour avec succès.`);
+        addLog(`${result.count} documents indexés avec succès.`);
         setProgress(100);
         toast({
-          title: "Mise à jour terminée",
-          description: `${result.count} documents ont été enrichis avec des embeddings.`
+          title: "Indexation terminée",
+          description: `${result.count} documents ont été indexés dans Pinecone.`
         });
       } else {
-        addLog("Échec de la mise à jour des embeddings des documents.");
+        addLog("Échec de l'indexation Pinecone des documents.");
         if (result.error) {
           addLog(`Erreur: ${result.error}`);
           setErrorSummary(result.error);
         }
         toast({
           title: "Erreur",
-          description: "Une erreur est survenue lors de la mise à jour des embeddings.",
+          description: "Une erreur est survenue lors de l'indexation Pinecone.",
           variant: "destructive"
         });
       }
@@ -62,116 +58,7 @@ export const useEmbeddingsUpdate = () => {
       setErrorSummary(errorMsg);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour des embeddings.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [addLog, toast]);
-
-  const updateKnowledgeEntryEmbeddings = useCallback(async () => {
-    setIsUpdating(true);
-    setProgress(0);
-    setErrorSummary(null);
-    addLog("Début de la mise à jour des embeddings des entrées de connaissances...");
-    
-    try {
-      // Update progress as a number and pass the addLog function
-      const result = await updateKnowledgeEntries(
-        (progressValue: number) => {
-          setProgress(progressValue);
-        },
-        addLog
-      );
-      
-      setProgress(100);
-      
-      if (result.success) {
-        if (result.failures && result.failures.length > 0) {
-          // Group failures by reason
-          const reasonCounts: Record<string, number> = {};
-          result.failures.forEach((f: any) => {
-            reasonCounts[f.reason] = (reasonCounts[f.reason] || 0) + 1;
-          });
-          
-          // Find the most common error
-          const mostCommonError = Object.entries(reasonCounts)
-            .sort((a, b) => b[1] - a[1])[0];
-            
-          if (mostCommonError) {
-            const [reason, count] = mostCommonError;
-            setErrorSummary(`Principale erreur (${count}/${result.failures.length}): ${reason}`);
-          }
-          
-          toast({
-            title: "Mise à jour terminée avec des avertissements",
-            description: `${result.succeeded}/${result.processed} entrées ont pu être mises à jour.`,
-            variant: "destructive"  // Changed from "warning" to "destructive" as it's the only allowed variant
-          });
-        } else {
-          toast({
-            title: "Mise à jour terminée",
-            description: `${result.succeeded}/${result.processed} entrées de connaissances ont été enrichies avec des embeddings.`
-          });
-        }
-      } else {
-        if (result.error) {
-          addLog(`Erreur globale: ${result.error}`);
-          setErrorSummary(result.error);
-        }
-        toast({
-          title: "Erreur",
-          description: "Une erreur est survenue lors de la mise à jour des embeddings.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      addLog(`Erreur globale: ${errorMsg}`);
-      setErrorSummary(errorMsg);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour des embeddings.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [addLog, toast]);
-
-  const updateAllEmbeddingsWithProgress = useCallback(async () => {
-    setIsUpdating(true);
-    setProgress(0);
-    setErrorSummary(null);
-    addLog("Début de la mise à jour de tous les embeddings (documents et base de connaissances)...");
-    
-    try {
-      const result = await updateAllEmbeddings(addLog);
-      
-      setProgress(100);
-      
-      if (result.success) {
-        toast({
-          title: "Mise à jour terminée",
-          description: `Mise à jour des embeddings terminée pour documents et entrées de connaissances.`
-        });
-      } else if (result.error) {
-        addLog(`Erreur globale: ${result.error}`);
-        setErrorSummary(result.error);
-        toast({
-          title: "Erreur",
-          description: "Une erreur est survenue lors de la mise à jour des embeddings.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      addLog(`Erreur globale: ${errorMsg}`);
-      setErrorSummary(errorMsg);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour des embeddings.",
+        description: "Une erreur est survenue lors de l'indexation Pinecone.",
         variant: "destructive"
       });
     } finally {
@@ -184,9 +71,7 @@ export const useEmbeddingsUpdate = () => {
     progress,
     logs,
     errorSummary,
-    updateDocumentEmbeddings: updateDocumentEmbeddingsWithProgress,
-    updateKnowledgeEntryEmbeddings,
-    updateAllEmbeddings: updateAllEmbeddingsWithProgress,
+    updateDocumentEmbeddings,
     clearLogs,
     exportLogs
   };
