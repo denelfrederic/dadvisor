@@ -21,7 +21,8 @@ const corsedResponse = (response: any, status = 200) => {
 };
 
 serve(async (req: Request) => {
-  console.log(`[${new Date().toISOString()}] Requête reçue: ${req.method} ${req.url}`);
+  const requestTime = new Date().toISOString();
+  console.log(`[${requestTime}] Requête reçue: ${req.method} ${req.url}`);
   
   // Gérer les requêtes OPTIONS (CORS)
   if (req.method === "OPTIONS") {
@@ -44,7 +45,7 @@ serve(async (req: Request) => {
       return corsedResponse({ success: false, error: "Action manquante" }, 400);
     }
     
-    console.log(`Traitement de l'action "${action}"...`);
+    console.log(`[${new Date().toISOString()}] Traitement de l'action "${action}"...`);
     
     // Traiter les différentes actions
     if (action === 'config') {
@@ -89,7 +90,7 @@ serve(async (req: Request) => {
           }, 400);
         }
         
-        console.log(`Indexation du document ${documentId}...`);
+        console.log(`[${new Date().toISOString()}] Indexation du document ${documentId}...`);
         const indexResult = await indexDocumentInPinecone(
           documentId, 
           documentContent,
@@ -122,7 +123,17 @@ serve(async (req: Request) => {
         console.log("Vérification de la configuration OpenAI...");
         const status = await checkOpenAIStatus();
         console.log("Statut OpenAI:", status);
-        return corsedResponse(status);
+        
+        // Ajouter des informations sur Pinecone également
+        const pineconeConfig = await getPineconeConfig();
+        
+        return corsedResponse({
+          ...status,
+          pineconeConfig: {
+            ...pineconeConfig.config,
+            warnings: pineconeConfig.warnings
+          }
+        });
       } catch (error) {
         console.error("Erreur lors de la vérification de la configuration OpenAI:", error);
         return corsedResponse({ 
@@ -144,7 +155,7 @@ serve(async (req: Request) => {
           }, 400);
         }
         
-        console.log(`Génération de l'embedding pour le texte: "${text.substring(0, 30)}..."`);
+        console.log(`[${new Date().toISOString()}] Génération de l'embedding pour le texte: "${text.substring(0, 30)}..."`);
         const result = await generateTestEmbedding(text);
         
         if (!result.success) {

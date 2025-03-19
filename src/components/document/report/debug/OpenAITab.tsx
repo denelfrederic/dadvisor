@@ -4,7 +4,7 @@ import { useOpenAICheck } from "./hooks/useOpenAICheck";
 import OpenAIConfigCheck from "./components/OpenAIConfigCheck";
 import EmbeddingGenerator from "./components/EmbeddingGenerator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface OpenAITabProps {
@@ -69,6 +69,29 @@ const OpenAITab: React.FC<OpenAITabProps> = ({ addLog }) => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Actualiser la page
               </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {openaiStatus && openaiStatus.valid === false && openaiStatus.warnings && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Avertissements de configuration</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-5 mt-2 text-sm">
+              {openaiStatus.warnings.map((warning: string, index: number) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+            <div className="mt-2 text-sm">
+              <p>Pour résoudre ces problèmes, vérifiez les variables d'environnement de votre fonction edge.</p>
+              {openaiStatus.warnings.includes("PINECONE_INDEX manquant") && (
+                <div className="mt-1 p-2 bg-amber-50 text-amber-800 rounded-md">
+                  <p className="font-medium">Vous devez configurer PINECONE_INDEX</p>
+                  <p>Sans cette variable, l'indexation Pinecone ne fonctionnera pas correctement.</p>
+                </div>
+              )}
             </div>
           </AlertDescription>
         </Alert>

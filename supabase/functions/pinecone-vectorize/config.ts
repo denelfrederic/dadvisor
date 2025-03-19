@@ -6,7 +6,7 @@ export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 export const PINECONE_API_KEY = Deno.env.get("PINECONE_API_KEY") || "";
 export const PINECONE_BASE_URL = Deno.env.get("PINECONE_BASE_URL") || "";
 export const ALTERNATIVE_PINECONE_URL = Deno.env.get("ALTERNATIVE_PINECONE_URL") || "";
-export const PINECONE_INDEX = Deno.env.get("PINECONE_INDEX") || "";
+export const PINECONE_INDEX = Deno.env.get("PINECONE_INDEX") || "dadvisor"; // Utilise "dadvisor" comme index par défaut
 
 // URL par défaut pour Pinecone si aucune n'est configurée
 // Cette URL est utilisée uniquement comme exemple et devrait être remplacée par une URL réelle
@@ -91,7 +91,8 @@ export function validateConfig() {
       hasAlternativeUrl: Boolean(ALTERNATIVE_PINECONE_URL),
       hasPineconeIndex: Boolean(PINECONE_INDEX),
       pineconeUrlStatus,
-      effectiveUrl: getPineconeUrl()
+      effectiveUrl: getPineconeUrl(),
+      defaultIndex: PINECONE_INDEX || "dadvisor"
     }
   };
 }

@@ -53,7 +53,11 @@ export async function testPineconeConnection(): Promise<any> {
     const normalizedUrl = pineconeUrl.endsWith('/') ? pineconeUrl : `${pineconeUrl}/`;
     let testUrl;
     
-    if (PINECONE_INDEX) {
+    // Déterminer l'URL de test
+    const indexName = PINECONE_INDEX || "dadvisor"; // Utiliser l'index par défaut si non configuré
+    console.log(`Utilisation de l'index: ${indexName}`);
+    
+    if (indexName) {
       // Si un index est configuré, on utilise la nouvelle API Pinecone
       testUrl = `${normalizedUrl}databases`;
     } else {
@@ -92,6 +96,7 @@ export async function testPineconeConnection(): Promise<any> {
           status: response.status,
           timestamp: new Date().toISOString(),
           url: testUrl,
+          indexName: indexName,
           response: responseData.substring(0, 200)
         };
       } else {
@@ -105,7 +110,8 @@ export async function testPineconeConnection(): Promise<any> {
           error: errorText,
           status: response.status,
           timestamp: new Date().toISOString(),
-          url: testUrl
+          url: testUrl,
+          indexName: indexName
         };
       }
     } catch (fetchError) {
@@ -122,7 +128,8 @@ export async function testPineconeConnection(): Promise<any> {
           "Exception lors de la connexion à Pinecone",
         error: errorMessage,
         timestamp: new Date().toISOString(),
-        url: testUrl
+        url: testUrl,
+        indexName: indexName
       };
     }
   } catch (error) {
@@ -236,10 +243,12 @@ export async function indexDocumentInPinecone(
     const result = await response.json();
     console.log(`Document ${id} indexé avec succès:`, result);
     
+    // Retourner l'embedding avec le résultat pour stocker dans Supabase également
     return {
       success: true,
       documentId: id,
       result,
+      embedding: embedding,
       timestamp: new Date().toISOString()
     };
   } catch (error) {

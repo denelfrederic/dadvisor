@@ -11,11 +11,26 @@ export const updateDocuments = async (
   try {
     onLog?.("Recherche des documents non indexés dans Pinecone...");
     
+    // Récupérer d'abord le nombre total de documents
+    const { count: totalCount, error: countError } = await supabase
+      .from('documents')
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) {
+      const errorMsg = `Erreur lors du comptage des documents: ${countError.message}`;
+      onLog?.(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+    
+    onLog?.(`Nombre total de documents: ${totalCount || 0}`);
+    
     // Récupérer les documents sans indexation Pinecone
+    // Modifié pour inclure ceux avec pinecone_indexed à NULL ou FALSE
     const { data: documents, error: fetchError } = await supabase
       .from('documents')
-      .select('id, content, title, type')
-      .eq('pinecone_indexed', false)
+      .select('id, content, title, type, pinecone_indexed')
+      .or('pinecone_indexed.is.null,pinecone_indexed.eq.false')
+      .not('content', 'is', null)
       .not('content', 'eq', '');
     
     if (fetchError) {
@@ -26,10 +41,34 @@ export const updateDocuments = async (
     
     if (!documents || documents.length === 0) {
       onLog?.("Aucun document à indexer trouvé.");
+      
+      // Vérification supplémentaire avec des détails SQL
+      const { data: checkData, error: checkError } = await supabase
+        .from('documents')
+        .select('id, title, pinecone_indexed')
+        .limit(5);
+      
+      if (!checkError && checkData && checkData.length > 0) {
+        onLog?.(`Les 5 premiers documents dans la base:`);
+        for (const doc of checkData) {
+          onLog?.(`- Document "${doc.title}" (${doc.id.substring(0, 8)}): pinecone_indexed = ${doc.pinecone_indexed === null ? 'NULL' : doc.pinecone_indexed}`);
+        }
+      }
+      
       return { success: true, count: 0 };
     }
     
     onLog?.(`${documents.length} documents à indexer trouvés.`);
+    
+    // Afficher les premiers documents trouvés
+    const sampleSize = Math.min(3, documents.length);
+    if (sampleSize > 0) {
+      onLog?.(`Aperçu des ${sampleSize} premiers documents à indexer:`);
+      for (let i = 0; i < sampleSize; i++) {
+        const doc = documents[i];
+        onLog?.(`- Document "${doc.title}" (${doc.id.substring(0, 8)}): ${doc.content?.length || 0} caractères`);
+      }
+    }
     
     let successCount = 0;
     let errorDetails = [];
@@ -53,7 +92,8 @@ export const updateDocuments = async (
             documentId: doc.id,
             documentContent: truncatedContent,
             documentTitle: doc.title,
-            documentType: doc.type
+            documentType: doc.type,
+            _timestamp: new Date().getTime() // Éviter la mise en cache
           }
         });
         

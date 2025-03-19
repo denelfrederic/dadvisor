@@ -51,7 +51,7 @@ export const useOpenAICheck = (addLog: (message: string) => void) => {
         return;
       }
       
-      addLog(`Réponse reçue: ${JSON.stringify(data)}`);
+      addLog(`Réponse reçue: ${JSON.stringify(data, null, 2)}`);
       setOpenaiStatus(data);
       
     } catch (error) {
