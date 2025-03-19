@@ -1,53 +1,78 @@
 
 import React from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Check, Bot, Database, AlertTriangle, Archive } from "lucide-react";
 import { IndexationReport } from "../hooks/useIndexationReport";
 
 interface ReportStatsCardsProps {
   report: IndexationReport;
 }
 
-const ReportStatsCards = ({ report }: ReportStatsCardsProps) => {
+const ReportStatsCards: React.FC<ReportStatsCardsProps> = ({ report }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="p-6">
-        <div className="flex flex-col">
-          <span className="text-muted-foreground mb-2">Documents totaux</span>
-          <span className="text-4xl font-bold">{report.totalDocuments}</span>
-        </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center">
+            <Archive className="h-4 w-4 mr-2" />
+            Documents totaux
+          </CardTitle>
+          <CardDescription>Base documentaire</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{report.totalDocuments}</div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Documents stockés dans la base
+          </p>
+        </CardContent>
       </Card>
-      
-      <Card className="p-6">
-        <div className="flex flex-col">
-          <span className="text-muted-foreground mb-2">Avec embeddings</span>
-          <div className="flex items-center gap-3">
-            <span className="text-4xl font-bold">{report.documentsWithEmbeddings}</span>
-            <Badge 
-              variant={report.embeddingsPercentage > 50 ? "default" : "destructive"}
-              className="text-sm"
-            >
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center">
+            <Bot className="h-4 w-4 mr-2" />
+            Embeddings OpenAI
+          </CardTitle>
+          <CardDescription>Vectorisation locale</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {report.documentsWithEmbeddings}/{report.totalDocuments}
+            <span className="text-sm font-normal ml-2 text-muted-foreground">
               {report.embeddingsPercentage}%
-            </Badge>
+            </span>
           </div>
-        </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Documents avec embeddings stockés dans Supabase
+          </p>
+        </CardContent>
       </Card>
-      
-      <Card className="p-6">
-        <div className="flex flex-col">
-          <span className="text-muted-foreground mb-2">Sans embeddings</span>
-          <div className="flex items-center gap-3">
-            <span className="text-4xl font-bold">{report.documentsWithoutEmbeddings}</span>
-            {report.documentsWithoutEmbeddings > 0 && (
-              <Badge 
-                variant="outline" 
-                className="bg-amber-100 text-amber-800 hover:bg-amber-100"
-              >
-                Attention
-              </Badge>
-            )}
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center">
+            <Database className="h-4 w-4 mr-2" />
+            Index Pinecone
+          </CardTitle>
+          <CardDescription>Vectorisation distante</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {report.pineconeIndexedCount}/{report.totalDocuments}
+            <span className="text-sm font-normal ml-2 text-muted-foreground">
+              {report.pineconePercentage}%
+            </span>
           </div>
-        </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Documents indexés dans la base vectorielle Pinecone
+          </p>
+        </CardContent>
       </Card>
     </div>
   );

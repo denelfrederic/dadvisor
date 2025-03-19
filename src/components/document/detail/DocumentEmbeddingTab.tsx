@@ -47,6 +47,7 @@ const DocumentEmbeddingTab = ({
   if (!document) return null;
 
   const hasVectorization = document.embedding || document.pinecone_indexed === true;
+  const isPineconeIndexed = document.pinecone_indexed === true;
 
   if (hasVectorization) {
     return (
@@ -58,20 +59,40 @@ const DocumentEmbeddingTab = ({
         
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-muted-foreground">Détails de la vectorisation</h3>
-          <div className="p-3 bg-muted rounded-md text-xs">
-            {document.pinecone_indexed === true ? (
-              <p className="flex items-center gap-2">
+          <div className="p-3 bg-muted rounded-md space-y-2">
+            {isPineconeIndexed ? (
+              <p className="flex items-center gap-2 text-green-600">
                 <Database className="h-4 w-4" />
-                Document indexé dans Pinecone
+                Document indexé dans Pinecone ✓
               </p>
             ) : (
-              <>
-                <p>Type: {typeof document.embedding}</p>
-                <p>Taille: {document.embedding?.length || 0} caractères</p>
-              </>
+              <p className="flex items-center gap-2 text-amber-600">
+                <AlertTriangle className="h-4 w-4" />
+                Document non indexé dans Pinecone
+              </p>
             )}
+            
+            <p className="text-xs">
+              {typeof document.embedding === 'string' 
+                ? `Embedding stocké (${document.embedding.length} caractères)` 
+                : typeof document.embedding === 'object' && document.embedding 
+                  ? `Embedding stocké (${Object.keys(document.embedding).length} dimensions)`
+                  : 'Format d\'embedding non reconnu'}
+            </p>
           </div>
         </div>
+
+        {!isPineconeIndexed && (
+          <Button
+            onClick={onUpdateEmbedding}
+            variant="outline"
+            size="sm"
+            className="mt-2"
+          >
+            <Database className="h-4 w-4 mr-2" />
+            Indexer dans Pinecone
+          </Button>
+        )}
 
         <Button
           onClick={onReloadDocument}
@@ -98,6 +119,14 @@ const DocumentEmbeddingTab = ({
           <h3 className="text-sm font-medium text-muted-foreground">Analyse du problème</h3>
           <div className="p-3 bg-muted rounded-md">
             <p>{analysis.analysis}</p>
+            
+            {analysis.pinecone && (
+              <p className="mt-2 text-sm">
+                <strong>Statut Pinecone:</strong> {analysis.pinecone.indexed 
+                  ? "Indexé dans Pinecone ✓" 
+                  : "Non indexé dans Pinecone"}
+              </p>
+            )}
           </div>
         </div>
       )}

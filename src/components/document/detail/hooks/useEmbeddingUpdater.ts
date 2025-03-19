@@ -16,7 +16,8 @@ export const useEmbeddingUpdater = () => {
     try {
       console.log(`Tentative de vectorisation avec Pinecone pour le document ${document.id} (${document.title})`);
       
-      // Appeler l'edge function Pinecone
+      // Appeler l'edge function Pinecone avec des logs améliorés
+      console.log("Début de l'appel à l'API Pinecone via l'edge function");
       const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
         body: {
           action: 'vectorize',
@@ -32,13 +33,20 @@ export const useEmbeddingUpdater = () => {
         throw pineconeError;
       }
       
-      if (!pineconeData.success) {
-        throw new Error(pineconeData.error || "Échec de vectorisation avec Pinecone");
+      if (!pineconeData || !pineconeData.success) {
+        console.error("Données retournées par Pinecone:", pineconeData);
+        throw new Error(pineconeData?.error || "Échec de vectorisation avec Pinecone");
       }
       
-      console.log(`Document ${document.id} vectorisé avec succès dans Pinecone`);
+      console.log(`Document ${document.id} vectorisé avec succès dans Pinecone:`, pineconeData);
+      
+      // Vérifier si l'embedding est présent
+      if (!pineconeData.embedding) {
+        console.warn("L'API Pinecone n'a pas retourné d'embedding");
+      }
       
       // Mettre à jour le document dans Supabase pour indiquer qu'il est indexé dans Pinecone
+      console.log("Mise à jour du document dans Supabase avec pinecone_indexed=true");
       const { error: updateError } = await supabase
         .from('documents')
         .update({ 
@@ -52,7 +60,7 @@ export const useEmbeddingUpdater = () => {
         throw updateError;
       }
       
-      console.log(`Document ${document.id} mis à jour avec succès dans Supabase`);
+      console.log(`Document ${document.id} mis à jour avec succès dans Supabase (pinecone_indexed=true)`);
       
       setUpdateResult({
         success: true,
@@ -92,8 +100,10 @@ export const useEmbeddingUpdater = () => {
       
       // Tronquer le contenu pour les documents volumineux
       const truncatedContent = documentData.content.substring(0, 8000);
+      console.log(`Contenu tronqué de ${documentData.content.length} à ${truncatedContent.length} caractères`);
       
       // Appeler l'edge function Pinecone avec le contenu tronqué
+      console.log("Appel à l'API Pinecone avec contenu tronqué");
       const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
         body: {
           action: 'vectorize',
@@ -110,10 +120,14 @@ export const useEmbeddingUpdater = () => {
       }
       
       if (!pineconeData.success) {
+        console.error("Réponse de l'API Pinecone:", pineconeData);
         throw new Error(pineconeData.error || "Échec de vectorisation optimisée avec Pinecone");
       }
       
+      console.log("Vectorisation réussie avec Pinecone:", pineconeData);
+      
       // Mettre à jour le document dans Supabase
+      console.log("Mise à jour du document dans Supabase");
       const { error: updateError } = await supabase
         .from('documents')
         .update({ 

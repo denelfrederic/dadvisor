@@ -6,16 +6,20 @@ const PINECONE_API_KEY = Deno.env.get('PINECONE_API_KEY');
 const PINECONE_ENVIRONMENT = 'gcp-starter'; // Update this to match your Pinecone environment
 const PINECONE_INDEX = 'document-vectors'; // Update this to match your index name
 const PINECONE_BASE_URL = `https://${PINECONE_INDEX}-${PINECONE_ENVIRONMENT}.svc.${PINECONE_ENVIRONMENT}.pinecone.io`;
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+
+console.log(`Pinecone Edge Function initialisée. Environnement: ${PINECONE_ENVIRONMENT}, Index: ${PINECONE_INDEX}`);
+console.log(`API keys disponibles: Pinecone: ${PINECONE_API_KEY ? "Oui" : "Non"}, OpenAI: ${OPENAI_API_KEY ? "Oui" : "Non"}`);
 
 // OpenAI function to generate embeddings
 async function generateEmbeddingWithOpenAI(text: string) {
-  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-  
   if (!OPENAI_API_KEY) {
+    console.error("Clé API OpenAI manquante");
     throw new Error('Missing OpenAI API key');
   }
   
   const truncatedText = text.slice(0, 8000); // Truncate text to fit within token limits
+  console.log(`Génération d'embedding OpenAI pour un texte de ${truncatedText.length} caractères`);
   
   try {
     const response = await fetch('https://api.openai.com/v1/embeddings', {
@@ -32,10 +36,12 @@ async function generateEmbeddingWithOpenAI(text: string) {
     
     if (!response.ok) {
       const error = await response.text();
+      console.error(`Erreur API OpenAI (${response.status}): ${error}`);
       throw new Error(`OpenAI API error: ${error}`);
     }
     
     const data = await response.json();
+    console.log(`Embedding généré avec succès, dimensions: ${data.data[0].embedding.length}`);
     return data.data[0].embedding;
   } catch (error) {
     console.error('Error generating OpenAI embedding:', error);
@@ -46,8 +52,12 @@ async function generateEmbeddingWithOpenAI(text: string) {
 // Upsert vector to Pinecone
 async function upsertToPinecone(id: string, vector: number[], metadata: any) {
   if (!PINECONE_API_KEY) {
+    console.error("Clé API Pinecone manquante");
     throw new Error('Missing Pinecone API key');
   }
+  
+  console.log(`Insertion dans Pinecone pour document ID: ${id}, avec metadata: ${JSON.stringify(metadata)}`);
+  console.log(`URL Pinecone: ${PINECONE_BASE_URL}/vectors/upsert`);
   
   try {
     const response = await fetch(`${PINECONE_BASE_URL}/vectors/upsert`, {
@@ -70,10 +80,13 @@ async function upsertToPinecone(id: string, vector: number[], metadata: any) {
     
     if (!response.ok) {
       const error = await response.text();
+      console.error(`Erreur API Pinecone (${response.status}): ${error}`);
       throw new Error(`Pinecone API error: ${error}`);
     }
     
-    return await response.json();
+    const result = await response.json();
+    console.log(`Insertion Pinecone réussie:`, result);
+    return result;
   } catch (error) {
     console.error('Error upserting to Pinecone:', error);
     throw error;
@@ -83,8 +96,11 @@ async function upsertToPinecone(id: string, vector: number[], metadata: any) {
 // Query vectors from Pinecone
 async function queryPinecone(vector: number[], topK: number = 5) {
   if (!PINECONE_API_KEY) {
+    console.error("Clé API Pinecone manquante");
     throw new Error('Missing Pinecone API key');
   }
+  
+  console.log(`Recherche dans Pinecone pour ${topK} résultats`);
   
   try {
     const response = await fetch(`${PINECONE_BASE_URL}/query`, {
@@ -103,10 +119,13 @@ async function queryPinecone(vector: number[], topK: number = 5) {
     
     if (!response.ok) {
       const error = await response.text();
+      console.error(`Erreur API Pinecone Query (${response.status}): ${error}`);
       throw new Error(`Pinecone API error: ${error}`);
     }
     
-    return await response.json();
+    const result = await response.json();
+    console.log(`Recherche Pinecone réussie, ${result.matches?.length || 0} résultats trouvés`);
+    return result;
   } catch (error) {
     console.error('Error querying Pinecone:', error);
     throw error;
@@ -125,18 +144,21 @@ serve(async (req) => {
   }
   
   try {
-    const { action, documentId, documentContent, documentTitle, documentType, query } = await req.json();
+    console.log(`Nouvelle requête ${req.method} reçue`);
+    const reqBody = await req.json();
+    const { action, documentId, documentContent, documentTitle, documentType, query } = reqBody;
     
-    console.log(`Processing ${action} request for document: ${documentId || 'query'}`);
+    console.log(`Action demandée: ${action}, Document ID: ${documentId || 'N/A'}`);
     
     switch (action) {
       case 'vectorize': {
         // Generate embedding for document content
         if (!documentContent || !documentId) {
+          console.error("Paramètres manquants", reqBody);
           throw new Error('Missing document content or ID');
         }
         
-        console.log(`Generating embedding for document: ${documentId} (content length: ${documentContent.length})`);
+        console.log(`Génération d'embedding pour document: ${documentId} (content length: ${documentContent.length})`);
         
         // Generate embedding using OpenAI
         const embedding = await generateEmbeddingWithOpenAI(documentContent);
@@ -151,7 +173,7 @@ serve(async (req) => {
         
         const result = await upsertToPinecone(documentId, embedding, metadata);
         
-        console.log(`Successfully vectorized document: ${documentId}`);
+        console.log(`Vectorisation réussie pour document: ${documentId}`);
         
         // Also return the embedding for storage in Supabase as a backup
         return new Response(JSON.stringify({
@@ -166,10 +188,11 @@ serve(async (req) => {
       
       case 'query': {
         if (!query) {
+          console.error("Requête de recherche sans texte", reqBody);
           throw new Error('Missing query text');
         }
         
-        console.log(`Processing semantic search query: "${query}"`);
+        console.log(`Recherche sémantique: "${query}"`);
         
         // Generate embedding for query
         const embedding = await generateEmbeddingWithOpenAI(query);
@@ -177,7 +200,7 @@ serve(async (req) => {
         // Query Pinecone for similar documents
         const results = await queryPinecone(embedding, 5);
         
-        console.log(`Found ${results.matches?.length || 0} matches for query`);
+        console.log(`${results.matches?.length || 0} résultats trouvés pour la requête`);
         
         return new Response(JSON.stringify({
           success: true,
@@ -188,6 +211,7 @@ serve(async (req) => {
       }
       
       default:
+        console.error(`Action inconnue: ${action}`);
         throw new Error(`Unknown action: ${action}`);
     }
   } catch (error) {

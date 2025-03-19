@@ -8,6 +8,7 @@ export interface DocumentIndexationStatus {
   title: string;
   type: string;
   hasEmbedding: boolean;
+  pineconeIndexed: boolean;
   created_at: string;
   size: number;
 }
@@ -17,6 +18,8 @@ export interface IndexationReport {
   documentsWithEmbeddings: number;
   documentsWithoutEmbeddings: number;
   embeddingsPercentage: number;
+  pineconeIndexedCount: number;
+  pineconePercentage: number;
   documentsByType: Record<string, number>;
   recentDocuments: DocumentIndexationStatus[];
 }
@@ -43,7 +46,7 @@ export const useIndexationReport = () => {
       // Récupérer tous les documents avec leur statut d'embedding
       const { data: documents, error: fetchError } = await supabase
         .from('documents')
-        .select('id, title, type, content, embedding, created_at, size')
+        .select('id, title, type, content, embedding, pinecone_indexed, created_at, size')
         .order('created_at', { ascending: false });
       
       if (fetchError) {
@@ -58,6 +61,8 @@ export const useIndexationReport = () => {
           documentsWithEmbeddings: 0,
           documentsWithoutEmbeddings: 0,
           embeddingsPercentage: 0,
+          pineconeIndexedCount: 0,
+          pineconePercentage: 0,
           documentsByType: {},
           recentDocuments: []
         });
@@ -69,6 +74,7 @@ export const useIndexationReport = () => {
       // Analyser les documents
       const documentsByType: Record<string, number> = {};
       let documentsWithEmbeddings = 0;
+      let pineconeIndexedCount = 0;
       
       documents.forEach(doc => {
         // Compter par type
@@ -82,6 +88,12 @@ export const useIndexationReport = () => {
         } else {
           addLog(`Document ${doc.id.substring(0, 8)} (${doc.title}) n'a PAS d'embedding`);
         }
+        
+        // Compter documents indexés dans Pinecone
+        if (doc.pinecone_indexed === true) {
+          pineconeIndexedCount++;
+          addLog(`Document ${doc.id.substring(0, 8)} (${doc.title}) est indexé dans Pinecone`);
+        }
       });
       
       const totalDocuments = documents.length;
@@ -90,12 +102,17 @@ export const useIndexationReport = () => {
         ? Math.round((documentsWithEmbeddings / totalDocuments) * 100) 
         : 0;
       
+      const pineconePercentage = totalDocuments > 0
+        ? Math.round((pineconeIndexedCount / totalDocuments) * 100)
+        : 0;
+      
       // Préparer les documents récents pour l'affichage
       const recentDocuments: DocumentIndexationStatus[] = documents.slice(0, 10).map(doc => ({
         id: doc.id,
         title: doc.title || "Sans titre",
         type: doc.type || "inconnu",
         hasEmbedding: !!doc.embedding,
+        pineconeIndexed: doc.pinecone_indexed === true,
         created_at: doc.created_at,
         size: doc.size || 0
       }));
@@ -106,19 +123,22 @@ export const useIndexationReport = () => {
         documentsWithEmbeddings,
         documentsWithoutEmbeddings,
         embeddingsPercentage,
+        pineconeIndexedCount,
+        pineconePercentage,
         documentsByType,
         recentDocuments
       };
       
       setReport(newReport);
       addLog(`Rapport généré avec succès: ${documentsWithEmbeddings}/${totalDocuments} documents avec embeddings (${embeddingsPercentage}%)`);
+      addLog(`Pinecone: ${pineconeIndexedCount}/${totalDocuments} documents indexés (${pineconePercentage}%)`);
       
       // Consigner les détails dans la console pour le débogage
       console.log("Rapport d'indexation généré:", newReport);
       
       toast({
         title: "Rapport d'indexation généré",
-        description: `${totalDocuments} documents analysés (${embeddingsPercentage}% avec embeddings)`
+        description: `${totalDocuments} documents analysés (${embeddingsPercentage}% avec embeddings, ${pineconePercentage}% dans Pinecone)`
       });
       
     } catch (err) {

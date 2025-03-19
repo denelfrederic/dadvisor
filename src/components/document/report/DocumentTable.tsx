@@ -1,92 +1,107 @@
 
-import React, { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Eye, AlertTriangle } from "lucide-react";
+import React from "react";
+import { Check, X, FileText, FileImage, FileArchive, Database } from "lucide-react";
 import { DocumentIndexationStatus } from "../hooks/useIndexationReport";
-import DocumentDetailDialog from "../DocumentDetailDialog";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatFileSize } from "../utils";
 
 interface DocumentTableProps {
   documents: DocumentIndexationStatus[];
+  onViewDetails?: (documentId: string) => void;
 }
 
-const DocumentTable: React.FC<DocumentTableProps> = ({ documents }) => {
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-
-  const openDetailDialog = (documentId: string) => {
-    setSelectedDocumentId(documentId);
-    setIsDetailDialogOpen(true);
+const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onViewDetails }) => {
+  const getDocumentIcon = (type: string) => {
+    if (type.includes("image")) return <FileImage className="h-4 w-4" />;
+    if (type.includes("pdf")) return <FileArchive className="h-4 w-4" />;
+    return <FileText className="h-4 w-4" />;
   };
 
-  const closeDetailDialog = () => {
-    setIsDetailDialogOpen(false);
-    setSelectedDocumentId(null);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   };
-
-  if (documents.length === 0) {
-    return <p className="text-center text-muted-foreground py-4">Aucun document disponible</p>;
-  }
 
   return (
-    <>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left py-2 px-3 font-medium text-sm">Titre</th>
-              <th className="text-left py-2 px-3 font-medium text-sm">Type</th>
-              <th className="text-center py-2 px-3 font-medium text-sm">Embedding</th>
-              <th className="text-left py-2 px-3 font-medium text-sm">Date</th>
-              <th className="text-right py-2 px-3 font-medium text-sm">Taille</th>
-              <th className="text-right py-2 px-3 font-medium text-sm">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map((doc) => (
-              <tr key={doc.id} className="border-b hover:bg-accent/5">
-                <td className="py-2 px-3 truncate max-w-[200px]">{doc.title}</td>
-                <td className="py-2 px-3">{doc.type}</td>
-                <td className="py-2 px-3 text-center">
+    <div className="border rounded-md">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Document</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Taille</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-center">Embedding</TableHead>
+            <TableHead className="text-center">Pinecone</TableHead>
+            {onViewDetails && <TableHead className="text-right">Actions</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {documents.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                Aucun document trouvé
+              </TableCell>
+            </TableRow>
+          ) : (
+            documents.map((doc) => (
+              <TableRow key={doc.id}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {getDocumentIcon(doc.type)}
+                    <span className="truncate max-w-[150px]">{doc.title}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {doc.type}
+                </TableCell>
+                <TableCell>{formatFileSize(doc.size)}</TableCell>
+                <TableCell className="text-xs">
+                  {formatDate(doc.created_at)}
+                </TableCell>
+                <TableCell className="text-center">
                   {doc.hasEmbedding ? (
-                    <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                      Oui
-                    </Badge>
+                    <Check className="h-4 w-4 text-green-500 mx-auto" />
                   ) : (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      Non
-                    </Badge>
+                    <X className="h-4 w-4 text-red-500 mx-auto" />
                   )}
-                </td>
-                <td className="py-2 px-3">{new Date(doc.created_at).toLocaleDateString()}</td>
-                <td className="py-2 px-3 text-right">
-                  {doc.size >= 1024 * 1024
-                    ? `${(doc.size / (1024 * 1024)).toFixed(2)} MB`
-                    : `${(doc.size / 1024).toFixed(2)} KB`}
-                </td>
-                <td className="py-2 px-3 text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => openDetailDialog(doc.id)}
-                    title="Voir les détails"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <DocumentDetailDialog
-        documentId={selectedDocumentId}
-        isOpen={isDetailDialogOpen}
-        onClose={closeDetailDialog}
-      />
-    </>
+                </TableCell>
+                <TableCell className="text-center">
+                  {doc.pineconeIndexed ? (
+                    <Database className="h-4 w-4 text-green-500 mx-auto" />
+                  ) : (
+                    <X className="h-4 w-4 text-red-500 mx-auto" />
+                  )}
+                </TableCell>
+                {onViewDetails && (
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onViewDetails(doc.id)}
+                    >
+                      Détails
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
