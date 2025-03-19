@@ -39,6 +39,30 @@ export function validatePineconeConfig(): boolean {
 }
 
 /**
+ * Détecte automatiquement le format d'URL Pinecone 
+ * entre les anciennes versions et les nouvelles versions Serverless
+ * @param url URL de base Pinecone
+ * @returns Type d'API Pinecone ('legacy', 'serverless', 'unknown')
+ */
+export function detectPineconeUrlType(url: string): string {
+  // Nettoyage URL
+  const cleanUrl = url.trim().replace(/\/+$/, '');
+  
+  if (cleanUrl.includes('.svc.') && cleanUrl.includes('pinecone.io')) {
+    if (cleanUrl.includes('-aped-') || cleanUrl.includes('.serverless.')) {
+      console.log("Format URL Pinecone détecté: serverless");
+      return 'serverless';
+    } else {
+      console.log("Format URL Pinecone détecté: legacy");
+      return 'legacy';
+    }
+  }
+  
+  console.log("Format URL Pinecone non reconnu");
+  return 'unknown';
+}
+
+/**
  * Obtient l'URL complète pour une opération Pinecone spécifique
  * @param operation L'opération Pinecone (query, upsert, etc.)
  * @returns L'URL complète pour l'opération
@@ -51,18 +75,29 @@ export function getPineconeOperationUrl(operation: string): string {
   // Obtenir l'index actuel (celui configuré ou fallback)
   const indexName = getPineconeIndex();
   
-  // Logging détaillé
-  console.log(`Construction de l'URL d'opération: baseUrl=${normalizedUrl}, operation=${operation}, indexName=${indexName}`);
+  // Détection automatique du type d'URL Pinecone
+  const apiType = detectPineconeUrlType(normalizedUrl);
   
-  // Format de l'URL selon la version de l'API Pinecone
-  // Pour l'API récente (serverless)
-  if (normalizedUrl.includes("serverless")) {
-    const operationUrl = `${normalizedUrl}${operation}`;
+  // Logging détaillé
+  console.log(`Construction de l'URL d'opération: baseUrl=${normalizedUrl}, operation=${operation}, indexName=${indexName}, apiType=${apiType}`);
+  
+  // Format de l'URL selon le type détecté
+  if (apiType === 'serverless') {
+    // Pour les API Serverless, utiliser le nouveau format
+    const operationUrl = `${normalizedUrl}vectors/${operation}`;
     console.log(`URL générée (serverless): ${operationUrl}`);
     return operationUrl;
   } 
-  // Pour l'API standard
+  else if (apiType === 'legacy') {
+    // Pour les API legacy, utiliser l'ancien format
+    // /vectors/operation
+    const operationUrl = `${normalizedUrl}vectors/${operation}`;
+    console.log(`URL générée (legacy): ${operationUrl}`);
+    return operationUrl;
+  }
   else {
+    // Format inconnu, essayer l'URL standard (comme avant)
+    console.log("Format d'URL inconnu, tentative avec le format standard");
     const operationUrl = `${normalizedUrl}vectors/${operation}`;
     console.log(`URL générée (standard): ${operationUrl}`);
     return operationUrl;
@@ -82,9 +117,9 @@ export function diagnosePineconeError(status: number, message: string): string {
     case 401:
       return `Non autorisé (401): ${message}. Vérifiez votre clé API Pinecone.`;
     case 403:
-      return `Accès interdit (403): ${message}. Votre clé API n'a pas les permissions nécessaires ou l'index est inaccessible.`;
+      return `Accès interdit (403): ${message}. Votre clé API n'a pas les permissions nécessaires ou l'index est inaccessible. Si vous utilisez le plan gratuit, vérifiez que votre index n'est pas en pause.`;
     case 404:
-      return `Ressource non trouvée (404): ${message}. Vérifiez que l'index "${getPineconeIndex()}" existe dans votre compte Pinecone.`;
+      return `Ressource non trouvée (404): ${message}. Vérifiez que l'index "${getPineconeIndex()}" existe dans votre compte Pinecone et que votre URL est correcte. L'erreur 404 peut indiquer que l'URL Pinecone est incorrecte ou que vous utilisez le mauvais format d'API.`;
     case 429:
       return `Trop de requêtes (429): ${message}. Vous avez dépassé la limite de requêtes de votre compte Pinecone.`;
     case 500:

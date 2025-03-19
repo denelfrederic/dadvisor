@@ -1,11 +1,11 @@
 
 import { PINECONE_API_KEY, getPineconeUrl, PINECONE_INDEX, PINECONE_NAMESPACE } from "../../config.ts";
-import { PINECONE_HEADERS, getPineconeOperationUrl } from "./config.ts";
+import { PINECONE_HEADERS, getPineconeOperationUrl, detectPineconeUrlType } from "./config.ts";
 import { generateEmbeddingWithOpenAI } from "../openai.ts";
 import { logMessage, logError } from "../../utils/logging.ts";
 
 /**
- * Teste la connexion à Pinecone
+ * Teste la connexion à Pinecone avec différentes variantes d'URL
  * @returns Un objet indiquant si la connexion a réussi
  */
 export async function testPineconeConnection(): Promise<any> {
@@ -52,91 +52,155 @@ export async function testPineconeConnection(): Promise<any> {
     
     // Construction de l'URL complète
     const normalizedUrl = pineconeUrl.endsWith('/') ? pineconeUrl : `${pineconeUrl}/`;
-    let testUrl;
     
-    // Déterminer l'URL de test
+    // Détection du type d'API Pinecone
+    const apiType = detectPineconeUrlType(normalizedUrl);
+    console.log(`Type d'API Pinecone détecté: ${apiType}`);
+    
+    // Déterminer l'URL de test en fonction du type d'API
     const indexName = PINECONE_INDEX || "dadvisor"; // Utiliser l'index par défaut si non configuré
     console.log(`Utilisation de l'index: ${indexName}`);
     
-    if (indexName) {
-      // Si un index est configuré, on utilise la nouvelle API Pinecone
-      testUrl = `${normalizedUrl}databases`;
-    } else {
-      // Sinon, on essaie un endpoint générique
-      testUrl = normalizedUrl;
+    // Essayons différentes URL en fonction du type d'API
+    const testUrls = [];
+    
+    if (apiType === 'serverless') {
+      // URLs pour API Serverless
+      testUrls.push(`${normalizedUrl}`); // URL de base
+      testUrls.push(`${normalizedUrl}describe_index_stats`); // Stats d'index (serverless)
+    } 
+    else if (apiType === 'legacy') {
+      // URLs pour API Legacy
+      testUrls.push(`${normalizedUrl}`); // URL de base
+      testUrls.push(`${normalizedUrl}query`); // Endpoint query (legacy)
+    }
+    else {
+      // Type inconnu, essayer plusieurs formats
+      testUrls.push(`${normalizedUrl}`); // URL de base
+      testUrls.push(`${normalizedUrl}describe_index_stats`); // Stats d'index (serverless)
+      testUrls.push(`${normalizedUrl}query`); // Endpoint query (legacy)
+      
+      // Essayer aussi avec databases
+      if (!normalizedUrl.includes("databases")) {
+        testUrls.push(`${normalizedUrl}databases`);
+      }
     }
     
-    console.log(`URL de test complète: ${testUrl}`);
-    console.log(`En-têtes utilisés: ${JSON.stringify({
-      ...PINECONE_HEADERS,
-      'Api-Key': 'XXXXX' // Masquer la clé API pour la sécurité
-    })}`);
+    // Essayer chaque URL jusqu'à ce qu'une fonctionne
+    let success = false;
+    let lastError = null;
+    let lastResponse = null;
+    let successUrl = null;
     
-    try {
-      // Test simple avec HEAD pour vérifier si le domaine est valide
-      console.log(`Envoi de la requête de test à ${testUrl}...`);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
-      
-      const response = await fetch(testUrl, {
-        method: 'GET',
-        headers: PINECONE_HEADERS,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      console.log(`Réponse du test: ${response.status} ${response.statusText}`);
-      
-      // Traiter la réponse
-      if (response.ok) {
-        const responseData = await response.text();
-        console.log(`Réponse reçue: ${responseData.substring(0, 100)}...`);
+    for (const testUrl of testUrls) {
+      try {
+        console.log(`Tentative avec l'URL: ${testUrl}`);
         
-        return {
-          success: true,
-          message: "Connexion Pinecone réussie",
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
+        
+        const response = await fetch(testUrl, {
+          method: 'GET',
+          headers: PINECONE_HEADERS,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log(`Réponse du test pour ${testUrl}: ${response.status} ${response.statusText}`);
+        
+        // Stocker la dernière réponse
+        lastResponse = {
           status: response.status,
-          timestamp: new Date().toISOString(),
-          url: testUrl,
-          indexName: indexName,
-          response: responseData.substring(0, 200)
+          statusText: response.statusText,
+          url: testUrl
         };
-      } else {
-        const errorText = await response.text();
-        console.error(`Erreur HTTP: ${response.status} ${response.statusText}`);
-        console.error(`Corps de l'erreur: ${errorText}`);
         
-        return {
-          success: false,
-          message: `Connexion échouée: ${response.status} ${response.statusText}`,
-          error: errorText,
-          status: response.status,
-          timestamp: new Date().toISOString(),
-          url: testUrl,
-          indexName: indexName,
-          headers: Object.keys(PINECONE_HEADERS) // Liste des en-têtes utilisés sans valeurs
+        // Si la réponse est OK, on a trouvé une URL qui fonctionne
+        if (response.ok || response.status === 200) {
+          success = true;
+          successUrl = testUrl;
+          
+          const responseData = await response.text();
+          console.log(`Réponse reçue: ${responseData.substring(0, 100)}...`);
+          
+          return {
+            success: true,
+            message: "Connexion Pinecone réussie",
+            status: response.status,
+            timestamp: new Date().toISOString(),
+            url: testUrl,
+            apiType: apiType,
+            indexName: indexName,
+            response: responseData.substring(0, 200)
+          };
+        } else {
+          const errorText = await response.text();
+          console.error(`Erreur HTTP pour ${testUrl}: ${response.status} ${response.statusText}`);
+          console.error(`Corps de l'erreur: ${errorText}`);
+          
+          // Stocker la dernière erreur
+          lastError = {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+            url: testUrl
+          };
+        }
+      } catch (fetchError) {
+        console.error(`Erreur lors de la requête à ${testUrl}:`, fetchError);
+        
+        // Stocker la dernière erreur
+        const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        lastError = {
+          error: errorMessage,
+          url: testUrl
         };
       }
-    } catch (fetchError) {
-      console.error("Erreur de fetch:", fetchError);
+    }
+    
+    // Si aucune URL n'a fonctionné, retourner la dernière erreur
+    if (!success) {
+      let errorMessage = "Toutes les tentatives de connexion à Pinecone ont échoué";
       
-      // Vérifier si c'est une erreur de timeout
-      const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
-      const isTimeout = errorMessage.includes("abort") || errorMessage.includes("timeout");
+      // Vérifier si c'est une erreur 404 (URL incorrecte ou index inexistant)
+      if (lastResponse && lastResponse.status === 404) {
+        errorMessage = `Erreur 404: L'URL Pinecone ou l'index '${indexName}' n'existe pas. Vérifiez les points suivants:\n`;
+        errorMessage += "1. Vérifiez que l'URL contient bien le nom de votre index et la région correcte\n";
+        errorMessage += "2. Assurez-vous que votre index est bien créé dans la console Pinecone\n";
+        errorMessage += "3. Si vous utilisez un plan gratuit, vérifiez que votre index n'est pas en pause\n";
+        errorMessage += "4. Essayez de récupérer une nouvelle URL depuis la console Pinecone";
+      }
+      // Vérifier si c'est une erreur 403 (problème d'accès ou de clé API)
+      else if (lastResponse && lastResponse.status === 403) {
+        errorMessage = "Erreur 403: Accès refusé. Vérifiez votre clé API Pinecone ou les permissions de votre compte.";
+        errorMessage += " Si vous utilisez un plan gratuit, votre index pourrait être en pause.";
+      }
       
       return {
         success: false,
-        message: isTimeout ? 
-          "La connexion a expiré, le serveur Pinecone n'a pas répondu à temps" : 
-          "Exception lors de la connexion à Pinecone",
-        error: errorMessage,
+        message: errorMessage,
+        error: lastError ? JSON.stringify(lastError) : "Erreur inconnue",
+        status: lastResponse ? lastResponse.status : null,
         timestamp: new Date().toISOString(),
-        url: testUrl,
-        indexName: indexName
+        testedUrls: testUrls,
+        apiType: apiType,
+        indexName: indexName,
+        lastError: lastError,
+        lastResponse: lastResponse,
+        recommendedAction: "Vérifiez votre URL Pinecone dans la console Pinecone. L'URL doit inclure le nom de votre index et la région correcte."
       };
     }
+    
+    // Ce code ne devrait jamais être atteint si tout va bien, mais au cas où
+    return {
+      success: true,
+      message: "Connexion Pinecone réussie (fallback)",
+      timestamp: new Date().toISOString(),
+      url: successUrl,
+      apiType: apiType,
+      indexName: indexName
+    };
   } catch (error) {
     console.error("Erreur lors du test de connexion Pinecone:", error);
     return {

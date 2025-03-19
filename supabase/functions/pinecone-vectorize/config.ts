@@ -26,12 +26,27 @@ export const REQUEST_TIMEOUT = 30000;
 export function getPineconeUrl(): string {
   if (PINECONE_BASE_URL && PINECONE_BASE_URL.trim() !== "") {
     console.log(`Utilisation de l'URL Pinecone principale: ${PINECONE_BASE_URL}`);
-    return PINECONE_BASE_URL;
+    
+    // Vérifier et corriger l'URL si nécessaire
+    let url = PINECONE_BASE_URL.trim();
+    
+    // S'assurer que l'URL se termine par un slash
+    if (!url.endsWith('/')) {
+      url = `${url}/`;
+    }
+    
+    return url;
   }
   
   if (ALTERNATIVE_PINECONE_URL && ALTERNATIVE_PINECONE_URL.trim() !== "") {
     console.log(`URL principale non disponible, utilisation de l'URL alternative: ${ALTERNATIVE_PINECONE_URL}`);
-    return ALTERNATIVE_PINECONE_URL;
+    
+    let url = ALTERNATIVE_PINECONE_URL.trim();
+    if (!url.endsWith('/')) {
+      url = `${url}/`;
+    }
+    
+    return url;
   }
   
   console.warn("Aucune URL Pinecone configurée, tentative d'utilisation de l'URL par défaut");

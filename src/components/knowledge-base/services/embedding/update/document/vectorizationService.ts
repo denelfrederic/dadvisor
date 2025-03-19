@@ -50,13 +50,26 @@ export const vectorizeDocument = async (
         onLog?.("1. Une erreur 403 Forbidden renvoyée par Pinecone (quota dépassé ou plan gratuit en pause)");
         onLog?.("2. Un problème de configuration dans les variables d'environnement de la fonction edge");
         onLog?.("3. Un problème temporaire avec l'API Pinecone");
+        onLog?.("4. Une erreur 404 Not Found - URL incorrecte ou index inexistant");
         
         // Détection spécifique du quota des plans gratuits
         onLog?.("Si vous utilisez un plan gratuit Pinecone, il est possible que:");
         onLog?.("- Votre index soit en pause (après une période d'inactivité)");
         onLog?.("- Vous ayez atteint la limite de requêtes de votre plan");
         onLog?.("- Votre index soit encore en cours de démarrage");
-        onLog?.("Conseil: Patientez quelques minutes et réessayez, ou vérifiez l'état de votre index dans la console Pinecone");
+        onLog?.("- L'URL configurée ne soit pas correcte (vérifiez dans la console Pinecone)");
+        onLog?.("Conseil: Vérifiez l'état de votre index dans la console Pinecone (https://app.pinecone.io)");
+        
+        // Si erreur 403 ou 404 spécifiquement
+        if (pineconeError.message.includes("403")) {
+          onLog?.("ERREUR 403 - ACCÈS REFUSÉ:");
+          onLog?.("Les plans gratuits de Pinecone se mettent en pause après 1h d'inactivité.");
+          onLog?.("Allez sur https://app.pinecone.io pour réactiver votre index.");
+        } else if (pineconeError.message.includes("404")) {
+          onLog?.("ERREUR 404 - INDEX NON TROUVÉ:");
+          onLog?.("Vérifiez que l'URL de votre index est correcte dans la console Pinecone.");
+          onLog?.("L'URL dans config.ts doit correspondre exactement à celle de la console Pinecone.");
+        }
       }
       
       return false;
@@ -75,7 +88,7 @@ export const vectorizeDocument = async (
           onLog?.("2. Quota dépassé (plan gratuit)");
           onLog?.("3. Index en pause ou en cours de démarrage");
           onLog?.("4. Restriction IP (peu probable)");
-          onLog?.("Conseil: Vérifiez l'état de votre index dans la console Pinecone et patientez quelques minutes avant de réessayer");
+          onLog?.("Conseil: Vérifiez l'état de votre index dans la console Pinecone (https://app.pinecone.io) et patientez quelques minutes avant de réessayer");
         } else if (pineconeData.error.includes("timeout") || pineconeData.error.includes("ETIMEDOUT")) {
           onLog?.("ERREUR DE TIMEOUT: Le serveur Pinecone n'a pas répondu à temps.");
           onLog?.("Cela peut être dû à:");
@@ -84,8 +97,10 @@ export const vectorizeDocument = async (
           onLog?.("3. Un problème de connectivité réseau");
           onLog?.("Conseil: Patientez quelques minutes et réessayez");
         } else if (pineconeData.error.includes("not found") || pineconeData.error.includes("404")) {
-          onLog?.("ERREUR 404: Index Pinecone non trouvé.");
-          onLog?.("Vérifiez le nom de l'index dans la configuration (actuellement: " + (pineconeData.indexName || "non spécifié") + ")");
+          onLog?.("ERREUR 404: URL ou index Pinecone non trouvé.");
+          onLog?.("Vérifiez l'URL et le nom de l'index dans la configuration: " + (pineconeData.indexName || "non spécifié"));
+          onLog?.("URL utilisée: " + (pineconeData.url || "inconnue"));
+          onLog?.("Récupérez l'URL correcte depuis la console Pinecone: https://app.pinecone.io");
         }
       }
       
