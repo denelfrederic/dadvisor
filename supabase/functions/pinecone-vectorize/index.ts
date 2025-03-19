@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -107,6 +108,13 @@ async function upsertToPinecone(id, vector, metadata) {
     console.log(`Envoi de données à Pinecone: ${JSON.stringify(vectorData).substring(0, 200)}...`);
     console.log(`Dimensions du vecteur: ${vector.length}`);
     
+    // Ajout de logs détaillés pour la requête
+    console.log(`Headers: Api-Key: ${PINECONE_API_KEY ? "Présente (masquée)" : "Manquante!"}, Content-Type: application/json`);
+    
+    // Effectuer la requête avec un timeout plus long
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 sec timeout
+    
     const response = await fetch(`${PINECONE_BASE_URL}/vectors/upsert`, {
       method: 'POST',
       headers: {
@@ -114,13 +122,34 @@ async function upsertToPinecone(id, vector, metadata) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(vectorData),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     const responseText = await response.text();
     console.log(`Réponse Pinecone (${response.status}): ${responseText}`);
     
     if (!response.ok) {
+      // Log détaillé de l'erreur
       console.error(`Erreur API Pinecone (${response.status}): ${responseText}`);
+      console.error(`URL utilisée: ${PINECONE_BASE_URL}/vectors/upsert`);
+      console.error(`Index: ${PINECONE_INDEX}, Environnement: ${PINECONE_ENVIRONMENT}`);
+      
+      // Tester l'API pour info
+      try {
+        console.log("Test de la connexion à l'API Pinecone...");
+        const testResponse = await fetch(`${PINECONE_BASE_URL}/describe_index_stats`, {
+          method: 'GET',
+          headers: {
+            'Api-Key': PINECONE_API_KEY,
+          },
+        });
+        console.log(`Test d'API Pinecone: ${testResponse.status} - ${await testResponse.text()}`);
+      } catch (testError) {
+        console.error("Test de connexion Pinecone échoué:", testError);
+      }
+      
       throw new Error(`Pinecone API error (${response.status}): ${responseText}`);
     }
     
@@ -257,7 +286,43 @@ serve(async (req) => {
         };
         
         try {
-          const result = await upsertToPinecone(documentId, embedding, metadata);
+          // Tentative avec gestion d'erreur améliorée
+          let result;
+          try {
+            result = await upsertToPinecone(documentId, embedding, metadata);
+          } catch (pineconeError) {
+            console.error("Première tentative échouée, réessai avec une configuration alternative...");
+            
+            // Essayer une URL alternative au cas où
+            const alternativeUrl = `https://${PINECONE_INDEX}-3q5v9g1.svc.${PINECONE_ENVIRONMENT}.pinecone.io/vectors/upsert`;
+            console.log(`Tentative avec URL alternative: ${alternativeUrl}`);
+            
+            const response = await fetch(alternativeUrl, {
+              method: 'POST',
+              headers: {
+                'Api-Key': PINECONE_API_KEY,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                vectors: [
+                  {
+                    id: documentId,
+                    values: embedding,
+                    metadata
+                  }
+                ],
+                namespace: 'documents'
+              }),
+            });
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Alternative également échouée (${response.status}): ${errorText}`);
+            }
+            
+            result = await response.json();
+            console.log("Tentative alternative réussie!", result);
+          }
           
           console.log(`Vectorisation réussie pour document: ${documentId}`);
           
