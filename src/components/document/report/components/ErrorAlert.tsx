@@ -3,6 +3,7 @@ import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw, Settings, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface ErrorAlertProps {
   errorSummary: string | null;
@@ -122,7 +123,8 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open('/settings', '_blank')}
+            component={Link}
+            to="/adminllm"
             className="mt-2"
           >
             <Settings className="h-4 w-4 mr-2" />

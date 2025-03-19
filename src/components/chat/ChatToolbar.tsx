@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Database, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface ChatToolbarProps {
   docCount: number;
@@ -25,10 +26,12 @@ const ChatToolbar = ({ docCount, onOpenDocManager, onToggleSettings }: ChatToolb
         variant="ghost"
         size="icon"
         className="text-white hover:text-white/80 hover:bg-white/10"
-        onClick={onToggleSettings}
+        asChild
         title="Paramètres"
       >
-        <Settings className="h-4 w-4" />
+        <Link to="/adminllm">
+          <Settings className="h-4 w-4" />
+        </Link>
       </Button>
     </div>
   );

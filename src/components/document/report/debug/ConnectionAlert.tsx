@@ -3,6 +3,7 @@ import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface ConnectionAlertProps {
   connectionTest: any;
@@ -84,17 +85,26 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest, onRet
             Ouvrir la console Pinecone
           </Button>
           
-          {onRetryTest && (
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={onRetryTest}
-              className="flex items-center gap-1"
-            >
-              <RefreshCw className="h-3 w-3" />
-              Réessayer
-            </Button>
-          )}
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={onRetryTest}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Réessayer
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            component={Link}
+            to="/adminllm"
+            className="flex items-center gap-1"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Paramètres
+          </Button>
         </div>
       </AlertDescription>
     </Alert>
