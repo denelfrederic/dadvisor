@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeBaseStats } from "../../types";
@@ -147,8 +148,9 @@ export const useKnowledgeBaseReport = () => {
                 console.log(`Impossible de parser l'embedding: ${(e as Error).message}`);
               }
             } else if (Array.isArray(entry.embedding)) {
-              console.log(`Embedding brut: Tableau de longueur ${entry.embedding.length}`);
-              console.log(`Premiers éléments:`, entry.embedding.slice(0, 5));
+              const embeddingArray = entry.embedding as number[];
+              console.log(`Embedding brut: Tableau de longueur ${embeddingArray.length}`);
+              console.log(`Premiers éléments:`, embeddingArray.slice(0, 5));
             } else {
               console.log(`Embedding brut (type non standard):`, entry.embedding);
             }
