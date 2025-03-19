@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeBaseStats } from "../../types";
 import { isValidEmbedding, parseEmbedding } from "../../services/embedding/embeddingUtils";
@@ -112,17 +111,27 @@ export const useKnowledgeBaseReport = () => {
     }
   };
 
-  const checkRawEmbeddings = async () => {
+  const checkRawEmbeddings = useCallback(async () => {
     console.log("Vérification des embeddings bruts dans la base de données...");
     try {
+      // Toast pour informer l'utilisateur
+      toast({
+        title: "Vérification des embeddings",
+        description: "Consultez la console développeur pour voir les détails"
+      });
+
       const { data, error } = await supabase
         .from('knowledge_entries')
         .select('id, embedding')
         .limit(3);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur lors de la récupération des embeddings:", error);
+        throw error;
+      }
       
       if (data && data.length > 0) {
+        console.group("Analyse des embeddings");
         data.forEach(entry => {
           console.log(`Entrée ID: ${entry.id}`);
           if (entry.embedding) {
@@ -137,20 +146,29 @@ export const useKnowledgeBaseReport = () => {
               } catch (e) {
                 console.log(`Impossible de parser l'embedding: ${(e as Error).message}`);
               }
+            } else if (Array.isArray(entry.embedding)) {
+              console.log(`Embedding brut: Tableau de longueur ${entry.embedding.length}`);
+              console.log(`Premiers éléments:`, entry.embedding.slice(0, 5));
             } else {
-              console.log(`Embedding brut:`, entry.embedding);
+              console.log(`Embedding brut (type non standard):`, entry.embedding);
             }
           } else {
             console.log(`Pas d'embedding pour cette entrée`);
           }
         });
+        console.groupEnd();
       } else {
-        console.log("Aucune entrée trouvée");
+        console.log("Aucune entrée trouvée ou toutes les entrées sont sans embedding");
       }
     } catch (error) {
       console.error("Erreur lors de la vérification des embeddings:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de vérifier les embeddings. Consultez la console pour plus de détails.",
+        variant: "destructive"
+      });
     }
-  };
+  }, [toast]);
 
   return {
     report,

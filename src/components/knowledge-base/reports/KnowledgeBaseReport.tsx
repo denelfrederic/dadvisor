@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import KnowledgeBaseCard from "./components/KnowledgeBaseCard";
@@ -8,6 +9,20 @@ import { useKnowledgeBaseReport } from "./hooks/useKnowledgeBaseReport";
 
 const KnowledgeBaseReport = () => {
   const { report, isLoading, generateReport, checkRawEmbeddings } = useKnowledgeBaseReport();
+
+  // Exposer le rapport globalement pour le débogage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && report) {
+      (window as any).__knowledgeBaseReport = report;
+    }
+  }, [report]);
+
+  const handleShowReport = () => {
+    console.log("Rapport actuel de la base de connaissances:", report);
+    if (!report) {
+      console.log("Aucun rapport disponible. Veuillez d'abord générer un rapport.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -33,11 +48,9 @@ const KnowledgeBaseReport = () => {
         />
       )}
       
-      {/* Debug buttons component */}
+      {/* Debug buttons component avec handlers explicites */}
       <DebugButtons 
-        onShowReport={() => {
-          console.log("Rapport actuel de la base de connaissances:", report);
-        }}
+        onShowReport={handleShowReport}
         onCheckEmbeddings={checkRawEmbeddings}
       />
     </div>
