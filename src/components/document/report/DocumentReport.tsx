@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -11,6 +10,7 @@ import IndexationProgressBar from "./IndexationProgressBar";
 import ReportStatsCards from "./ReportStatsCards";
 import EmptyReportState from "./EmptyReportState";
 import { formatFileSize } from "../utils";
+import { supabase } from "@/integrations/supabase/client"; // Added missing import
 
 const DocumentReport = () => {
   const { report, isLoading, error, generateReport } = useIndexationReport();
