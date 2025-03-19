@@ -20,7 +20,7 @@ export const generateEmbedding = async (text: string, modelType = "document"): P
     
     if (error) {
       console.error("Erreur lors de la génération de l'embedding:", error);
-      throw new Error("Échec de la génération de l'embedding");
+      throw new Error("Échec de la génération de l'embedding: " + error.message);
     }
     
     if (!data || !data.embedding || !Array.isArray(data.embedding) || data.embedding.length === 0) {
@@ -28,7 +28,7 @@ export const generateEmbedding = async (text: string, modelType = "document"): P
       throw new Error("L'embedding généré est invalide ou vide");
     }
     
-    console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName}`);
+    console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName || 'inconnu'}`);
     
     // Vérifier que l'embedding est valide - accepter 384, 768 ou 1536 dimensions
     if (!isValidEmbedding(data.embedding)) {
