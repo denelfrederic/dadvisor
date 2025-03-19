@@ -1,8 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../types";
-import { generateEntryEmbedding, validateEmbeddingDimensions } from "../embedding/embeddingService";
-import { prepareEmbeddingForStorage, processEntryForEmbedding } from "../embedding/embeddingUtils";
+import { generateEntryEmbedding } from "../embedding/embeddingService";
+import { prepareEmbeddingForStorage, processEntryForEmbedding, validateEmbeddingDimensions } from "../embedding/embeddingUtils";
 
 export const createEntry = async (
   question: string,

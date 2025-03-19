@@ -80,3 +80,9 @@ export const prepareEmbeddingForStorage = (embedding: number[] | string): string
 export const processEntryForEmbedding = (question: string, answer: string): string => {
   return `Question: ${question.trim()}\nRéponse: ${answer.trim()}`;
 };
+
+// Fonction pour valider les dimensions d'un embedding
+export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 384): boolean => {
+  if (!Array.isArray(embedding)) return false;
+  return embedding.length === expectedDimension;
+};

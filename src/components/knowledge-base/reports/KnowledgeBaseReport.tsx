@@ -7,7 +7,7 @@ import EmptyReportState from "./components/EmptyReportState";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { KnowledgeBaseStats } from "../types";
-import { isValidEmbedding } from "../services/embedding/embeddingUtils";
+import { isValidEmbedding, parseEmbedding } from "../services/embedding/embeddingUtils";
 
 const KnowledgeBaseReport = () => {
   const [report, setReport] = useState<KnowledgeBaseStats | null>(null);
@@ -45,7 +45,7 @@ const KnowledgeBaseReport = () => {
         throw new Error(`Erreur lors de l'analyse des entrées: ${entriesError.message}`);
       }
       
-      if (entries) {
+      if (entries && entries.length > 0) {
         console.log(`Analyse de ${entries.length} entrées de connaissances pour embeddings`);
         
         // Compter les entrées avec embeddings valides

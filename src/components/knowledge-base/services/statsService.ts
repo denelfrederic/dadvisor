@@ -27,7 +27,7 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       .from('knowledge_entries')
       .select('id, source, embedding');
     
-    if (!entriesError && entries) {
+    if (!entriesError && entries && entries.length > 0) {
       console.log(`Analyzing ${entries.length} knowledge entries for embeddings`);
       
       // Compter les entrées avec embeddings valides
@@ -113,7 +113,7 @@ export const generateCombinedReport = async (): Promise<{
     let docWithEmbeddings = 0;
     
     // Vérifier plus précisément si l'embedding existe et est valide
-    if (documents) {
+    if (documents && documents.length > 0) {
       console.log(`Analyzing ${documents.length} documents for embeddings`);
       
       for (const doc of documents) {

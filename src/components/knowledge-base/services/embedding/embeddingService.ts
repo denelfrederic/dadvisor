@@ -1,5 +1,5 @@
 
-import { parseEmbedding, prepareEmbeddingForStorage, isValidEmbedding } from "./embeddingUtils";
+import { parseEmbedding, prepareEmbeddingForStorage, isValidEmbedding, validateEmbeddingDimensions } from "./embeddingUtils";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -89,3 +89,6 @@ export const updateEntryEmbedding = async (entryId: string, question: string, an
     return false;
   }
 };
+
+// Exporter la fonction de validation pour utilisation dans d'autres modules
+export { validateEmbeddingDimensions };
