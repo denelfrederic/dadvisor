@@ -1,14 +1,15 @@
 
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, ExternalLink } from "lucide-react";
+import { AlertTriangle, ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ConnectionAlertProps {
   connectionTest: any;
+  onRetryTest?: () => void;
 }
 
-const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest }) => {
+const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest, onRetryTest }) => {
   if (!connectionTest || connectionTest.success) return null;
   
   const openPineconeConsole = () => {
@@ -32,6 +33,8 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest }) => 
               <li>Vérifiez que l'URL de votre index est correcte</li>
               <li>Assurez-vous que l'index existe dans votre compte Pinecone</li>
               <li>Récupérez l'URL correcte depuis la console Pinecone</li>
+              <li>Vérifiez que l'index que vous utilisez est correctement spécifié dans les variables d'environnement</li>
+              <li>Pour les API serverless, vérifiez que l'URL inclut <code>.aped-</code> ou <code>.serverless.</code></li>
             </ul>
           </div>
         )}
@@ -43,6 +46,7 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest }) => 
               <li>Vérifiez que votre clé API est correcte</li>
               <li>Les plans gratuits se mettent en pause après 1h d'inactivité</li>
               <li>Allez sur la console Pinecone pour réactiver votre index</li>
+              <li>Un index en pause peut prendre plusieurs minutes pour démarrer</li>
             </ul>
           </div>
         )}
@@ -70,7 +74,7 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest }) => 
           </div>
         )}
         
-        <div className="mt-3">
+        <div className="mt-3 flex gap-2">
           <Button 
             size="sm" 
             onClick={openPineconeConsole}
@@ -79,6 +83,18 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest }) => 
             <ExternalLink className="h-3 w-3" />
             Ouvrir la console Pinecone
           </Button>
+          
+          {onRetryTest && (
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={onRetryTest}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Réessayer
+            </Button>
+          )}
         </div>
       </AlertDescription>
     </Alert>

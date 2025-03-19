@@ -45,7 +45,8 @@ export const processDocument = async (file: File): Promise<boolean> => {
         // Utiliser des options plus robustes pour les documents volumineux
         const options = {
           maxLength: content.length > 15000 ? 8000 : 10000, // Réduire la taille pour les très gros documents
-          retries: content.length > 20000 ? 2 : 1,         // Plus de tentatives pour les gros documents
+          retries: content.length > 20000 ? 2 : 1,          // Plus de tentatives pour les gros documents
+          targetDimension: 768,                            // S'assurer que la dimension est correcte pour la DB
         };
         
         embedding = await generateEmbedding(content, "document", options);
@@ -69,29 +70,60 @@ export const processDocument = async (file: File): Promise<boolean> => {
       type: file.type,
       size: file.size,
       content_length: content.length,
-      has_embedding: embedding !== null
+      has_embedding: embedding !== null,
+      embedding_dimensions: embedding ? (Array.isArray(embedding) ? embedding.length : "non disponible") : "pas d'embedding"
     });
 
-    const { data, error } = await supabase
-      .from('documents')
-      .insert({
-        title: file.name,
-        content: content,
-        type: file.type,
-        size: file.size,
-        source: "Upload utilisateur",
-        embedding: embeddingForStorage
-      })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("Erreur lors de l'insertion du document:", error);
-      throw new Error(`Erreur Supabase: ${error.message}`);
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .insert({
+          title: file.name,
+          content: content,
+          type: file.type,
+          size: file.size,
+          source: "Upload utilisateur",
+          embedding: embeddingForStorage
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Erreur lors de l'insertion du document:", error);
+        throw new Error(`Erreur Supabase: ${error.message}`);
+      }
+      
+      console.log("Document ajouté avec succès:", data);
+      return true;
+    } catch (insertError) {
+      console.error("Erreur détaillée lors de l'insertion:", insertError);
+      // Si on a un problème de dimension, ajoutons sans embedding pour réessayer plus tard
+      if (insertError.toString().includes("dimensions")) {
+        console.log("Tentative d'insertion sans embedding suite à une erreur de dimensions");
+        const { data, error } = await supabase
+          .from('documents')
+          .insert({
+            title: file.name,
+            content: content,
+            type: file.type,
+            size: file.size,
+            source: "Upload utilisateur (sans embedding - erreur de dimensions)",
+            embedding: null
+          })
+          .select()
+          .single();
+          
+        if (error) {
+          console.error("Échec de l'insertion même sans embedding:", error);
+          throw new Error(`Impossible d'insérer le document même sans embedding: ${error.message}`);
+        }
+        
+        console.log("Document ajouté sans embedding, sera vectorisé ultérieurement:", data);
+        return true;
+      }
+      
+      throw insertError;
     }
-    
-    console.log("Document ajouté avec succès:", data);
-    return true;
 
   } catch (error) {
     console.error("Erreur lors du traitement du document:", error);

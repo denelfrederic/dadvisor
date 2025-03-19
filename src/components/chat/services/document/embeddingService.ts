@@ -2,6 +2,34 @@
 import { supabase } from "@/integrations/supabase/client";
 import { parseEmbedding, prepareEmbeddingForStorage, isValidEmbedding } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 
+// Fonction pour adapter les dimensions d'un embedding
+const adaptEmbeddingDimensions = (embedding: number[], targetDimension = 768): number[] => {
+  if (!embedding || !Array.isArray(embedding)) {
+    throw new Error("L'embedding doit être un tableau de nombres");
+  }
+  
+  const currentDimension = embedding.length;
+  console.log(`Adaptation des dimensions de l'embedding: ${currentDimension} -> ${targetDimension}`);
+  
+  if (currentDimension === targetDimension) {
+    return embedding; // Déjà la bonne dimension
+  }
+  
+  if (currentDimension > targetDimension) {
+    // Réduction des dimensions: prendre les premières 'targetDimension' valeurs
+    console.log(`Réduction des dimensions de ${currentDimension} à ${targetDimension}`);
+    return embedding.slice(0, targetDimension);
+  } else {
+    // Augmentation des dimensions: remplir avec des zéros
+    console.log(`Augmentation des dimensions de ${currentDimension} à ${targetDimension} (non recommandé)`);
+    const result = [...embedding];
+    while (result.length < targetDimension) {
+      result.push(0);
+    }
+    return result;
+  }
+};
+
 // Fonction pour générer l'embedding à partir du texte
 export const generateEmbedding = async (text: string, modelType = "document", options = {}): Promise<any> => {
   try {
@@ -16,6 +44,7 @@ export const generateEmbedding = async (text: string, modelType = "document", op
       maxLength: 8000, // Réduit la taille maximale par défaut
       retries: 2,
       chunkSize: 0, // 0 signifie pas de découpage
+      targetDimension: 768, // Dimension cible pour la base de données
       ...options
     };
 
@@ -73,7 +102,10 @@ export const generateEmbedding = async (text: string, modelType = "document", op
           continue;
         }
         
-        return data.embedding;
+        // Adapter les dimensions de l'embedding si nécessaire
+        const adaptedEmbedding = adaptEmbeddingDimensions(data.embedding, defaultOptions.targetDimension);
+        
+        return adaptedEmbedding;
       } catch (attemptError) {
         console.error(`Exception lors de la tentative ${retryCount + 1}:`, attemptError);
         lastError = attemptError;
@@ -117,6 +149,7 @@ export const forceGenerateEmbedding = async (documentId: string): Promise<boolea
     const options = {
       maxLength: 6000, // Réduire davantage la taille pour les documents problématiques
       retries: 3,      // Faire plus de tentatives
+      targetDimension: 768, // Dimension cible pour la base de données
     };
     
     // Pour les PDF, réduire encore plus la taille
