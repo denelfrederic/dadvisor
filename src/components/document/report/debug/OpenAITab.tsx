@@ -2,181 +2,178 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, RefreshCw } from "lucide-react";
-import { checkOpenAIConfig, generateTestEmbedding } from "../utils/openai";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, Zap } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OpenAITabProps {
   addLog: (message: string) => void;
 }
 
-/**
- * Onglet de diagnostic pour tester le service OpenAI
- * Permet de vérifier la configuration et générer des embeddings de test
- */
 const OpenAITab: React.FC<OpenAITabProps> = ({ addLog }) => {
-  const [openAIStatus, setOpenAIStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [openAIInfo, setOpenAIInfo] = useState<any>(null);
-  const [testText, setTestText] = useState("Ceci est un texte de test pour générer un embedding");
+  const [openaiStatus, setOpenaiStatus] = useState<any>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [testText, setTestText] = useState("Ceci est un test pour générer un embedding avec OpenAI");
   const [testResult, setTestResult] = useState<any>(null);
-  const [testLoading, setTestLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const checkOpenAIStatus = async () => {
-    setOpenAIStatus('loading');
-    addLog("Vérification de la configuration OpenAI...");
+  // Vérifier l'état de la configuration OpenAI
+  const checkOpenAIConfig = async () => {
+    setIsChecking(true);
+    setOpenaiStatus(null);
     
     try {
-      const result = await checkOpenAIConfig();
+      addLog("Vérification de la configuration OpenAI...");
       
-      if (result.success) {
-        setOpenAIStatus('success');
-        setOpenAIInfo(result.data);
-        addLog(`Configuration OpenAI vérifiée avec succès. Modèle disponible: ${result.data?.model || 'non spécifié'}`);
-      } else {
-        setOpenAIStatus('error');
-        setOpenAIInfo({ error: result.error });
-        addLog(`Erreur lors de la vérification OpenAI: ${result.error}`);
+      const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
+        body: { action: 'check-openai' }
+      });
+      
+      if (error) {
+        addLog(`ERREUR: ${error.message}`);
+        setOpenaiStatus({ success: false, error: error.message });
+        return;
       }
+      
+      addLog(`Réponse reçue: ${JSON.stringify(data)}`);
+      setOpenaiStatus(data);
+      
     } catch (error) {
-      setOpenAIStatus('error');
-      setOpenAIInfo({ error: error instanceof Error ? error.message : String(error) });
-      addLog(`Exception lors de la vérification OpenAI: ${error instanceof Error ? error.message : String(error)}`);
+      addLog(`EXCEPTION: ${error instanceof Error ? error.message : String(error)}`);
+      setOpenaiStatus({ 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    } finally {
+      setIsChecking(false);
     }
   };
-  
-  const testEmbedding = async () => {
-    if (!testText.trim()) {
-      addLog("Le texte de test ne peut pas être vide");
-      return;
-    }
+
+  // Générer un embedding de test
+  const generateTestEmbedding = async () => {
+    if (!testText.trim()) return;
     
-    setTestLoading(true);
+    setIsGenerating(true);
     setTestResult(null);
-    addLog(`Génération d'un embedding de test pour: "${testText.substring(0, 30)}..."`);
     
     try {
-      const result = await generateTestEmbedding(testText);
+      addLog(`Génération d'un embedding pour le texte: "${testText.substring(0, 50)}..."`);
       
-      if (result.success) {
-        const embedding = result.data.embedding;
-        setTestResult({
-          success: true,
-          dimensions: embedding.length,
-          sample: embedding.slice(0, 5),
-          model: result.data.model || "text-embedding-3-small"
-        });
-        addLog(`Embedding généré avec succès: ${embedding.length} dimensions`);
-      } else {
-        setTestResult({
-          success: false,
-          error: result.error
-        });
-        addLog(`Erreur lors de la génération de l'embedding: ${result.error}`);
-      }
-    } catch (error) {
-      setTestResult({
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
+      const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
+        body: { 
+          action: 'generate-embedding',
+          text: testText
+        }
       });
-      addLog(`Exception lors de la génération de l'embedding: ${error instanceof Error ? error.message : String(error)}`);
+      
+      if (error) {
+        addLog(`ERREUR: ${error.message}`);
+        setTestResult({ success: false, error: error.message });
+        return;
+      }
+      
+      addLog(`Embedding généré avec succès (${data.dimensions} dimensions)`);
+      setTestResult(data);
+      
+    } catch (error) {
+      addLog(`EXCEPTION: ${error instanceof Error ? error.message : String(error)}`);
+      setTestResult({ 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
     } finally {
-      setTestLoading(false);
+      setIsGenerating(false);
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-medium">Configuration OpenAI</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium">Vérification OpenAI</h3>
         <Button 
-          onClick={checkOpenAIStatus} 
+          onClick={checkOpenAIConfig} 
           variant="outline" 
           size="sm"
-          disabled={openAIStatus === 'loading'}
+          disabled={isChecking}
         >
-          {openAIStatus === 'loading' ? (
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+          {isChecking ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
-            openAIStatus === 'success' ? (
-              <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-            ) : openAIStatus === 'error' ? (
-              <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
-            ) : null
+            <Zap className="h-4 w-4 mr-2" />
           )}
-          Vérifier configuration
+          Vérifier la clé API
         </Button>
       </div>
       
-      {openAIInfo && (
-        <Card className="p-3 text-sm">
-          {openAIStatus === 'success' ? (
-            <div>
-              <div className="flex items-center mb-2">
-                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                <span className="font-medium">Configuration OpenAI valide</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="font-medium">Modèle:</span> {openAIInfo.model || "text-embedding-3-small"}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center text-red-500">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              <span>{openAIInfo.error || "Erreur inconnue"}</span>
-            </div>
-          )}
-        </Card>
+      {openaiStatus && (
+        <Alert variant={openaiStatus.success ? "default" : "destructive"}>
+          <AlertTitle>
+            {openaiStatus.success ? "Configuration valide" : "Problème détecté"}
+          </AlertTitle>
+          <AlertDescription>
+            {openaiStatus.success ? (
+              <p>La clé API OpenAI est correctement configurée. Modèle disponible: {openaiStatus.model || "Non spécifié"}</p>
+            ) : (
+              <p>{openaiStatus.error || "Erreur lors de la vérification de la clé API OpenAI"}</p>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
       
-      <div className="border-t pt-4 mt-4">
-        <h3 className="text-sm font-medium mb-2">Test de génération d'embedding</h3>
-        <Textarea
+      <div className="space-y-2 mt-4">
+        <h3 className="text-sm font-medium">Test de génération d'embeddings</h3>
+        <Textarea 
           value={testText}
           onChange={(e) => setTestText(e.target.value)}
-          placeholder="Entrez du texte pour générer un embedding de test"
-          className="h-20 mb-2"
+          placeholder="Entrez un texte pour générer un embedding..."
+          className="h-20"
         />
-        <div className="flex justify-end">
-          <Button 
-            onClick={testEmbedding} 
-            disabled={testLoading || !testText.trim()}
-            size="sm"
-          >
-            {testLoading && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
-            Générer un embedding
-          </Button>
-        </div>
-        
-        {testResult && (
-          <Card className="p-3 mt-3 text-sm">
-            {testResult.success ? (
-              <div>
-                <div className="flex items-center mb-2">
-                  <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                  <span className="font-medium">Embedding généré avec succès</span>
-                </div>
-                <div>
-                  <div><span className="font-medium">Dimensions:</span> {testResult.dimensions}</div>
-                  <div><span className="font-medium">Modèle:</span> {testResult.model}</div>
-                  <div className="mt-1">
-                    <span className="font-medium">Échantillon:</span>
-                    <pre className="bg-gray-100 p-1 rounded mt-1 overflow-x-auto">
-                      {JSON.stringify(testResult.sample, null, 2)}...
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center text-red-500">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                <span>{testResult.error || "Erreur inconnue"}</span>
-              </div>
-            )}
-          </Card>
-        )}
+        <Button
+          onClick={generateTestEmbedding}
+          disabled={isGenerating || !testText.trim()}
+        >
+          {isGenerating ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Zap className="h-4 w-4 mr-2" />
+          )}
+          Générer un embedding
+        </Button>
       </div>
+      
+      {testResult && (
+        <div className="mt-4 space-y-2">
+          <h4 className="text-sm font-medium">Résultat:</h4>
+          {testResult.success ? (
+            <div className="space-y-2">
+              <div className="flex space-x-2 text-xs">
+                <span className="font-medium">Modèle:</span>
+                <span>{testResult.model || "Non spécifié"}</span>
+              </div>
+              <div className="flex space-x-2 text-xs">
+                <span className="font-medium">Dimensions:</span>
+                <span>{testResult.dimensions}</span>
+              </div>
+              <h5 className="text-xs font-medium mt-2">Vecteur d'embedding (premières 10 valeurs):</h5>
+              <ScrollArea className="h-28 border rounded-md p-2 bg-black/90 text-white font-mono">
+                <pre className="text-xs whitespace-pre-wrap">
+                  {testResult.embedding ? 
+                    JSON.stringify(testResult.embedding.slice(0, 10)) + "..." 
+                    : "Données non disponibles"}
+                </pre>
+              </ScrollArea>
+            </div>
+          ) : (
+            <Alert variant="destructive">
+              <AlertTitle>Erreur</AlertTitle>
+              <AlertDescription>
+                {testResult.error || "Échec de la génération de l'embedding"}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
     </div>
   );
 };

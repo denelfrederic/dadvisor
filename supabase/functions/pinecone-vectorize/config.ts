@@ -8,6 +8,10 @@ export const PINECONE_BASE_URL = Deno.env.get("PINECONE_BASE_URL") || "";
 export const ALTERNATIVE_PINECONE_URL = Deno.env.get("ALTERNATIVE_PINECONE_URL") || "";
 export const PINECONE_INDEX = Deno.env.get("PINECONE_INDEX") || "";
 
+// URL par défaut pour Pinecone si aucune n'est configurée
+// Cette URL devrait être remplacée par une URL réelle dans les variables d'environnement
+export const DEFAULT_PINECONE_URL = "https://demo-index-xxxx.svc.pinecone.io/";
+
 // Namespace par défaut pour Pinecone
 export const PINECONE_NAMESPACE = "documents";
 
