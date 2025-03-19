@@ -1,65 +1,24 @@
 
-import { KnowledgeEntry } from "../../../../types";
-import { isValidEmbedding } from "../../embeddingUtils";
+import { KnowledgeEntry } from "@/components/knowledge-base/types";
 
 /**
- * Validates if a knowledge entry is valid for embedding generation
+ * Validate that an entry has required fields for embedding generation
  */
 export const isValidEntry = (entry: KnowledgeEntry): boolean => {
-  if (!entry) return false;
-  if (!entry.question || !entry.answer) return false;
-  
-  // Check that content is not just whitespace
-  const questionTrimmed = entry.question.trim();
-  const answerTrimmed = entry.answer.trim();
-  
-  return questionTrimmed.length > 0 && answerTrimmed.length > 0;
-};
-
-/**
- * Validates embedding dimensions against database expectations
- */
-export const validateEmbeddingDimensions = (
-  embedding: number[], 
-  expectedDimensions: number | null
-): { valid: boolean; reason?: string } => {
-  if (!embedding || !Array.isArray(embedding)) {
-    return { 
-      valid: false, 
-      reason: "Generated embedding is not a valid array" 
-    };
+  // Entry must have both question and answer fields
+  if (!entry || !entry.question || !entry.answer) {
+    return false;
   }
   
-  // During transition period, accept 384, 768, or 1536 dimensions
-  if (expectedDimensions === null || expectedDimensions === 1536) {
-    const isValidDimension = embedding.length === 384 || 
-                             embedding.length === 768 || 
-                             embedding.length === 1536;
-    
-    if (!isValidDimension) {
-      return {
-        valid: false,
-        reason: `Dimension mismatch: generated ${embedding.length}, but expected 384, 768, or 1536`
-      };
-    }
-    
-    if (!isValidEmbedding(embedding)) {
-      return {
-        valid: false,
-        reason: "Generated invalid embedding"
-      };
-    }
-    
-    return { valid: true };
+  // Both question and answer must have meaningful content
+  if (entry.question.trim() === '' || entry.answer.trim() === '') {
+    return false;
   }
   
-  // For specific dimension requirements
-  if (embedding.length !== expectedDimensions) {
-    return {
-      valid: false,
-      reason: `Dimension mismatch: generated ${embedding.length}, but database expects ${expectedDimensions}`
-    };
+  // Entry must have an ID for database update
+  if (!entry.id) {
+    return false;
   }
   
-  return { valid: true };
+  return true;
 };

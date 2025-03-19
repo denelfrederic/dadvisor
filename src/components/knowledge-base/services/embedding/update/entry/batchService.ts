@@ -1,7 +1,7 @@
 
 import { KnowledgeEntry } from "@/components/knowledge-base/types";
 import { generateEntryEmbedding } from "@/components/knowledge-base/services/embedding/embeddingService";
-import { isValidEmbedding } from "@/components/knowledge-base/services/embedding/embeddingUtils";
+import { isValidEmbedding, prepareEmbeddingForStorage } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { processEntryForEmbedding } from "./processor";
 import { isValidEntry } from "./validation";
@@ -41,9 +41,12 @@ export const processBatchEmbeddings = async (
         }
         
         // Update entry with embedding
+        // Here is the fix - convert the embedding to a string before storing
+        const embeddingForStorage = prepareEmbeddingForStorage(embedding);
+        
         const { error } = await supabase
           .from('knowledge_entries')
-          .update({ embedding })
+          .update({ embedding: embeddingForStorage })
           .eq('id', entry.id);
         
         if (error) {
