@@ -1,15 +1,17 @@
 
-// Service pour interagir avec Pinecone
-
-import { PINECONE_API_KEY, PINECONE_BASE_URL, ALTERNATIVE_PINECONE_URL, PINECONE_INDEX } from "../config.ts";
+// Service pour l'insertion de vecteurs dans Pinecone
+import { PINECONE_API_KEY, PINECONE_BASE_URL, ALTERNATIVE_PINECONE_URL, PINECONE_INDEX } from "../../config.ts";
+import { PINECONE_HEADERS, REQUEST_TIMEOUT, validatePineconeConfig } from "./config.ts";
 
 /**
  * Insère un vecteur dans Pinecone
+ * @param id Identifiant du document
+ * @param vector Vecteur d'embedding
+ * @param metadata Métadonnées associées au document
  */
 export async function upsertToPinecone(id: string, vector: number[], metadata: any): Promise<any> {
-  if (!PINECONE_API_KEY) {
-    console.error("Clé API Pinecone manquante");
-    throw new Error('Missing Pinecone API key');
+  if (!validatePineconeConfig()) {
+    throw new Error('Configuration Pinecone invalide');
   }
   
   console.log(`Insertion dans Pinecone pour document ID: ${id}, avec metadata: ${JSON.stringify(metadata)}`);
@@ -31,16 +33,12 @@ export async function upsertToPinecone(id: string, vector: number[], metadata: a
     
     // Requête avec un timeout plus long (30 secondes)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     
     try {
       const response = await fetch(`${PINECONE_BASE_URL}/vectors/upsert`, {
         method: 'POST',
-        headers: {
-          'Api-Key': PINECONE_API_KEY,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: PINECONE_HEADERS,
         body: JSON.stringify(vectorData),
         signal: controller.signal
       });
@@ -92,16 +90,12 @@ async function tryAlternativePineconeStructure(vectorData: any): Promise<any> {
   console.log(`Tentative avec URL alternative: ${ALTERNATIVE_PINECONE_URL}/upsert`);
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
   
   try {
     const response = await fetch(`${ALTERNATIVE_PINECONE_URL}/upsert`, {
       method: 'POST',
-      headers: {
-        'Api-Key': PINECONE_API_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: PINECONE_HEADERS,
       body: JSON.stringify(alternativePayload),
       signal: controller.signal
     });
@@ -143,10 +137,7 @@ async function tryLegacyPineconeEndpoint(vectorData: any): Promise<any> {
   try {
     const response = await fetch(legacyUrl, {
       method: 'POST',
-      headers: {
-        'Api-Key': PINECONE_API_KEY,
-        'Content-Type': 'application/json',
-      },
+      headers: PINECONE_HEADERS,
       body: JSON.stringify(vectorData),
     });
     
@@ -164,47 +155,5 @@ async function tryLegacyPineconeEndpoint(vectorData: any): Promise<any> {
   } catch (error) {
     console.error("Échec de toutes les tentatives d'insertion dans Pinecone", error instanceof Error ? error.message : String(error));
     throw new Error(`Échec de toutes les tentatives d'insertion dans Pinecone: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * Recherche dans Pinecone
- */
-export async function queryPinecone(vector: number[], topK = 5): Promise<any> {
-  if (!PINECONE_API_KEY) {
-    console.error("Clé API Pinecone manquante");
-    throw new Error('Missing Pinecone API key');
-  }
-  
-  console.log(`Recherche dans Pinecone pour ${topK} résultats`);
-  
-  try {
-    const response = await fetch(`${PINECONE_BASE_URL}/query`, {
-      method: 'POST',
-      headers: {
-        'Api-Key': PINECONE_API_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        vector,
-        topK,
-        includeMetadata: true,
-        namespace: 'documents'
-      }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      console.error(`Erreur API Pinecone Query (${response.status}): ${error}`);
-      throw new Error(`Pinecone API error: ${error}`);
-    }
-    
-    const result = await response.json();
-    console.log(`Recherche Pinecone réussie, ${result.matches?.length || 0} résultats trouvés`);
-    return result;
-  } catch (error) {
-    console.error('Error querying Pinecone', error instanceof Error ? error.message : String(error));
-    throw error;
   }
 }

@@ -1,100 +1,65 @@
 
-// Configuration pour la fonction Pinecone Vectorize
+// Configuration pour l'edge function pinecone-vectorize
 
-// Récupération des variables d'environnement avec valeurs par défaut et logging
-export const PINECONE_API_KEY = Deno.env.get('PINECONE_API_KEY') || '';
-export const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
+// API keys et URLs
+export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
+export const PINECONE_API_KEY = Deno.env.get("PINECONE_API_KEY") || "";
+export const PINECONE_BASE_URL = Deno.env.get("PINECONE_BASE_URL") || "";
+export const ALTERNATIVE_PINECONE_URL = Deno.env.get("ALTERNATIVE_PINECONE_URL") || "";
+export const PINECONE_INDEX = Deno.env.get("PINECONE_INDEX") || "";
 
-// Configuration Pinecone avec nouvelles variables basées sur la documentation officielle
-export const PINECONE_INDEX = 'dadvisor'; // Nom de l'index
-export const PINECONE_NAMESPACE = 'documents'; // Namespace par défaut
+// Namespace par défaut pour Pinecone
+export const PINECONE_NAMESPACE = "documents";
 
-// Format d'URL de l'API Pinecone (selon la documentation officielle la plus récente)
-// Format de base : https://{index-name}-{project-id}.svc.{environment}.pinecone.io
-export const PINECONE_HOST = 'dadvisor-3q5v9g1.svc.aped-4627-b74a.pinecone.io';
-export const PINECONE_BASE_URL = `https://${PINECONE_HOST}`;
+// Timeout pour les requêtes (30 secondes)
+export const REQUEST_TIMEOUT = 30000;
 
-// URL alternative pour les anciennes versions de l'API
-export const ALTERNATIVE_PINECONE_URL = 'https://api.pinecone.io/v1/indexes/dadvisor';
-
-// Timeout de requête (en millisecondes) - augmenté pour éviter les expirations
-export const REQUEST_TIMEOUT = 45000; // 45 secondes
-
-// Validation de la configuration
-export const validateConfig = () => {
-  console.log(`Configuration Pinecone :`);
-  console.log(`Index: ${PINECONE_INDEX}`);
-  console.log(`URL base: ${PINECONE_BASE_URL}`);
-  console.log(`Timeout: ${REQUEST_TIMEOUT}ms`);
-  console.log(`API keys disponibles: Pinecone: ${PINECONE_API_KEY ? "Oui" : "Non"}, OpenAI: ${OPENAI_API_KEY ? "Oui" : "Non"}`);
-  
+/**
+ * Valide la configuration de l'application
+ * @returns Objet contenant le statut de validation et les avertissements
+ */
+export function validateConfig() {
   const warnings = [];
   
   if (!PINECONE_API_KEY) {
-    warnings.push("ERREUR CRITIQUE: Clé API Pinecone manquante");
+    warnings.push("PINECONE_API_KEY manquante");
+  }
+  
+  if (!PINECONE_BASE_URL) {
+    warnings.push("PINECONE_BASE_URL manquante");
   }
   
   if (!OPENAI_API_KEY) {
-    warnings.push("AVERTISSEMENT: Clé API OpenAI manquante (utilisation du modèle de secours possible)");
+    warnings.push("OPENAI_API_KEY manquante");
   }
   
+  // Valider le format de l'URL Pinecone
+  if (PINECONE_BASE_URL && !PINECONE_BASE_URL.includes("pinecone")) {
+    warnings.push("PINECONE_BASE_URL semble invalide (doit contenir 'pinecone')");
+  }
+  
+  // Retourner le résultat de la validation
   return {
-    valid: Boolean(PINECONE_API_KEY),
+    valid: warnings.length === 0,
     warnings,
+    timestamp: new Date().toISOString(),
     config: {
-      indexName: PINECONE_INDEX,
-      namespace: PINECONE_NAMESPACE,
-      host: PINECONE_HOST,
-      baseUrl: PINECONE_BASE_URL
+      hasPineconeKey: Boolean(PINECONE_API_KEY),
+      hasPineconeUrl: Boolean(PINECONE_BASE_URL),
+      hasOpenAIKey: Boolean(OPENAI_API_KEY),
+      hasAlternativeUrl: Boolean(ALTERNATIVE_PINECONE_URL),
+      hasPineconeIndex: Boolean(PINECONE_INDEX)
     }
   };
-};
+}
 
-// Fonction pour tester la connexion à Pinecone
-export const testPineconeConnection = async () => {
-  try {
-    console.log(`Test de connexion à Pinecone: ${PINECONE_BASE_URL}/describe_index_stats`);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-    
-    const response = await fetch(`${PINECONE_BASE_URL}/describe_index_stats`, {
-      method: 'GET',
-      headers: {
-        'Api-Key': PINECONE_API_KEY,
-        'Accept': 'application/json',
-      },
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Erreur Pinecone (${response.status}): ${errorText}`);
-      return {
-        success: false,
-        status: response.status,
-        message: `Échec de la connexion: ${response.status} ${response.statusText}`,
-        details: errorText
-      };
-    }
-    
-    const data = await response.json();
-    console.log(`Connexion Pinecone réussie:`, data);
-    
-    return {
-      success: true,
-      status: response.status,
-      message: "Connexion à Pinecone réussie",
-      data
-    };
-  } catch (error) {
-    console.error("Erreur lors du test de connexion:", error instanceof Error ? error.message : String(error));
-    return {
-      success: false,
-      message: `Exception: ${error instanceof Error ? error.message : String(error)}`,
-      error: String(error)
-    };
-  }
-};
+/**
+ * Teste la connexion à Pinecone
+ * @returns Un objet indiquant si la connexion a réussi
+ */
+export async function testPineconeConnection(): Promise<any> {
+  // Note: Cette fonction est maintenant définie dans services/pinecone/index.ts
+  // Cette redirection est maintenue pour compatibilité
+  const { testPineconeConnection: tester } = await import("./services/pinecone/index.ts");
+  return await tester();
+}

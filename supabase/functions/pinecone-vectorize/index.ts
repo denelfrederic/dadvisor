@@ -4,15 +4,16 @@ import { OpenAI } from "https://deno.land/x/openai@v4.20.1/mod.ts";
 
 // Import configuration
 import { 
-  PINECONE_API_KEY, 
   OPENAI_API_KEY, 
-  PINECONE_BASE_URL,
-  PINECONE_INDEX,
-  PINECONE_NAMESPACE,
-  REQUEST_TIMEOUT,
   validateConfig,
   testPineconeConnection
 } from "./config.ts";
+
+// Import Pinecone services
+import { 
+  upsertToPinecone, 
+  queryPinecone 
+} from "./services/pinecone/index.ts";
 
 // Enable CORS
 const corsHeaders = {
@@ -36,42 +37,6 @@ async function generateOpenAIEmbedding(content) {
     return embeddingResponse.data[0].embedding;
   } catch (error) {
     console.error('Error generating embedding:', error);
-    throw error;
-  }
-}
-
-// Function to upsert data to Pinecone
-async function upsertToPinecone(vectors) {
-  const url = `${PINECONE_BASE_URL}/vectors/upsert`;
-  
-  console.log(`Sending upsert request to: ${url}`);
-  console.log(`Payload: ${JSON.stringify({ vectors, namespace: PINECONE_NAMESPACE }).substring(0, 200)}...`);
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Api-Key': PINECONE_API_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ 
-        vectors, 
-        namespace: PINECONE_NAMESPACE 
-      }),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Pinecone Upsert Error: ${response.status} - ${errorText}`);
-      throw new Error(`Pinecone Upsert Failed: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Pinecone upsert error:', error);
     throw error;
   }
 }
@@ -163,19 +128,15 @@ Deno.serve(async (req) => {
         }
         
         // Préparation des données pour Pinecone
-        const pineconeData = {
-          id: documentId,
-          values: embedding,
-          metadata: {
-            title: documentTitle || "Sans titre",
-            type: documentType || "document",
-            chars: documentContent.length
-          }
+        const metadata = {
+          title: documentTitle || "Sans titre",
+          type: documentType || "document",
+          chars: documentContent.length
         };
         
         // Upsert to Pinecone
         console.log(`Tentative d'upsert pour le document ${documentId}`);
-        const upsertResult = await upsertToPinecone([pineconeData]);
+        const upsertResult = await upsertToPinecone(documentId, embedding, metadata);
         
         console.log(`Vectorisation réussie:`, upsertResult);
         return createSuccessResponse({
