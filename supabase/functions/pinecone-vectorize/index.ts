@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -6,11 +5,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const PINECONE_API_KEY = Deno.env.get('PINECONE_API_KEY') || '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
 const PINECONE_ENVIRONMENT = 'aped-4627-b74a'; // Update to match your Pinecone environment
-const PINECONE_INDEX = 'dadvisor-3q5v9g1'; // Update to match your index name
-const PINECONE_BASE_URL = `https://${PINECONE_INDEX}.svc.${PINECONE_ENVIRONMENT}.pinecone.io`;
+const PINECONE_INDEX = 'dadvisor'; // Correction: utilisation du nom correct de l'index
+const PINECONE_BASE_URL = `https://dadvisor-3q5v9g1.svc.${PINECONE_ENVIRONMENT}.pinecone.io`;
 
 console.log(`Pinecone Edge Function initialisée. Environnement: ${PINECONE_ENVIRONMENT}, Index: ${PINECONE_INDEX}`);
 console.log(`API keys disponibles: Pinecone: ${PINECONE_API_KEY ? "Oui" : "Non"}, OpenAI: ${OPENAI_API_KEY ? "Oui" : "Non"}`);
+console.log(`URL de base Pinecone: ${PINECONE_BASE_URL}`);
 
 // Vérifier les variables requises
 if (!PINECONE_API_KEY) {
@@ -105,6 +105,7 @@ async function upsertToPinecone(id, vector, metadata) {
     };
     
     console.log(`Envoi de données à Pinecone: ${JSON.stringify(vectorData).substring(0, 200)}...`);
+    console.log(`Dimensions du vecteur: ${vector.length}`);
     
     const response = await fetch(`${PINECONE_BASE_URL}/vectors/upsert`, {
       method: 'POST',
@@ -231,8 +232,10 @@ serve(async (req) => {
         try {
           if (OPENAI_API_KEY) {
             embedding = await generateEmbeddingWithOpenAI(documentContent);
+            console.log(`Dimensions de l'embedding OpenAI: ${embedding.length}`);
           } else {
             embedding = await generateEmbeddingWithE5(documentContent);
+            console.log(`Dimensions de l'embedding E5: ${embedding.length}`);
           }
         } catch (embeddingError) {
           console.error("Erreur lors de la génération d'embedding:", embeddingError);
