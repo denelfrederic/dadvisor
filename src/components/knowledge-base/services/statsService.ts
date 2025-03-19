@@ -4,58 +4,38 @@ import { KnowledgeBaseStats, CombinedReport } from "../types";
 import { isValidEmbedding } from "./embedding/embeddingUtils";
 
 /**
- * Get statistics for the knowledge base
+ * Fetches and compiles statistics about the knowledge base
  */
 export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
   try {
-    // Récupérer le count total
+    // Get total count of entries
     const { count, error } = await supabase
       .from('knowledge_entries')
       .select('*', { count: 'exact', head: true });
     
-    if (error) {
-      console.error("Erreur lors de la récupération des statistiques:", error);
-      return { count: 0 };
-    }
+    if (error) throw error;
     
-    // Récupérer les catégories (sources)
-    const { data: sourcesData, error: sourcesError } = await supabase
+    // Get entries to check for embeddings and categories
+    const { data: entries, error: entriesError } = await supabase
       .from('knowledge_entries')
-      .select('source');
+      .select('id, source, embedding');
     
-    if (sourcesError) {
-      console.error("Erreur lors de la récupération des sources:", sourcesError);
-      return { count: count || 0 };
-    }
+    if (entriesError) throw entriesError;
     
-    // Compter les entrées par source
-    const categories: Record<string, number> = {};
-    sourcesData?.forEach(entry => {
-      const source = entry.source || 'Non catégorisé';
-      categories[source] = (categories[source] || 0) + 1;
-    });
-    
-    // Récupérer les entrées avec embeddings
-    const { data: entriesWithEmbedding, error: embeddingError } = await supabase
-      .from('knowledge_entries')
-      .select('id, embedding');
-    
-    if (embeddingError) {
-      console.error("Erreur lors de la récupération des embeddings:", embeddingError);
-      return { 
-        count: count || 0, 
-        categories,
-        categoriesCount: Object.keys(categories).length
-      };
-    }
-    
-    // Compter les entrées avec embeddings valides
+    // Count entries with valid embeddings and categorize by source
     let withEmbeddings = 0;
-    if (entriesWithEmbedding && entriesWithEmbedding.length > 0) {
-      for (const entry of entriesWithEmbedding) {
+    const categories: Record<string, number> = {};
+    
+    if (entries && entries.length > 0) {
+      for (const entry of entries) {
+        // Check embedding validity
         if (entry.embedding && isValidEmbedding(entry.embedding)) {
           withEmbeddings++;
         }
+        
+        // Count by category
+        const category = entry.source || 'Non catégorisé';
+        categories[category] = (categories[category] || 0) + 1;
       }
     }
     
@@ -66,65 +46,56 @@ export const getKnowledgeBaseStats = async (): Promise<KnowledgeBaseStats> => {
       categoriesCount: Object.keys(categories).length
     };
   } catch (error) {
-    console.error("Erreur lors de la récupération des statistiques:", error);
-    return { count: 0 };
+    console.error('Error getting knowledge base stats:', error);
+    return {
+      count: 0,
+      withEmbeddings: 0,
+      categories: {},
+      categoriesCount: 0
+    };
   }
 };
 
 /**
- * Get combined statistics for knowledge base and documents
+ * Generates a combined report of knowledge base and document statistics
  */
-export const getCombinedStats = async (): Promise<CombinedReport> => {
+export const generateCombinedReport = async (): Promise<CombinedReport> => {
   try {
-    // Récupérer les statistiques de la base de connaissances
+    // Get knowledge base stats
     const kbStats = await getKnowledgeBaseStats();
     
-    // Récupérer les statistiques des documents
-    const { data: allDocuments, error: docsError } = await supabase
+    // Get document stats
+    const { data: docs, error: docsError } = await supabase
       .from('documents')
       .select('id, embedding');
     
-    if (docsError) {
-      console.error("Erreur lors de la récupération des documents:", docsError);
-      return {
-        knowledgeBase: kbStats,
-        documents: {
-          total: 0,
-          withEmbeddings: 0,
-          withoutEmbeddings: 0,
-          percentage: 0
-        }
-      };
+    if (docsError) throw docsError;
+    
+    const docCount = docs?.length || 0;
+    let docsWithEmbeddings = 0;
+    
+    if (docs && docs.length > 0) {
+      docsWithEmbeddings = docs.filter(doc => doc.embedding && isValidEmbedding(doc.embedding)).length;
     }
-    
-    // Analyser les documents
-    const totalDocs = allDocuments?.length || 0;
-    let withEmbeddings = 0;
-    
-    if (allDocuments && allDocuments.length > 0) {
-      for (const doc of allDocuments) {
-        if (doc.embedding && isValidEmbedding(doc.embedding)) {
-          withEmbeddings++;
-        }
-      }
-    }
-    
-    const withoutEmbeddings = totalDocs - withEmbeddings;
-    const percentage = totalDocs > 0 ? Math.round((withEmbeddings / totalDocs) * 100) : 0;
     
     return {
       knowledgeBase: kbStats,
       documents: {
-        total: totalDocs,
-        withEmbeddings,
-        withoutEmbeddings,
-        percentage
+        total: docCount,
+        withEmbeddings: docsWithEmbeddings,
+        withoutEmbeddings: docCount - docsWithEmbeddings,
+        percentage: docCount > 0 ? Math.round((docsWithEmbeddings / docCount) * 100) : 0
       }
     };
   } catch (error) {
-    console.error("Erreur lors de la récupération des statistiques combinées:", error);
+    console.error('Error generating combined report:', error);
     return {
-      knowledgeBase: { count: 0 },
+      knowledgeBase: {
+        count: 0,
+        withEmbeddings: 0,
+        categories: {},
+        categoriesCount: 0
+      },
       documents: {
         total: 0,
         withEmbeddings: 0,

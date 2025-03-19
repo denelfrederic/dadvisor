@@ -61,7 +61,7 @@ export const useEmbeddingsUpdate = () => {
     
     try {
       const result = await updateKnowledgeEntries(
-        // Round the progress to an integer for display
+        // Convert progress to integer
         (progressValue) => setProgress(Math.round(progressValue)),
         addLog
       );
@@ -99,7 +99,7 @@ export const useEmbeddingsUpdate = () => {
     
     try {
       const result = await updateAllEmbeddings(
-        // Round the progress to an integer for display
+        // Convert progress to integer
         (progressValue) => setProgress(Math.round(progressValue)),
         addLog
       );

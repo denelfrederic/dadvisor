@@ -59,6 +59,11 @@ serve(async (req) => {
       throw new Error(`Invalid embedding format received: ${typeof embedding}`);
     }
     
+    // Vérifier les dimensions
+    if (embedding.length !== 384) {
+      console.warn(`Unexpected embedding dimensions: got ${embedding.length}, expected 384`);
+    }
+    
     console.log(`Embedding generated successfully: ${embedding.length} dimensions for ${modelType} using ${modelName}`);
 
     return new Response(JSON.stringify({ 

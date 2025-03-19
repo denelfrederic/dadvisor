@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { KnowledgeEntry } from "../../../types";
 import { generateEntryEmbedding } from "../embeddingService";
-import { prepareEmbeddingForStorage, processEntryForEmbedding } from "../embeddingUtils";
+import { prepareEmbeddingForStorage, processEntryForEmbedding, isValidEmbedding } from "../embeddingUtils";
 
 /**
  * Updates embeddings for a batch of knowledge entries
@@ -26,6 +26,12 @@ export const updateEntryEmbeddingBatch = async (
         
         if (!embedding) {
           console.error(`Failed to generate embedding for entry ${entry.id}`);
+          continue;
+        }
+        
+        // Validate embedding before storing
+        if (!isValidEmbedding(embedding)) {
+          console.error(`Generated invalid embedding for entry ${entry.id}, dimensions: ${embedding.length}`);
           continue;
         }
         
@@ -54,7 +60,9 @@ export const updateEntryEmbeddingBatch = async (
         // Update progress regardless of success or failure
         processedEntries++;
         if (progressCallback) {
-          progressCallback((processedEntries / totalEntries) * 100);
+          // Ensure progress is an integer percentage
+          const percentProgress = Math.round((processedEntries / totalEntries) * 100);
+          progressCallback(percentProgress);
         }
       }
     }
@@ -106,19 +114,32 @@ export const updateKnowledgeEntries = async (
     }
     
     // Filter entries without valid embeddings
-    const entriesToUpdate = entries.filter(entry => !entry.embedding || typeof entry.embedding === 'string' && entry.embedding.length < 10);
+    const entriesToUpdate = entries.filter(entry => {
+      if (!entry.embedding) return true;
+      
+      if (typeof entry.embedding === 'string') {
+        try {
+          const parsed = JSON.parse(entry.embedding);
+          return !Array.isArray(parsed) || parsed.length !== 384;
+        } catch {
+          return true;
+        }
+      }
+      
+      return !isValidEmbedding(entry.embedding);
+    });
     
     if (entriesToUpdate.length === 0) {
-      log("All entries already have embeddings");
+      log("All entries already have valid embeddings");
       return { success: true, processed: 0, succeeded: 0 };
     }
 
-    log(`Found ${entriesToUpdate.length} entries without embeddings. Starting update...`);
+    log(`Found ${entriesToUpdate.length} entries without valid embeddings. Starting update...`);
     
     // Update the entries in batches
     const result = await updateEntryEmbeddingBatch(entriesToUpdate, progressCallback);
     
-    log(`Finished updating ${entriesToUpdate.length} entries`);
+    log(`Finished updating ${entriesToUpdate.length} entries, ${result.succeeded} succeeded`);
     
     return { 
       success: true, 

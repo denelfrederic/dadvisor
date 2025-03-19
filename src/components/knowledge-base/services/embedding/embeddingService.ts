@@ -34,6 +34,11 @@ export const generateEntryEmbedding = async (text: string): Promise<number[] | n
       throw new Error("Structure d'embedding invalide retournée par l'API");
     }
     
+    // Vérifier les dimensions (devrait être 384 avec le modèle actuel)
+    if (data.embedding.length !== 384) {
+      console.warn(`Dimensions d'embedding inattendues: ${data.embedding.length}, attendu: 384`);
+    }
+    
     console.log(`Embedding généré avec succès: ${data.embedding.length} dimensions, modèle: ${data.modelName || 'inconnu'}`);
     
     return data.embedding;
@@ -66,6 +71,12 @@ export const updateEntryEmbedding = async (entryId: string, question: string, an
     
     if (!embedding) {
       console.error("Impossible de générer l'embedding");
+      return false;
+    }
+    
+    // Vérifier que l'embedding est valide et a les bonnes dimensions
+    if (!validateEmbeddingDimensions(embedding, 384)) {
+      console.error(`Embedding généré avec des dimensions invalides: ${embedding.length}, attendu: 384`);
       return false;
     }
     

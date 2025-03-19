@@ -1,6 +1,4 @@
 
-import { KnowledgeEntry } from "../../types";
-
 // Fonction pour déterminer si un embedding est valide
 export const isValidEmbedding = (embedding: any): boolean => {
   try {
@@ -15,10 +13,10 @@ export const isValidEmbedding = (embedding: any): boolean => {
       return false;
     }
     
-    // Vérifier les dimensions - accepter 384, 768 et 1536 (modèles courants)
-    const validDimensions = [384, 768, 1536];
-    if (!validDimensions.includes(embeddingArray.length)) {
-      console.log(`Embedding de dimensions non valides: ${embeddingArray.length}, attendu l'un de: ${validDimensions.join(', ')}`);
+    // Vérifier les dimensions - accepter 384 (modèle actuel)
+    // Note: Nous utilisons maintenant uniquement le modèle de 384 dimensions
+    if (embeddingArray.length !== 384) {
+      console.log(`Embedding de dimensions non valides: ${embeddingArray.length}, attendu: 384`);
       return false;
     }
     

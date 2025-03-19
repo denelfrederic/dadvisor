@@ -1,122 +1,69 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { CombinedReport } from "../../types";
-import { generateCombinedReport } from "../../services/statsService";
-import { useToast } from "@/hooks/use-toast";
-
-const STORAGE_KEY = "previousIndexationReports";
+import { getKnowledgeBaseStats } from "../../services/statsService";
+import { supabase } from "@/integrations/supabase/client";
+import { isValidEmbedding } from "../../services/embedding/embeddingUtils";
 
 export const useReportData = () => {
   const [report, setReport] = useState<CombinedReport | null>(null);
-  const [previousReports, setPreviousReports] = useState<{date: string, report: CombinedReport}[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("current");
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
-  // Load previous reports from localStorage on mount
-  useEffect(() => {
-    try {
-      const storedReports = localStorage.getItem(STORAGE_KEY);
-      if (storedReports) {
-        const parsedReports = JSON.parse(storedReports);
-        console.log("Loaded previous reports:", parsedReports);
-        if (Array.isArray(parsedReports) && parsedReports.length > 0) {
-          setPreviousReports(parsedReports);
-        } else {
-          console.warn("Stored reports exist but are not a valid array:", parsedReports);
-        }
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des rapports précédents:", error);
-      // Réinitialiser le stockage corrompu
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, []);
-
-  // Save reports to localStorage
-  const saveReportsToStorage = useCallback((reports: {date: string, report: CombinedReport}[]) => {
-    if (!Array.isArray(reports)) {
-      console.error("Attempted to save non-array reports to localStorage:", reports);
-      return;
-    }
-    
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-      console.log("Reports saved to localStorage:", reports);
-    } catch (error) {
-      console.error("Error saving reports to localStorage:", error);
-    }
-  }, []);
-  
-  // Une fonction pour déterminer si deux rapports sont significativement différents
-  const areReportsSignificantlyDifferent = (reportA: CombinedReport, reportB: CombinedReport): boolean => {
-    // Vérifier les différences dans la base de connaissances
-    if (reportA.knowledgeBase.count !== reportB.knowledgeBase.count) return true;
-    if (reportA.knowledgeBase.withEmbeddings !== reportB.knowledgeBase.withEmbeddings) return true;
-    
-    // Vérifier les différences dans les documents
-    if (reportA.documents.total !== reportB.documents.total) return true;
-    if (reportA.documents.withEmbeddings !== reportB.documents.withEmbeddings) return true;
-    
-    return false;
-  };
-
-  const handleGenerateReport = async () => {
+  const generateReport = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      const data = await generateCombinedReport();
-      console.log("Generated report:", data);
+      // Get knowledge base stats
+      const kbStats = await getKnowledgeBaseStats();
       
-      // Sauvegarder le rapport actuel dans l'historique s'il existe et est différent du nouveau
-      if (report) {
-        // Vérifier si le nouveau rapport est significativement différent
-        const isDifferent = areReportsSignificantlyDifferent(report, data);
-        
-        // Sauvegarder uniquement si différent du rapport actuel
-        if (isDifferent) {
-          console.log("New report is significantly different, saving to history");
-          const currentDate = new Date().toISOString();
-          const updatedReports = [
-            { date: currentDate, report: report },
-            ...previousReports.slice(0, 4) // Garder seulement les 5 derniers rapports
-          ];
-          
-          setPreviousReports(updatedReports);
-          saveReportsToStorage(updatedReports);
-          console.log("Updated reports history with current report:", updatedReports);
-        } else {
-          console.log("New report is not significantly different from current, not saving to history");
-        }
-      } else if (previousReports.length === 0) {
-        // Si c'est le premier rapport, ajoutez-le à l'historique
-        console.log("This is the first report, no history yet");
+      // Get document stats
+      const { data: docs, error: docsError } = await supabase
+        .from('documents')
+        .select('id, embedding');
+      
+      if (docsError) throw docsError;
+      
+      const docCount = docs?.length || 0;
+      let docsWithEmbeddings = 0;
+      
+      if (docs && docs.length > 0) {
+        // Count documents with valid embeddings
+        docsWithEmbeddings = docs.filter(doc => 
+          doc.embedding && isValidEmbedding(doc.embedding)
+        ).length;
       }
       
-      setReport(data);
-      setActiveTab("current");
+      // Build combined report
+      const combinedReport: CombinedReport = {
+        knowledgeBase: kbStats,
+        documents: {
+          total: docCount,
+          withEmbeddings: docsWithEmbeddings,
+          withoutEmbeddings: docCount - docsWithEmbeddings,
+          percentage: docCount > 0 ? Math.round((docsWithEmbeddings / docCount) * 100) : 0
+        }
+      };
       
-      toast({
-        title: "Rapport généré",
-        description: "Le rapport d'indexation a été généré avec succès."
-      });
-    } catch (error) {
-      console.error("Erreur lors de la génération du rapport:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de générer le rapport d'indexation.",
-        variant: "destructive"
-      });
+      setReport(combinedReport);
+    } catch (err) {
+      console.error("Error generating report:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Generate report on component mount
+  useEffect(() => {
+    generateReport();
+  }, []);
+
   return {
     report,
-    previousReports,
     isLoading,
-    activeTab,
-    setActiveTab,
-    handleGenerateReport
+    error,
+    refreshReport: generateReport
   };
 };
