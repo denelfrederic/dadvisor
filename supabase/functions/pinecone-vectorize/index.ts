@@ -1,20 +1,18 @@
-import { serve } from 'std/server';
-import { OpenAI } from 'openai';
-import { load } from "std/dotenv/mod.ts";
+
+import { serve } from "std/server";
+import { OpenAI } from "openai";
 
 // Import configuration
 import { 
   PINECONE_API_KEY, 
   OPENAI_API_KEY, 
-  PINECONE_INDEX, 
-  PINECONE_PROJECT, 
-  PINECONE_ENVIRONMENT,
-  PINECONE_API_V1_URL,
-  PINECONE_API_V2_URL,
-  PINECONE_DIRECT_URL,
+  PINECONE_BASE_URL,
+  PINECONE_INDEX,
+  PINECONE_NAMESPACE,
   REQUEST_TIMEOUT,
-  validateConfig
-} from './config.ts';
+  validateConfig,
+  testPineconeConnection
+} from "./config.ts";
 
 // Enable CORS
 const corsHeaders = {
@@ -43,16 +41,24 @@ async function generateOpenAIEmbedding(content) {
 }
 
 // Function to upsert data to Pinecone
-async function upsertToPinecone(baseUrl, vectors) {
-  const url = `${baseUrl}/vectors/upsert`;
+async function upsertToPinecone(vectors) {
+  const url = `${PINECONE_BASE_URL}/vectors/upsert`;
+  
+  console.log(`Sending upsert request to: ${url}`);
+  console.log(`Payload: ${JSON.stringify({ vectors, namespace: PINECONE_NAMESPACE }).substring(0, 200)}...`);
+  
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Api-Key': PINECONE_API_KEY,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: JSON.stringify({ vectors }),
+      body: JSON.stringify({ 
+        vectors, 
+        namespace: PINECONE_NAMESPACE 
+      }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT)
     });
 
@@ -89,14 +95,14 @@ function createErrorResponse(message, details = {}) {
 
 // Gestionnaire de requête
 Deno.serve(async (req) => {
+  console.log(`Received request: ${req.method} ${req.url}`);
+  
   // Gestion CORS pour les requêtes OPTIONS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, documentId, documentContent, documentTitle, documentType } = await req.json();
-
     // Validation de la configuration au démarrage
     const configValidation = validateConfig();
     console.log("Configuration validée:", configValidation.valid);
@@ -104,6 +110,18 @@ Deno.serve(async (req) => {
     if (!configValidation.valid) {
       return createErrorResponse("Configuration Pinecone invalide: " + configValidation.warnings.join(", "));
     }
+    
+    // Parse request body
+    let reqBody;
+    try {
+      reqBody = await req.json();
+      console.log("Request body action:", reqBody.action);
+    } catch (error) {
+      console.error("Error parsing request body:", error);
+      return createErrorResponse("Invalid request body");
+    }
+    
+    const { action, documentId, documentContent, documentTitle, documentType } = reqBody;
 
     // Action de vérification de configuration (pour debugging)
     if (action === 'config') {
@@ -113,63 +131,21 @@ Deno.serve(async (req) => {
     // Action de test de connexion
     if (action === 'test-connection') {
       try {
-        // Essai avec l'API v1
-        console.log(`Test de connexion avec l'API v1: ${PINECONE_API_V1_URL}`);
-        const v1Result = await testPineconeConnection(PINECONE_API_V1_URL);
-        if (v1Result.success) {
-          return createSuccessResponse({
-            success: true,
-            message: "Connexion à Pinecone API v1 réussie",
-            version: "v1",
-            details: v1Result
-          });
-        }
+        console.log("Testing Pinecone connection...");
+        const connectionResult = await testPineconeConnection();
         
-        // Si l'API v1 échoue, essayer l'API v2
-        console.log(`Test de connexion avec l'API v2: ${PINECONE_API_V2_URL}`);
-        const v2Result = await testPineconeConnection(PINECONE_API_V2_URL);
-        if (v2Result.success) {
-          return createSuccessResponse({
-            success: true,
-            message: "Connexion à Pinecone API v2 réussie",
-            version: "v2",
-            details: v2Result
-          });
-        }
+        console.log("Connection test result:", connectionResult);
         
-        // Enfin, essayer l'URL directe
-        console.log(`Test de connexion avec l'URL directe: ${PINECONE_DIRECT_URL}`);
-        const directResult = await testPineconeConnection(PINECONE_DIRECT_URL);
-        if (directResult.success) {
-          return createSuccessResponse({
-            success: true,
-            message: "Connexion à Pinecone URL directe réussie",
-            version: "direct",
-            details: directResult
-          });
-        }
-        
-        // Toutes les tentatives ont échoué
-        return createSuccessResponse({
-          success: false,
-          message: "Toutes les tentatives de connexion ont échoué",
-          attempts: {
-            v1: v1Result,
-            v2: v2Result,
-            direct: directResult
-          }
-        });
+        return createSuccessResponse(connectionResult);
       } catch (error) {
-        console.error("Erreur lors du test de connexion:", error);
-        return createSuccessResponse({
-          success: false,
-          message: `Erreur lors du test de connexion: ${error.message}`,
-          error: error.message
+        console.error("Connection test error:", error);
+        return createErrorResponse(`Erreur lors du test de connexion: ${error.message}`, {
+          error: error instanceof Error ? error.message : String(error)
         });
       }
     }
 
-    // Action de vectorisation (réécrire avec la nouvelle logique)
+    // Action de vectorisation
     if (action === 'vectorize') {
       // Validation des paramètres
       if (!documentId || !documentContent) {
@@ -197,50 +173,24 @@ Deno.serve(async (req) => {
           }
         };
         
-        // Essai en cascade pour Pinecone
-        let upsertResult;
-        let successfulEndpoint = "";
+        // Upsert to Pinecone
+        console.log(`Tentative d'upsert pour le document ${documentId}`);
+        const upsertResult = await upsertToPinecone([pineconeData]);
         
-        try {
-          // Tentative 1: API v1
-          console.log(`Tentative d'upsert avec API v1: ${PINECONE_API_V1_URL}`);
-          upsertResult = await upsertToPinecone(PINECONE_API_V1_URL, [pineconeData]);
-          successfulEndpoint = "v1";
-        } catch (error) {
-          console.log(`Échec API v1: ${error.message}, tentative API v2...`);
-          
-          try {
-            // Tentative 2: API v2
-            upsertResult = await upsertToPinecone(PINECONE_API_V2_URL, [pineconeData]);
-            successfulEndpoint = "v2";
-          } catch (error2) {
-            console.log(`Échec API v2: ${error2.message}, tentative URL directe...`);
-            
-            // Tentative 3: URL directe
-            upsertResult = await upsertToPinecone(PINECONE_DIRECT_URL, [pineconeData]);
-            successfulEndpoint = "direct";
-          }
-        }
-        
-        console.log(`Vectorisation réussie avec l'endpoint ${successfulEndpoint}`);
+        console.log(`Vectorisation réussie:`, upsertResult);
         return createSuccessResponse({
           success: true,
-          embedding: embedding,
-          upsertResult: upsertResult,
-          endpoint: successfulEndpoint
+          embedding: embedding.slice(0, 5) + "...", // Truncated for response size
+          upsertResult: upsertResult
         });
       } catch (error) {
         console.error(`Erreur lors de la vectorisation: ${error.message}`);
-        // Capturer les détails complets de l'erreur
+        
+        // Detailed error information
         const errorDetails = {
           message: error.message,
           stack: error.stack,
-          name: error.name,
-          // Si c'est une erreur de fetch, inclure le statut et le texte de réponse
-          status: error.status || null,
-          statusText: error.statusText || null,
-          // Si on a une réponse, essayer de l'inclure
-          response: error.response ? await error.response.text().catch(() => "Impossible de lire la réponse") : null
+          name: error.name
         };
         
         return createErrorResponse(`Erreur lors de la vectorisation: ${error.message}`, errorDetails);
@@ -255,45 +205,3 @@ Deno.serve(async (req) => {
     return createErrorResponse(`Erreur générale: ${error.message}`);
   }
 });
-
-// Fonction de test de connexion Pinecone
-async function testPineconeConnection(baseUrl) {
-  try {
-    // Requête pour vérifier l'état de l'index
-    const url = baseUrl.includes('/indices') 
-      ? baseUrl // Pour API v2, l'URL est déjà complète
-      : `${baseUrl}/describe_index_stats`; // Pour API v1
-      
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Api-Key': PINECONE_API_KEY,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      };
-    }
-    
-    const data = await response.json();
-    return {
-      success: true,
-      status: response.status,
-      data: data
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}

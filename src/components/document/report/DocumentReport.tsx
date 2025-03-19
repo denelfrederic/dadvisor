@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Check, AlertCircle, Download } from "lucide-react";
+import { RefreshCw, Check, AlertCircle, Download, Database } from "lucide-react";
 import { useEmbeddingsUpdate } from "../../knowledge-base/search/hooks/useEmbeddingsUpdate";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SystemLogs from "./SystemLogs";
@@ -41,7 +41,7 @@ const DocumentReport: React.FC = () => {
               </>
             ) : (
               <>
-                <Check className="h-4 w-4" />
+                <Database className="h-4 w-4" />
                 Vectoriser tous les documents
               </>
             )}
@@ -95,7 +95,7 @@ const DocumentReport: React.FC = () => {
               className="mt-2"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Réessayer avec configuration alternative
+              Réessayer
             </Button>
           </AlertDescription>
         </Alert>

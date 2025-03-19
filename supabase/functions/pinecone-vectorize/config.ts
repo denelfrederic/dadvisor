@@ -5,32 +5,23 @@
 export const PINECONE_API_KEY = Deno.env.get('PINECONE_API_KEY') || '';
 export const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
 
-// Configuration Pinecone vérifiée
+// Configuration Pinecone avec nouvelles variables basées sur la documentation officielle
 export const PINECONE_INDEX = 'dadvisor'; // Nom de l'index
-export const PINECONE_PROJECT = '3q5v9g1'; // ID du projet 
-export const PINECONE_ENVIRONMENT = 'aped-4627-b74a'; // Environnement confirmé
+export const PINECONE_NAMESPACE = 'documents'; // Namespace par défaut
 
-// API v1 (ancienne structure) - sera utilisée en premier
-export const PINECONE_API_V1_URL = `https://${PINECONE_INDEX}-${PINECONE_PROJECT}.svc.${PINECONE_ENVIRONMENT}.pinecone.io`;
-
-// API v2 (nouvelle structure) - structure alternative pour les nouvelles versions
-export const PINECONE_API_V2_URL = `https://controller.${PINECONE_ENVIRONMENT}.pinecone.io/databases/${PINECONE_INDEX}/indices`;
-
-// Troisième alternative : URL directe avec le nom d'hôte complet
-export const PINECONE_DIRECT_URL = `https://dadvisor-3q5v9g1.svc.aped-4627-b74a.pinecone.io`;
+// Format d'URL de l'API Pinecone (selon la documentation officielle la plus récente)
+// Format de base : https://{index-name}-{project-id}.svc.{environment}.pinecone.io
+export const PINECONE_HOST = 'dadvisor-3q5v9g1.svc.aped-4627-b74a.pinecone.io';
+export const PINECONE_BASE_URL = `https://${PINECONE_HOST}`;
 
 // Timeout de requête (en millisecondes) - augmenté pour éviter les expirations
-export const REQUEST_TIMEOUT = 30000; // 30 secondes
+export const REQUEST_TIMEOUT = 45000; // 45 secondes
 
 // Validation de la configuration
 export const validateConfig = () => {
   console.log(`Configuration Pinecone :`);
   console.log(`Index: ${PINECONE_INDEX}`);
-  console.log(`Projet: ${PINECONE_PROJECT}`);
-  console.log(`Environnement: ${PINECONE_ENVIRONMENT}`);
-  console.log(`URL API v1: ${PINECONE_API_V1_URL}`);
-  console.log(`URL API v2: ${PINECONE_API_V2_URL}`);
-  console.log(`URL directe: ${PINECONE_DIRECT_URL}`);
+  console.log(`URL base: ${PINECONE_BASE_URL}`);
   console.log(`Timeout: ${REQUEST_TIMEOUT}ms`);
   console.log(`API keys disponibles: Pinecone: ${PINECONE_API_KEY ? "Oui" : "Non"}, OpenAI: ${OPENAI_API_KEY ? "Oui" : "Non"}`);
   
@@ -49,13 +40,58 @@ export const validateConfig = () => {
     warnings,
     config: {
       indexName: PINECONE_INDEX,
-      projectId: PINECONE_PROJECT,
-      environment: PINECONE_ENVIRONMENT,
-      apiUrls: {
-        v1: PINECONE_API_V1_URL,
-        v2: PINECONE_API_V2_URL,
-        direct: PINECONE_DIRECT_URL
-      }
+      namespace: PINECONE_NAMESPACE,
+      host: PINECONE_HOST,
+      baseUrl: PINECONE_BASE_URL
     }
   };
+};
+
+// Fonction pour tester la connexion à Pinecone
+export const testPineconeConnection = async () => {
+  try {
+    console.log(`Test de connexion à Pinecone: ${PINECONE_BASE_URL}/describe_index_stats`);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    
+    const response = await fetch(`${PINECONE_BASE_URL}/describe_index_stats`, {
+      method: 'GET',
+      headers: {
+        'Api-Key': PINECONE_API_KEY,
+        'Accept': 'application/json',
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Erreur Pinecone (${response.status}): ${errorText}`);
+      return {
+        success: false,
+        status: response.status,
+        message: `Échec de la connexion: ${response.status} ${response.statusText}`,
+        details: errorText
+      };
+    }
+    
+    const data = await response.json();
+    console.log(`Connexion Pinecone réussie:`, data);
+    
+    return {
+      success: true,
+      status: response.status,
+      message: "Connexion à Pinecone réussie",
+      data
+    };
+  } catch (error) {
+    console.error("Erreur lors du test de connexion:", error);
+    return {
+      success: false,
+      message: `Exception: ${error instanceof Error ? error.message : String(error)}`,
+      error: String(error)
+    };
+  }
 };
