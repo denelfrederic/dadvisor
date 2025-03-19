@@ -5,13 +5,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Get environment variables with fallbacks and logging
 const PINECONE_API_KEY = Deno.env.get('PINECONE_API_KEY') || '';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
-const PINECONE_ENVIRONMENT = 'aped-4627-b74a'; // Update to match your Pinecone environment
-const PINECONE_INDEX = 'dadvisor'; // Correction: utilisation du nom correct de l'index
+const PINECONE_ENVIRONMENT = 'aped-4627-b74a'; // Environnement Pinecone confirmé
+const PINECONE_INDEX = 'dadvisor'; // Nom de l'index Pinecone 
+// URL complète basée sur l'URL fournie par l'utilisateur
 const PINECONE_BASE_URL = `https://dadvisor-3q5v9g1.svc.${PINECONE_ENVIRONMENT}.pinecone.io`;
 
-console.log(`Pinecone Edge Function initialisée. Environnement: ${PINECONE_ENVIRONMENT}, Index: ${PINECONE_INDEX}`);
+console.log(`Pinecone Edge Function initialisée. URL: ${PINECONE_BASE_URL}`);
+console.log(`Index: ${PINECONE_INDEX}, Environnement: ${PINECONE_ENVIRONMENT}`);
 console.log(`API keys disponibles: Pinecone: ${PINECONE_API_KEY ? "Oui" : "Non"}, OpenAI: ${OPENAI_API_KEY ? "Oui" : "Non"}`);
-console.log(`URL de base Pinecone: ${PINECONE_BASE_URL}`);
 
 // Vérifier les variables requises
 if (!PINECONE_API_KEY) {
@@ -91,7 +92,8 @@ async function upsertToPinecone(id, vector, metadata) {
   }
   
   console.log(`Insertion dans Pinecone pour document ID: ${id}, avec metadata: ${JSON.stringify(metadata)}`);
-  console.log(`URL Pinecone: ${PINECONE_BASE_URL}/vectors/upsert`);
+  console.log(`URL d'insertion Pinecone: ${PINECONE_BASE_URL}/vectors/upsert`);
+  console.log(`Dimensions du vecteur: ${vector.length}`);
   
   try {
     const vectorData = {
@@ -105,15 +107,13 @@ async function upsertToPinecone(id, vector, metadata) {
       namespace: 'documents' // You can organize your vectors in namespaces
     };
     
-    console.log(`Envoi de données à Pinecone: ${JSON.stringify(vectorData).substring(0, 200)}...`);
-    console.log(`Dimensions du vecteur: ${vector.length}`);
-    
-    // Ajout de logs détaillés pour la requête
+    // Logs détaillés pour le debugging
     console.log(`Headers: Api-Key: ${PINECONE_API_KEY ? "Présente (masquée)" : "Manquante!"}, Content-Type: application/json`);
+    console.log(`Corps de la requête (début): ${JSON.stringify(vectorData).substring(0, 200)}...`);
     
-    // Effectuer la requête avec un timeout plus long
+    // Requête avec un timeout plus long (30 secondes)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 sec timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await fetch(`${PINECONE_BASE_URL}/vectors/upsert`, {
       method: 'POST',
@@ -127,25 +127,23 @@ async function upsertToPinecone(id, vector, metadata) {
     
     clearTimeout(timeoutId);
     
+    // Capturer le texte de la réponse pour debugging
     const responseText = await response.text();
-    console.log(`Réponse Pinecone (${response.status}): ${responseText}`);
+    console.log(`Réponse Pinecone (${response.status}): ${responseText.substring(0, 500)}`);
     
     if (!response.ok) {
-      // Log détaillé de l'erreur
+      // Logging détaillé de l'erreur
       console.error(`Erreur API Pinecone (${response.status}): ${responseText}`);
       console.error(`URL utilisée: ${PINECONE_BASE_URL}/vectors/upsert`);
-      console.error(`Index: ${PINECONE_INDEX}, Environnement: ${PINECONE_ENVIRONMENT}`);
       
-      // Tester l'API pour info
+      // Test diagnostic de l'API Pinecone
       try {
-        console.log("Test de la connexion à l'API Pinecone...");
+        console.log("Test de connexion à l'API Pinecone (describe_index_stats)...");
         const testResponse = await fetch(`${PINECONE_BASE_URL}/describe_index_stats`, {
           method: 'GET',
-          headers: {
-            'Api-Key': PINECONE_API_KEY,
-          },
+          headers: { 'Api-Key': PINECONE_API_KEY },
         });
-        console.log(`Test d'API Pinecone: ${testResponse.status} - ${await testResponse.text()}`);
+        console.log(`Test d'API Pinecone: ${testResponse.status} - ${await testResponse.text().then(t => t.substring(0, 200))}`);
       } catch (testError) {
         console.error("Test de connexion Pinecone échoué:", testError);
       }
@@ -291,11 +289,17 @@ serve(async (req) => {
           try {
             result = await upsertToPinecone(documentId, embedding, metadata);
           } catch (pineconeError) {
-            console.error("Première tentative échouée, réessai avec une configuration alternative...");
+            console.error("Première tentative échouée, essai avec une configuration alternative...");
             
-            // Essayer une URL alternative au cas où
-            const alternativeUrl = `https://${PINECONE_INDEX}-3q5v9g1.svc.${PINECONE_ENVIRONMENT}.pinecone.io/vectors/upsert`;
+            // Log d'erreur détaillé
+            console.error(`Erreur détaillée: ${pineconeError.message}`);
+            
+            // Essayer une URL légèrement différente (avec le nom d'index directement dans l'URL)
+            const alternativeUrl = `https://${PINECONE_INDEX}.svc.${PINECONE_ENVIRONMENT}.pinecone.io/vectors/upsert`;
             console.log(`Tentative avec URL alternative: ${alternativeUrl}`);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
             
             const response = await fetch(alternativeUrl, {
               method: 'POST',
@@ -313,10 +317,14 @@ serve(async (req) => {
                 ],
                 namespace: 'documents'
               }),
+              signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             if (!response.ok) {
               const errorText = await response.text();
+              console.error(`Alternative également échouée (${response.status}): ${errorText}`);
               throw new Error(`Alternative également échouée (${response.status}): ${errorText}`);
             }
             
