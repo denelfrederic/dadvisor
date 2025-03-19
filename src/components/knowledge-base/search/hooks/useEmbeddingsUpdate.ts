@@ -6,6 +6,7 @@ import {
   updateKnowledgeEntries, 
   updateAllEmbeddings 
 } from "../../services/embedding/update";
+import { exportLogsToFile } from "@/components/document/report/utils/logUtils";
 
 export const useEmbeddingsUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -19,6 +20,14 @@ export const useEmbeddingsUpdate = () => {
     setLogs(prev => [...prev, message]);
   }, []);
 
+  const clearLogs = useCallback(() => {
+    setLogs([]);
+  }, []);
+
+  const exportLogs = useCallback(() => {
+    exportLogsToFile(logs);
+  }, [logs]);
+
   const updateDocumentEmbeddingsWithProgress = useCallback(async () => {
     setIsUpdating(true);
     setProgress(0);
@@ -26,7 +35,7 @@ export const useEmbeddingsUpdate = () => {
     addLog("Début de la mise à jour des embeddings des documents...");
     
     try {
-      const result = await updateDocuments();
+      const result = await updateDocuments(addLog);
       
       if (result.success) {
         addLog(`${result.count} documents mis à jour avec succès.`);
@@ -68,12 +77,10 @@ export const useEmbeddingsUpdate = () => {
     addLog("Début de la mise à jour des embeddings des entrées de connaissances...");
     
     try {
+      // Update progress as a number and pass the addLog function
       const result = await updateKnowledgeEntries(
-        // Convert progress to integer
-        (progressValue) => {
-          const intProgress = Math.round(progressValue);
-          setProgress(intProgress);
-          console.log(`Progression mise à jour: ${intProgress}%`);
+        (progressValue: number) => {
+          setProgress(progressValue);
         },
         addLog
       );
@@ -84,7 +91,7 @@ export const useEmbeddingsUpdate = () => {
         if (result.failures && result.failures.length > 0) {
           // Group failures by reason
           const reasonCounts: Record<string, number> = {};
-          result.failures.forEach(f => {
+          result.failures.forEach((f: any) => {
             reasonCounts[f.reason] = (reasonCounts[f.reason] || 0) + 1;
           });
           
@@ -140,15 +147,7 @@ export const useEmbeddingsUpdate = () => {
     addLog("Début de la mise à jour de tous les embeddings (documents et base de connaissances)...");
     
     try {
-      const result = await updateAllEmbeddings(
-        // Convert progress to integer
-        (progressValue) => {
-          const intProgress = Math.round(progressValue);
-          setProgress(intProgress);
-          console.log(`Progression mise à jour: ${intProgress}%`);
-        },
-        addLog
-      );
+      const result = await updateAllEmbeddings(addLog);
       
       setProgress(100);
       
@@ -187,6 +186,8 @@ export const useEmbeddingsUpdate = () => {
     errorSummary,
     updateDocumentEmbeddings: updateDocumentEmbeddingsWithProgress,
     updateKnowledgeEntryEmbeddings,
-    updateAllEmbeddings: updateAllEmbeddingsWithProgress
+    updateAllEmbeddings: updateAllEmbeddingsWithProgress,
+    clearLogs,
+    exportLogs
   };
 };

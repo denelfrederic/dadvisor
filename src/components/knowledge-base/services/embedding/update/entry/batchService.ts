@@ -1,6 +1,6 @@
 
 import { KnowledgeEntry } from "@/components/knowledge-base/types";
-import { generateEmbedding } from "@/components/knowledge-base/services/embedding/embeddingService";
+import { generateEntryEmbedding } from "@/components/knowledge-base/services/embedding/embeddingService";
 import { isValidEmbedding } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { processEntryForEmbedding } from "./processor";
@@ -33,10 +33,10 @@ export const processBatchEmbeddings = async (
         const processedContent = processEntryForEmbedding(entry);
         
         // Generate embedding
-        const embedding = await generateEmbedding(processedContent);
+        const embedding = await generateEntryEmbedding(processedContent);
         
         if (!embedding || !isValidEmbedding(embedding)) {
-          onProgress?.(`Échec de génération d'embedding pour "${entry.title}"`);
+          onProgress?.(`Échec de génération d'embedding pour "${entry.question}"`);
           return { success: false, entry };
         }
         
@@ -47,15 +47,15 @@ export const processBatchEmbeddings = async (
           .eq('id', entry.id);
         
         if (error) {
-          onProgress?.(`Erreur de mise à jour pour "${entry.title}": ${error.message}`);
+          onProgress?.(`Erreur de mise à jour pour "${entry.question}": ${error.message}`);
           return { success: false, entry };
         }
         
-        onProgress?.(`Embedding généré avec succès pour "${entry.title}"`);
+        onProgress?.(`Embedding généré avec succès pour "${entry.question}"`);
         return { success: true, entry };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        onProgress?.(`Exception pour "${entry.title}": ${message}`);
+        onProgress?.(`Exception pour "${entry.question}": ${message}`);
         return { success: false, entry, error };
       }
     });
@@ -76,3 +76,8 @@ export const processBatchEmbeddings = async (
   onProgress?.(`Traitement terminé. Réussis: ${succeeded}, Échecs: ${failures}`);
   return { succeeded, failures };
 };
+
+/**
+ * Update embeddings for a batch of entries
+ */
+export const updateEntryEmbeddingBatch = processBatchEmbeddings;

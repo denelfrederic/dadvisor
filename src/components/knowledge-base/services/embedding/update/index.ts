@@ -1,5 +1,5 @@
 
 // Export entry update services
-export { updateEntryEmbeddingBatch, updateKnowledgeEntries } from './entry';
-export { updateDocuments } from './documentUpdateService';
+export { updateEntryEmbedding, updateEntriesEmbeddings, updateKnowledgeEntries } from './entry';
+export { updateDocuments, updateDocumentEmbeddings } from './documentUpdateService';
 export { updateAllEmbeddings } from './combinedUpdateService';

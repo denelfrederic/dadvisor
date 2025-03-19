@@ -14,11 +14,11 @@ export const updateEntryEmbedding = async (
 ): Promise<boolean> => {
   try {
     if (!isValidEntry(entry)) {
-      onProgress?.(`Entrée invalide: ${entry.title}`);
+      onProgress?.(`Entrée invalide: ${entry.question}`);
       return false;
     }
 
-    onProgress?.(`Traitement de l'entrée: ${entry.title}...`);
+    onProgress?.(`Traitement de l'entrée: ${entry.question}...`);
     
     // Process the entry content for embedding
     const processedContent = processEntryForEmbedding(entry);
@@ -32,7 +32,7 @@ export const updateEntryEmbedding = async (
     );
 
     if (embeddingError || !embeddingData || !embeddingData.embedding) {
-      onProgress?.(`Erreur de génération d'embedding pour ${entry.title}: ${embeddingError?.message || 'Réponse invalide'}`);
+      onProgress?.(`Erreur de génération d'embedding pour ${entry.question}: ${embeddingError?.message || 'Réponse invalide'}`);
       return false;
     }
 
@@ -43,11 +43,11 @@ export const updateEntryEmbedding = async (
       .eq('id', entry.id);
 
     if (updateError) {
-      onProgress?.(`Erreur de mise à jour pour ${entry.title}: ${updateError.message}`);
+      onProgress?.(`Erreur de mise à jour pour ${entry.question}: ${updateError.message}`);
       return false;
     }
 
-    onProgress?.(`Embedding mis à jour avec succès pour: ${entry.title}`);
+    onProgress?.(`Embedding mis à jour avec succès pour: ${entry.question}`);
     return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -78,4 +78,81 @@ export const updateEntriesEmbeddings = async (
   }
 
   return { succeeded, failures };
+};
+
+/**
+ * Fetches all entries and updates their embeddings
+ */
+export const updateKnowledgeEntries = async (
+  onProgressPercent?: (percent: number) => void,
+  onLog?: (message: string) => void
+): Promise<{ 
+  success: boolean; 
+  succeeded?: number; 
+  failures?: any[]; 
+  processed?: number;
+  error?: string;
+}> => {
+  try {
+    onLog?.("Fetching entries from database...");
+    
+    // Fetch entries that need updating
+    const { data: entries, error } = await supabase
+      .from('knowledge_entries')
+      .select('*');
+      
+    if (error) {
+      onLog?.(`Error fetching entries: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+    
+    if (!entries || entries.length === 0) {
+      onLog?.("No entries found to update");
+      return { success: true, succeeded: 0, failures: [], processed: 0 };
+    }
+    
+    onLog?.(`Found ${entries.length} entries to process`);
+    
+    // Process entries
+    let succeeded = 0;
+    let failures: any[] = [];
+    
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      onLog?.(`Processing entry ${i+1}/${entries.length}: ${entry.question}`);
+      
+      // Update progress percentage
+      if (onProgressPercent) {
+        const percent = Math.round(((i+1) / entries.length) * 100);
+        onProgressPercent(percent);
+      }
+      
+      // Process the entry
+      const success = await updateEntryEmbedding(entry, onLog);
+      
+      if (success) {
+        succeeded++;
+      } else {
+        failures.push({
+          id: entry.id,
+          question: entry.question,
+          reason: "Failed to update embedding"
+        });
+      }
+    }
+    
+    onLog?.(`Completed processing: ${succeeded} succeeded, ${failures.length} failed`);
+    
+    return {
+      success: true,
+      succeeded,
+      failures,
+      processed: entries.length
+    };
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    onLog?.(`Error in updateKnowledgeEntries: ${errorMessage}`);
+    return { success: false, error: errorMessage };
+  }
 };

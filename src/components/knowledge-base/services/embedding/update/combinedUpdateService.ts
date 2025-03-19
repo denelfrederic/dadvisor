@@ -20,13 +20,15 @@ export const updateAllEmbeddings = async (
     await updateEntriesEmbeddings([], onProgress);
   
   // Compile results
-  const totalSucceeded = (docResult?.updated || 0) + entriesSucceeded;
-  const totalFailures = (docResult?.failed || 0) + entriesFailures;
+  const totalSucceeded = (docResult?.count || 0) + entriesSucceeded;
+  const totalFailures = ((docResult?.success === false) ? 1 : 0) + entriesFailures;
   
   onProgress?.(`Mise à jour terminée. Réussis: ${totalSucceeded}, Échoués: ${totalFailures}`);
   
   return {
     updated: totalSucceeded,
-    failed: totalFailures
+    failed: totalFailures,
+    success: docResult.success,
+    error: docResult.error
   };
 };

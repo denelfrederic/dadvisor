@@ -1,5 +1,20 @@
 
+import { KnowledgeEntry } from "../../../../types";
 import { isValidEmbedding } from "../../embeddingUtils";
+
+/**
+ * Validates if a knowledge entry is valid for embedding generation
+ */
+export const isValidEntry = (entry: KnowledgeEntry): boolean => {
+  if (!entry) return false;
+  if (!entry.question || !entry.answer) return false;
+  
+  // Check that content is not just whitespace
+  const questionTrimmed = entry.question.trim();
+  const answerTrimmed = entry.answer.trim();
+  
+  return questionTrimmed.length > 0 && answerTrimmed.length > 0;
+};
 
 /**
  * Validates embedding dimensions against database expectations
