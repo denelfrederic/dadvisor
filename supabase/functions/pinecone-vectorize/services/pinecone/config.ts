@@ -1,6 +1,6 @@
 
 // Configuration pour les services Pinecone
-import { PINECONE_API_KEY, PINECONE_BASE_URL, ALTERNATIVE_PINECONE_URL } from "../../config.ts";
+import { PINECONE_API_KEY, getPineconeUrl, PINECONE_INDEX } from "../../config.ts";
 
 /**
  * Configurations pour les requêtes Pinecone
@@ -25,10 +25,30 @@ export function validatePineconeConfig(): boolean {
     return false;
   }
   
-  if (!PINECONE_BASE_URL) {
-    console.error("URL de base Pinecone manquante");
+  const pineconeUrl = getPineconeUrl();
+  if (!pineconeUrl || !pineconeUrl.includes("pinecone")) {
+    console.error(`URL Pinecone invalide ou manquante: ${pineconeUrl}`);
     return false;
   }
   
   return true;
+}
+
+/**
+ * Obtient l'URL complète pour une opération Pinecone spécifique
+ * @param operation L'opération Pinecone (query, upsert, etc.)
+ * @returns L'URL complète pour l'opération
+ */
+export function getPineconeOperationUrl(operation: string): string {
+  const baseUrl = getPineconeUrl();
+  // S'assurer que l'URL se termine par un slash
+  const normalizedUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  
+  // Construire l'URL complète avec l'index
+  if (PINECONE_INDEX) {
+    return `${normalizedUrl}vectors/${operation}`;
+  } else {
+    console.warn("PINECONE_INDEX non défini, tentative d'utilisation de l'URL sans spécifier l'index");
+    return `${normalizedUrl}${operation}`;
+  }
 }

@@ -149,7 +149,7 @@ const OpenAITab: React.FC<OpenAITabProps> = ({ addLog }) => {
             <div className="space-y-2">
               <div className="flex space-x-2 text-xs">
                 <span className="font-medium">Modèle:</span>
-                <span>{testResult.model || "Non spécifié"}</span>
+                <span>{testResult.modelName || "Non spécifié"}</span>
               </div>
               <div className="flex space-x-2 text-xs">
                 <span className="font-medium">Dimensions:</span>

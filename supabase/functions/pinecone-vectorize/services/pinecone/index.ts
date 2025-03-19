@@ -1,14 +1,5 @@
-
-// Point d'entrée pour les services Pinecone
-// Exporte toutes les fonctions du service Pinecone
-
-export { validatePineconeConfig } from "./config.ts";
-export { upsertToPinecone } from "./upsert.ts";
-export { queryPinecone } from "./query.ts";
-
-// Ajout d'une fonction pour tester la connexion à Pinecone
-import { PINECONE_API_KEY, PINECONE_BASE_URL, ALTERNATIVE_PINECONE_URL } from "../../config.ts";
-import { PINECONE_HEADERS } from "./config.ts";
+import { PINECONE_API_KEY, getPineconeUrl, PINECONE_INDEX, PINECONE_NAMESPACE } from "../../config.ts";
+import { PINECONE_HEADERS, getPineconeOperationUrl } from "./config.ts";
 import { generateEmbeddingWithOpenAI } from "../openai.ts";
 
 /**
@@ -19,80 +10,100 @@ export async function testPineconeConnection(): Promise<any> {
   try {
     console.log("Test de connexion à Pinecone...");
     
+    // Vérification de la clé API
     if (!PINECONE_API_KEY) {
-      return { 
-        success: false, 
-        message: "Clé API Pinecone manquante", 
-        timestamp: new Date().toISOString() 
-      };
-    }
-    
-    if (!PINECONE_BASE_URL) {
-      return { 
-        success: false, 
-        message: "URL Pinecone manquante ou invalide", 
-        configuration: {
-          hasBaseUrl: Boolean(PINECONE_BASE_URL),
-          hasAlternativeUrl: Boolean(ALTERNATIVE_PINECONE_URL),
-          apiKeyPresent: Boolean(PINECONE_API_KEY)
-        },
-        timestamp: new Date().toISOString() 
-      };
-    }
-    
-    console.log(`Tentative de connexion à l'URL: ${PINECONE_BASE_URL}`);
-    
-    // Tester avec une requête simple (describeIndex)
-    const response = await fetch(`${PINECONE_BASE_URL}`, {
-      method: 'GET',
-      headers: PINECONE_HEADERS
-    });
-    
-    const responseText = await response.text();
-    
-    if (!response.ok) {
-      console.error(`Échec du test de connexion Pinecone (${response.status}): ${responseText}`);
-      
-      // Si première URL échoue, essayer l'URL alternative
-      if (ALTERNATIVE_PINECONE_URL) {
-        console.log(`Tentative avec URL alternative: ${ALTERNATIVE_PINECONE_URL}`);
-        return await testAlternativePineconeUrl();
-      }
-      
-      return { 
-        success: false, 
-        message: `Échec de connexion: ${response.status} ${responseText}`,
-        status: response.status,
-        response: responseText,
+      console.error("Clé API Pinecone manquante");
+      return {
+        success: false,
+        message: "Clé API Pinecone manquante",
         timestamp: new Date().toISOString()
       };
     }
     
-    // Tenter de parser la réponse
-    let responseData;
+    // Récupération de l'URL Pinecone
+    const pineconeUrl = getPineconeUrl();
+    
+    if (!pineconeUrl || pineconeUrl.trim() === '') {
+      console.error("URL Pinecone manquante ou vide");
+      return {
+        success: false,
+        message: "URL Pinecone non configurée",
+        error: "URL Pinecone manquante ou vide",
+        timestamp: new Date().toISOString(),
+        configuredUrl: pineconeUrl
+      };
+    }
+    
+    if (!pineconeUrl.includes("pinecone.io") && !pineconeUrl.startsWith("http")) {
+      console.error(`URL Pinecone invalide: ${pineconeUrl}`);
+      return {
+        success: false,
+        message: "Format d'URL Pinecone invalide",
+        error: `URL Pinecone invalide: ${pineconeUrl}`,
+        timestamp: new Date().toISOString(),
+        configuredUrl: pineconeUrl
+      };
+    }
+    
+    console.log(`Test de connexion avec l'URL: ${pineconeUrl}`);
+    
+    // Construction de l'URL complète
+    const normalizedUrl = pineconeUrl.endsWith('/') ? pineconeUrl : `${pineconeUrl}/`;
+    let testUrl;
+    
+    if (PINECONE_INDEX) {
+      // Si un index est configuré, on utilise la nouvelle API Pinecone
+      testUrl = `${normalizedUrl}databases`;
+    } else {
+      // Sinon, on essaie un endpoint générique
+      testUrl = normalizedUrl;
+    }
+    
+    console.log(`URL de test complète: ${testUrl}`);
+    
     try {
-      responseData = JSON.parse(responseText);
-    } catch (e) {
-      responseData = { text: responseText };
+      // Test simple avec HEAD pour vérifier si le domaine est valide
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: PINECONE_HEADERS
+      });
+      
+      console.log(`Réponse du test: ${response.status} ${response.statusText}`);
+      
+      // Traiter la réponse
+      if (response.ok) {
+        return {
+          success: true,
+          message: "Connexion Pinecone réussie",
+          status: response.status,
+          timestamp: new Date().toISOString(),
+          url: testUrl
+        };
+      } else {
+        const errorText = await response.text();
+        return {
+          success: false,
+          message: `Connexion échouée: ${response.status} ${response.statusText}`,
+          error: errorText,
+          status: response.status,
+          timestamp: new Date().toISOString(),
+          url: testUrl
+        };
+      }
+    } catch (fetchError) {
+      console.error("Erreur de fetch:", fetchError);
+      return {
+        success: false,
+        message: "Exception lors de la connexion à Pinecone",
+        error: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        timestamp: new Date().toISOString(),
+        url: testUrl
+      };
     }
-    
-    return { 
-      success: true, 
-      message: "Connexion à Pinecone réussie",
-      data: responseData,
-      timestamp: new Date().toISOString()
-    };
   } catch (error) {
-    console.error("Erreur lors du test de connexion:", error);
-    
-    // Si erreur sur l'URL principale, essayer l'URL alternative
-    if (ALTERNATIVE_PINECONE_URL && error instanceof TypeError && error.message.includes("URL")) {
-      console.log("Erreur d'URL, tentative avec URL alternative");
-      return await testAlternativePineconeUrl();
-    }
-    
-    return { 
-      success: false, 
+    console.error("Erreur lors du test de connexion Pinecone:", error);
+    return {
+      success: false,
       message: `Exception: ${error instanceof Error ? error.message : String(error)}`,
       error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
@@ -101,139 +112,73 @@ export async function testPineconeConnection(): Promise<any> {
 }
 
 /**
- * Teste la connexion à Pinecone avec l'URL alternative
- */
-async function testAlternativePineconeUrl(): Promise<any> {
-  try {
-    if (!ALTERNATIVE_PINECONE_URL) {
-      return { 
-        success: false, 
-        message: "URL alternative Pinecone manquante", 
-        timestamp: new Date().toISOString() 
-      };
-    }
-    
-    console.log(`Test avec URL alternative: ${ALTERNATIVE_PINECONE_URL}`);
-    
-    const response = await fetch(ALTERNATIVE_PINECONE_URL, {
-      method: 'GET',
-      headers: PINECONE_HEADERS
-    });
-    
-    const responseText = await response.text();
-    
-    if (!response.ok) {
-      console.error(`Échec du test avec URL alternative (${response.status}): ${responseText}`);
-      return { 
-        success: false, 
-        message: `Échec avec URL alternative: ${response.status} ${responseText}`,
-        status: response.status,
-        response: responseText,
-        timestamp: new Date().toISOString()
-      };
-    }
-    
-    // Tenter de parser la réponse
-    let responseData;
-    try {
-      responseData = JSON.parse(responseText);
-    } catch (e) {
-      responseData = { text: responseText };
-    }
-    
-    return { 
-      success: true, 
-      message: "Connexion à Pinecone réussie (via URL alternative)",
-      data: responseData,
-      timestamp: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error("Erreur lors du test avec URL alternative:", error);
-    return { 
-      success: false, 
-      message: `Exception avec URL alternative: ${error instanceof Error ? error.message : String(error)}`,
-      error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString()
-    };
-  }
-}
-
-/**
- * Récupère la configuration Pinecone
- * @returns La configuration Pinecone
- */
-export async function getPineconeConfig(): Promise<any> {
-  return {
-    success: true,
-    pineconeApiKey: Boolean(PINECONE_API_KEY),
-    pineconeUrl: PINECONE_BASE_URL || "(non configurée)",
-    alternativeUrl: ALTERNATIVE_PINECONE_URL || "(non configurée)",
-    timestamp: new Date().toISOString()
-  };
-}
-
-/**
- * Indexe un document dans Pinecone
- * @param documentId L'ID du document
- * @param documentContent Le contenu du document
- * @param documentTitle Le titre du document
- * @param documentType Le type du document
- * @returns Un objet indiquant si l'indexation a réussi
+ * Index un document dans Pinecone
+ * @param id ID du document
+ * @param content Contenu du document
+ * @param metadata Métadonnées du document
+ * @returns Résultat de l'opération d'indexation
  */
 export async function indexDocumentInPinecone(
-  documentId: string,
-  documentContent: string,
-  documentTitle: string,
-  documentType: string
-): Promise<{ success: boolean; message?: string; error?: string; embedding?: number[] }> {
+  id: string,
+  content: string,
+  metadata: Record<string, any>
+): Promise<any> {
   try {
-    console.log(`Indexation du document ${documentId} (${documentTitle}) dans Pinecone...`);
+    console.log(`Indexation du document ${id} dans Pinecone...`);
     
-    if (!documentContent || documentContent.trim() === '') {
-      return { success: false, error: "Le contenu du document est vide" };
+    // Génération d'embedding pour le document
+    const embedding = await generateEmbeddingWithOpenAI(content);
+    
+    // Préparation du vecteur pour Pinecone
+    const vector = {
+      id,
+      values: embedding,
+      metadata: {
+        ...metadata,
+        text: content.substring(0, 1000) // Tronquer à 1000 caractères pour les métadonnées
+      }
+    };
+    
+    // Construction de l'URL d'upsert
+    const upsertUrl = getPineconeOperationUrl('upsert');
+    console.log(`URL d'upsert: ${upsertUrl}`);
+    
+    // Préparation du corps de la requête
+    const requestBody = JSON.stringify({
+      vectors: [vector],
+      namespace: PINECONE_NAMESPACE
+    });
+    
+    // Envoi de la requête à Pinecone
+    const response = await fetch(upsertUrl, {
+      method: 'POST',
+      headers: PINECONE_HEADERS,
+      body: requestBody
+    });
+    
+    // Traitement de la réponse
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Erreur Pinecone pour upsert (${response.status}): ${errorText}`);
+      throw new Error(`Erreur Pinecone: ${response.status} ${errorText}`);
     }
     
-    // Générer l'embedding via OpenAI
-    console.log("Génération de l'embedding via OpenAI...");
-    const embedding = await generateEmbeddingWithOpenAI(documentContent);
+    const result = await response.json();
+    console.log(`Document ${id} indexé avec succès:`, result);
     
-    if (!embedding || !Array.isArray(embedding) || embedding.length === 0) {
-      return { success: false, error: "Échec de la génération de l'embedding" };
-    }
-    
-    console.log(`Embedding généré avec succès (${embedding.length} dimensions)`);
-    
-    // Préparer les métadonnées
-    const metadata = {
-      title: documentTitle || "Sans titre",
-      type: documentType || "text/plain",
-      source: "application",
+    return {
+      success: true,
+      documentId: id,
+      result,
       timestamp: new Date().toISOString()
     };
-    
-    // Upserter dans Pinecone
-    console.log("Insertion dans Pinecone...");
-    const upsertResult = await upsertToPinecone(documentId, embedding, metadata);
-    
-    if (!upsertResult.success) {
-      return { 
-        success: false, 
-        error: upsertResult.error || "Échec de l'insertion dans Pinecone"
-      };
-    }
-    
-    console.log("Document indexé avec succès dans Pinecone");
-    
-    return { 
-      success: true, 
-      message: "Document indexé avec succès",
-      embedding: embedding
-    };
   } catch (error) {
-    console.error("Erreur lors de l'indexation du document:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : String(error)
+    console.error(`Erreur lors de l'indexation du document ${id}:`, error);
+    return {
+      success: false,
+      documentId: id,
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString()
     };
   }
 }
