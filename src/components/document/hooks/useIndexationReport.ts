@@ -61,6 +61,8 @@ export const useIndexationReport = () => {
           documentsByType: {},
           recentDocuments: []
         });
+        addLog("Aucun document trouvé dans la base de données.");
+        setIsLoading(false);
         return;
       }
       
@@ -73,9 +75,12 @@ export const useIndexationReport = () => {
         const type = doc.type || "inconnu";
         documentsByType[type] = (documentsByType[type] || 0) + 1;
         
-        // Compter documents avec embedding
+        // Compter documents avec embedding valide
         if (doc.embedding) {
           documentsWithEmbeddings++;
+          addLog(`Document ${doc.id.substring(0, 8)} (${doc.title}) a un embedding`);
+        } else {
+          addLog(`Document ${doc.id.substring(0, 8)} (${doc.title}) n'a PAS d'embedding`);
         }
       });
       
@@ -108,6 +113,9 @@ export const useIndexationReport = () => {
       setReport(newReport);
       addLog(`Rapport généré avec succès: ${documentsWithEmbeddings}/${totalDocuments} documents avec embeddings (${embeddingsPercentage}%)`);
       
+      // Consigner les détails dans la console pour le débogage
+      console.log("Rapport d'indexation généré:", newReport);
+      
       toast({
         title: "Rapport d'indexation généré",
         description: `${totalDocuments} documents analysés (${embeddingsPercentage}% avec embeddings)`
@@ -117,6 +125,7 @@ export const useIndexationReport = () => {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
       setError(errorMessage);
       addLog(`ERREUR: ${errorMessage}`);
+      console.error("Erreur lors de la génération du rapport:", err);
       
       toast({
         title: "Erreur",

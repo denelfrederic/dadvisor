@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import KnowledgeBaseCard from "./components/KnowledgeBaseCard";
@@ -14,8 +14,14 @@ const KnowledgeBaseReport = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Générer le rapport au chargement initial
+  useEffect(() => {
+    generateReport();
+  }, []);
+
   const generateReport = async () => {
     setIsLoading(true);
+    console.log("Génération du rapport de la base de connaissances...");
     try {
       // Récupérer le nombre total d'entrées
       const { count, error } = await supabase
@@ -40,21 +46,24 @@ const KnowledgeBaseReport = () => {
       }
       
       if (entries) {
-        console.log(`Analyzing ${entries.length} knowledge entries for embeddings`);
+        console.log(`Analyse de ${entries.length} entrées de connaissances pour embeddings`);
         
         // Compter les entrées avec embeddings valides
         for (const entry of entries) {
           try {
-            const hasValidEmbedding = isValidEmbedding(entry.embedding);
+            const hasValidEmbedding = entry.embedding && isValidEmbedding(entry.embedding);
             if (hasValidEmbedding) {
               withEmbeddings++;
+              console.log(`Entrée ${entry.id.substring(0, 8)} a un embedding valide`);
+            } else {
+              console.log(`Entrée ${entry.id.substring(0, 8)} n'a PAS d'embedding valide`);
             }
             
             // Analyser les sources comme catégories
             const category = entry.source || 'Non catégorisé';
             categories[category] = (categories[category] || 0) + 1;
           } catch (e) {
-            console.error(`Error checking embedding for entry ${entry.id}:`, e);
+            console.error(`Erreur lors de la vérification de l'embedding pour l'entrée ${entry.id}:`, e);
           }
         }
       }
@@ -67,7 +76,13 @@ const KnowledgeBaseReport = () => {
         categoriesCount: Object.keys(categories).length
       };
       
+      console.log("Rapport généré:", newReport);
       setReport(newReport);
+      
+      // Enregistrer le rapport pour le débogage
+      if (typeof window !== 'undefined') {
+        (window as any).__knowledgeBaseReport = newReport;
+      }
       
       toast({
         title: "Rapport généré",
@@ -90,7 +105,7 @@ const KnowledgeBaseReport = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Rapport de la base de connaissances</h2>
+        <h2 className="text-lg font-medium">État de la base de connaissances</h2>
         <Button 
           onClick={generateReport} 
           disabled={isLoading}
@@ -98,7 +113,7 @@ const KnowledgeBaseReport = () => {
           size="sm"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          {isLoading ? 'Analyse...' : 'Générer le rapport'}
+          {isLoading ? 'Analyse...' : 'Actualiser le rapport'}
         </Button>
       </div>
 
@@ -110,6 +125,19 @@ const KnowledgeBaseReport = () => {
           onGenerateReport={generateReport} 
         />
       )}
+      
+      {/* Bouton de débogage */}
+      <div className="text-xs text-gray-400 mt-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => {
+            console.log("Rapport actuel de la base de connaissances:", report);
+          }}
+        >
+          Afficher les données dans la console
+        </Button>
+      </div>
     </div>
   );
 };
