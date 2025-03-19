@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Check, Database, FileText, Loader2, RefreshCw } from "lucide-react";
 import { formatFileSize } from "./utils";
+import { toast } from "sonner";
 
 const IndexedDocumentsList = () => {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -34,9 +35,10 @@ const IndexedDocumentsList = () => {
       
       setDocuments(data || []);
       console.log(`${data?.length || 0} documents indexés récupérés`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erreur lors de la récupération des documents indexés:", err);
       setError("Impossible de récupérer les documents indexés. Veuillez réessayer.");
+      toast.error("Erreur: " + (err.message || "Impossible de récupérer les documents"));
     } finally {
       setIsLoading(false);
     }
@@ -55,11 +57,12 @@ const IndexedDocumentsList = () => {
           size="sm" 
           onClick={fetchIndexedDocuments}
           disabled={isLoading}
+          className="flex items-center gap-2"
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4" />
           )}
           Rafraîchir
         </Button>
