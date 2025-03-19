@@ -106,7 +106,7 @@ const EmbeddingMaintenance = () => {
                   <p className="font-semibold">Erreur d'autorisation (403 Forbidden):</p>
                   <ul className="list-disc pl-5 mt-1 space-y-1">
                     <li>Vérifiez que la clé API Pinecone est correctement configurée dans les secrets Supabase</li>
-                    <li>Vérifiez que l'index "{Pinecone_index}" existe dans votre compte Pinecone</li>
+                    <li>Vérifiez que l'index configuré existe dans votre compte Pinecone</li>
                     <li>Vérifiez que l'URL de base Pinecone est correcte</li>
                   </ul>
                 </div>
