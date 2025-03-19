@@ -1,35 +1,60 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentSearchResult } from '../../types';
-import { generateEmbedding } from "./embeddingService";
-import { prepareEmbeddingForStorage } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 
-// Recherche de documents avec similarité vectorielle
+// Recherche de documents avec similarité vectorielle via Pinecone
 export const searchLocalDocuments = async (query: string): Promise<DocumentSearchResult[]> => {
   try {
     // Essayer d'abord la recherche vectorielle si possible
     try {
-      // Générer l'embedding pour la requête
-      const queryEmbedding = await generateEmbedding(query);
+      console.log("Tentative de recherche sémantique via Pinecone pour:", query);
       
-      // Recherche vectorielle avec match_documents
-      const { data: vectorResults, error: vectorError } = await supabase.rpc('match_documents', {
-        query_embedding: queryEmbedding,
-        similarity_threshold: 0.6, // Ajustable selon les besoins
-        match_count: 5
+      // Appeler l'edge function Pinecone pour la recherche
+      const { data: pineconeResults, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
+        body: {
+          action: 'query',
+          query: query
+        }
       });
       
-      if (!vectorError && vectorResults && vectorResults.length > 0) {
-        console.log("Résultats de recherche vectorielle trouvés:", vectorResults.length);
-        return vectorResults.map(item => ({
-          id: item.id,
-          title: item.title || "Sans titre",
-          content: item.content,
-          type: item.type,
-          source: item.source,
-          score: item.similarity,
-          matchCount: 1 // Non applicable pour la recherche vectorielle
-        }));
+      if (pineconeError) {
+        console.error("Erreur lors de la recherche via Pinecone:", pineconeError);
+        throw pineconeError;
+      }
+      
+      if (pineconeResults.success && pineconeResults.results && pineconeResults.results.length > 0) {
+        console.log("Résultats de recherche Pinecone trouvés:", pineconeResults.results.length);
+        
+        // Récupérer les IDs des documents trouvés
+        const documentIds = pineconeResults.results.map((match: any) => match.id);
+        
+        // Récupérer les informations complètes des documents depuis Supabase
+        const { data: documents, error: fetchError } = await supabase
+          .from('documents')
+          .select('*')
+          .in('id', documentIds);
+          
+        if (fetchError) {
+          console.error("Erreur lors de la récupération des documents:", fetchError);
+          throw fetchError;
+        }
+        
+        // Associer les scores de similarité aux documents
+        const documentsWithScores = documents.map((doc: any) => {
+          const match = pineconeResults.results.find((m: any) => m.id === doc.id);
+          return {
+            id: doc.id,
+            title: doc.title || "Sans titre",
+            content: doc.content,
+            type: doc.type,
+            source: doc.source,
+            score: match ? match.score : 0,
+            matchCount: 1
+          };
+        });
+        
+        // Trier par score décroissant
+        return documentsWithScores.sort((a: any, b: any) => b.score - a.score);
       }
     } catch (vectorSearchError) {
       console.warn("Recherche vectorielle échouée, repli sur la recherche textuelle:", vectorSearchError);
@@ -37,6 +62,7 @@ export const searchLocalDocuments = async (query: string): Promise<DocumentSearc
     }
     
     // Recherche textuelle classique (fallback)
+    console.log("Utilisation de la recherche textuelle (fallback)");
     const { data: textResults, error: textError } = await supabase.rpc('search_documents', {
       search_query: query
     });

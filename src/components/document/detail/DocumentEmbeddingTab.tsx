@@ -1,8 +1,9 @@
 
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, AlertTriangle, RefreshCw, FileText, FileCode, Loader2 } from "lucide-react";
+import { Check, AlertTriangle, RefreshCw, FileText, FileCode, Loader2, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DocumentEmbeddingTabProps {
   document: any;
@@ -45,19 +46,30 @@ const DocumentEmbeddingTab = ({
 
   if (!document) return null;
 
-  if (document.embedding) {
+  const hasVectorization = document.embedding || document.pinecone_indexed === true;
+
+  if (hasVectorization) {
     return (
       <div className="space-y-4">
         <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-3 rounded-md">
           <Check className="h-5 w-5" />
-          <span>Ce document possède un embedding qui permet la recherche sémantique.</span>
+          <span>Ce document est vectorisé et peut être utilisé pour la recherche sémantique.</span>
         </div>
         
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">Détails de l'embedding</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">Détails de la vectorisation</h3>
           <div className="p-3 bg-muted rounded-md text-xs">
-            <p>Type: {typeof document.embedding}</p>
-            <p>Taille: {document.embedding?.length || 0} caractères</p>
+            {document.pinecone_indexed === true ? (
+              <p className="flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Document indexé dans Pinecone
+              </p>
+            ) : (
+              <>
+                <p>Type: {typeof document.embedding}</p>
+                <p>Taille: {document.embedding?.length || 0} caractères</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -67,6 +79,7 @@ const DocumentEmbeddingTab = ({
           size="sm"
           className="mt-2"
         >
+          <RefreshCw className="h-4 w-4 mr-2" />
           Rafraîchir les informations
         </Button>
       </div>
@@ -77,7 +90,7 @@ const DocumentEmbeddingTab = ({
     <div className="space-y-4">
       <div className="flex items-center space-x-2 text-amber-600 bg-amber-50 p-3 rounded-md">
         <AlertTriangle className="h-5 w-5" />
-        <span>Ce document n'a pas d'embedding et ne peut pas être utilisé pour la recherche sémantique.</span>
+        <span>Ce document n'est pas vectorisé et ne peut pas être utilisé pour la recherche sémantique.</span>
       </div>
       
       {analysis && (
@@ -114,12 +127,12 @@ const DocumentEmbeddingTab = ({
           {updatingEmbedding ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Génération en cours...
+              Vectorisation en cours...
             </>
           ) : (
             <>
-              <FileText className="h-4 w-4 mr-2" />
-              Génération standard
+              <Database className="h-4 w-4 mr-2" />
+              Vectoriser avec Pinecone
             </>
           )}
         </Button>
@@ -132,12 +145,12 @@ const DocumentEmbeddingTab = ({
           {updatingEmbedding ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Génération optimisée...
+              Vectorisation optimisée...
             </>
           ) : (
             <>
               <FileCode className="h-4 w-4 mr-2" />
-              Génération optimisée
+              Contenu tronqué + Pinecone
             </>
           )}
         </Button>

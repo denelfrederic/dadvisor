@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateEmbedding } from "../../chat/services/document/embeddingService";
 import { analyzeDocumentEmbeddingIssue, fixDocumentEmbedding } from "../report/utils/documentEmbeddingAnalyzer";
 
 export const useDocumentDetail = (documentId: string | null, isOpen: boolean) => {
@@ -27,10 +26,10 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
       setDocument(data);
       
       // Vérifier si l'embedding est valide après rechargement
-      if (data && data.embedding) {
-        console.log(`Document ${documentId} rechargé avec embedding (longueur: ${typeof data.embedding === 'string' ? data.embedding.length : 'non-string'})`);
+      if (data && (data.embedding || data.pinecone_indexed)) {
+        console.log(`Document ${documentId} rechargé avec vectorisation`);
       } else {
-        console.log(`Document ${documentId} rechargé sans embedding`);
+        console.log(`Document ${documentId} rechargé sans vectorisation`);
       }
     } catch (error) {
       console.error("Erreur lors du chargement du document:", error);
@@ -61,7 +60,7 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     }
   }, [isOpen, documentId, loadDocument, analyzeDocument]);
 
-  // Mise à jour standard de l'embedding
+  // Vectoriser avec Pinecone
   const updateEmbedding = async () => {
     if (!document || !document.content) return;
     
@@ -69,41 +68,52 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     setUpdateResult(null);
     
     try {
-      console.log(`Tentative de génération d'embedding standard pour le document ${document.id} (${document.title})`);
+      console.log(`Tentative de vectorisation avec Pinecone pour le document ${document.id} (${document.title})`);
       
-      // Générer un embedding
-      const embedding = await generateEmbedding(document.content, "document");
+      // Appeler l'edge function Pinecone
+      const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
+        body: {
+          action: 'vectorize',
+          documentId: document.id,
+          documentContent: document.content,
+          documentTitle: document.title,
+          documentType: document.type
+        }
+      });
       
-      // Vérifier si l'embedding a été généré
-      if (!embedding) {
-        throw new Error("Échec de génération de l'embedding");
+      if (pineconeError) {
+        console.error(`Erreur lors de l'appel à l'API Pinecone:`, pineconeError);
+        throw pineconeError;
       }
       
-      console.log(`Embedding généré avec succès pour ${document.title}`);
+      if (!pineconeData.success) {
+        throw new Error(pineconeData.error || "Échec de vectorisation avec Pinecone");
+      }
       
-      // Convertir l'embedding au format de stockage
-      const embeddingForStorage = 
-        typeof embedding === 'string' ? embedding : JSON.stringify(embedding);
+      console.log(`Document ${document.id} vectorisé avec succès dans Pinecone`);
       
-      // Mettre à jour le document
-      const { error } = await supabase
+      // Mettre à jour le document dans Supabase pour indiquer qu'il est indexé dans Pinecone
+      const { error: updateError } = await supabase
         .from('documents')
-        .update({ embedding: embeddingForStorage })
+        .update({ 
+          pinecone_indexed: true,
+          embedding: pineconeData.embedding // Stocker également l'embedding pour la compatibilité
+        })
         .eq('id', document.id);
       
-      if (error) {
-        console.error(`Erreur lors de la mise à jour du document dans Supabase:`, error);
-        throw error;
+      if (updateError) {
+        console.error(`Erreur lors de la mise à jour du document dans Supabase:`, updateError);
+        throw updateError;
       }
       
       console.log(`Document ${document.id} mis à jour avec succès dans Supabase`);
       
       setUpdateResult({
         success: true,
-        message: "Embedding généré et enregistré avec succès"
+        message: "Document vectorisé et indexé avec succès dans Pinecone"
       });
     } catch (error) {
-      console.error("Erreur lors de la mise à jour de l'embedding:", error);
+      console.error("Erreur lors de la vectorisation avec Pinecone:", error);
       setUpdateResult({
         success: false,
         message: `Erreur: ${error instanceof Error ? error.message : String(error)}`
@@ -113,7 +123,7 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     }
   };
   
-  // Réparation optimisée pour les cas difficiles
+  // Réparation optimisée avec Pinecone pour les cas difficiles
   const fixEmbedding = async () => {
     if (!documentId) return;
     
@@ -121,19 +131,65 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     setUpdateResult(null);
     
     try {
-      console.log(`Tentative de génération optimisée d'embedding pour le document ${documentId}`);
+      console.log(`Tentative de vectorisation optimisée avec Pinecone pour le document ${documentId}`);
       
-      const result = await fixDocumentEmbedding(documentId);
-      
-      if (result.success) {
-        console.log(`Embedding réparé avec succès pour le document ${documentId}`);
-      } else {
-        console.error(`Échec de la réparation de l'embedding: ${result.message}`);
+      // Récupérer le document complet pour avoir accès au contenu
+      const { data: documentData, error: documentError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('id', documentId)
+        .single();
+        
+      if (documentError || !documentData) {
+        throw new Error(`Erreur lors de la récupération du document: ${documentError?.message || "Document non trouvé"}`);
       }
       
-      setUpdateResult(result);
+      // Tronquer le contenu pour les documents volumineux
+      const truncatedContent = documentData.content.substring(0, 8000);
+      
+      // Appeler l'edge function Pinecone avec le contenu tronqué
+      const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
+        body: {
+          action: 'vectorize',
+          documentId: documentData.id,
+          documentContent: truncatedContent,
+          documentTitle: documentData.title,
+          documentType: documentData.type
+        }
+      });
+      
+      if (pineconeError) {
+        console.error(`Erreur lors de l'appel à l'API Pinecone:`, pineconeError);
+        throw pineconeError;
+      }
+      
+      if (!pineconeData.success) {
+        throw new Error(pineconeData.error || "Échec de vectorisation optimisée avec Pinecone");
+      }
+      
+      // Mettre à jour le document dans Supabase
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({ 
+          pinecone_indexed: true,
+          // Stocker également l'embedding pour la compatibilité avec les fonctions existantes
+          embedding: pineconeData.embedding
+        })
+        .eq('id', documentData.id);
+      
+      if (updateError) {
+        console.error(`Erreur lors de la mise à jour du document dans Supabase:`, updateError);
+        throw updateError;
+      }
+      
+      console.log(`Document ${documentId} vectorisé avec contenu tronqué et indexé dans Pinecone`);
+      
+      setUpdateResult({
+        success: true,
+        message: "Document vectorisé avec succès en utilisant une version tronquée du contenu"
+      });
     } catch (error) {
-      console.error("Erreur lors de la réparation de l'embedding:", error);
+      console.error("Erreur lors de la vectorisation optimisée:", error);
       setUpdateResult({
         success: false,
         message: `Erreur: ${error instanceof Error ? error.message : String(error)}`
