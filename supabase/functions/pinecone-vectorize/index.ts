@@ -7,6 +7,7 @@ import { testPineconeConnection, getPineconeConfig, indexDocumentInPinecone } fr
 
 // Importation de nos services OpenAI
 import { checkOpenAIStatus, generateTestEmbedding } from "./services/openai.ts";
+import { validateConfig, getPineconeIndex } from "./config.ts";
 
 const supabaseClient = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -66,6 +67,7 @@ serve(async (req: Request) => {
     if (action === 'test-connection') {
       try {
         console.log("Test de connexion à Pinecone...");
+        console.log(`Index Pinecone utilisé pour le test: ${getPineconeIndex()}`);
         const connectionStatus = await testPineconeConnection();
         console.log("Résultat du test de connexion:", connectionStatus);
         return corsedResponse(connectionStatus);
@@ -91,6 +93,7 @@ serve(async (req: Request) => {
         }
         
         console.log(`[${new Date().toISOString()}] Indexation du document ${documentId}...`);
+        console.log(`Index Pinecone utilisé pour l'indexation: ${getPineconeIndex()}`);
         const indexResult = await indexDocumentInPinecone(
           documentId, 
           documentContent,
@@ -125,12 +128,14 @@ serve(async (req: Request) => {
         console.log("Statut OpenAI:", status);
         
         // Ajouter des informations sur Pinecone également
-        const pineconeConfig = await getPineconeConfig();
+        const pineconeConfig = validateConfig();
+        const effectiveIndex = getPineconeIndex();
         
         return corsedResponse({
           ...status,
           pineconeConfig: {
             ...pineconeConfig.config,
+            effectiveIndex: effectiveIndex,
             warnings: pineconeConfig.warnings
           }
         });

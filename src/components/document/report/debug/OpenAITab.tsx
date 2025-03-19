@@ -88,8 +88,11 @@ const OpenAITab: React.FC<OpenAITabProps> = ({ addLog }) => {
               <p>Pour résoudre ces problèmes, vérifiez les variables d'environnement de votre fonction edge.</p>
               {openaiStatus.warnings.includes("PINECONE_INDEX manquant") && (
                 <div className="mt-1 p-2 bg-amber-50 text-amber-800 rounded-md">
-                  <p className="font-medium">Vous devez configurer PINECONE_INDEX</p>
-                  <p>Sans cette variable, l'indexation Pinecone ne fonctionnera pas correctement.</p>
+                  <p className="font-medium">Information sur PINECONE_INDEX</p>
+                  <p>L'index par défaut "dadvisor" sera utilisé. Pour plus de contrôle, configurez PINECONE_INDEX dans vos variables d'environnement.</p>
+                  {openaiStatus.pineconeConfig?.effectiveIndex && (
+                    <p className="mt-1">Index utilisé actuellement: <strong>{openaiStatus.pineconeConfig.effectiveIndex}</strong></p>
+                  )}
                 </div>
               )}
             </div>

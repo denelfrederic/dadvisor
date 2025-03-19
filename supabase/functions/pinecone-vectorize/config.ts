@@ -7,6 +7,7 @@ export const PINECONE_API_KEY = Deno.env.get("PINECONE_API_KEY") || "";
 export const PINECONE_BASE_URL = Deno.env.get("PINECONE_BASE_URL") || "";
 export const ALTERNATIVE_PINECONE_URL = Deno.env.get("ALTERNATIVE_PINECONE_URL") || "";
 export const PINECONE_INDEX = Deno.env.get("PINECONE_INDEX") || "dadvisor"; // Utilise "dadvisor" comme index par défaut
+export const PINECONE_INDEX_FALLBACK = "dadvisor"; // Fallback si PINECONE_INDEX est vide
 
 // URL par défaut pour Pinecone si aucune n'est configurée
 // Cette URL est utilisée uniquement comme exemple et devrait être remplacée par une URL réelle
@@ -35,6 +36,20 @@ export function getPineconeUrl(): string {
   
   console.warn("Aucune URL Pinecone configurée, tentative d'utilisation de l'URL par défaut");
   return DEFAULT_PINECONE_URL;
+}
+
+/**
+ * Obtient l'index Pinecone à utiliser
+ * Utilise l'index configuré ou un fallback si non configuré
+ * @returns L'index Pinecone à utiliser
+ */
+export function getPineconeIndex(): string {
+  if (PINECONE_INDEX && PINECONE_INDEX.trim() !== "") {
+    return PINECONE_INDEX;
+  }
+  
+  console.warn(`Index Pinecone non configuré, utilisation de l'index par défaut: ${PINECONE_INDEX_FALLBACK}`);
+  return PINECONE_INDEX_FALLBACK;
 }
 
 /**
@@ -75,7 +90,11 @@ export function validateConfig() {
     warnings.push("OPENAI_API_KEY manquante");
   }
   
-  if (!PINECONE_INDEX) {
+  // Vérification moins stricte pour l'index, afficher un avertissement mais pas bloquant
+  const effectiveIndex = getPineconeIndex();
+  const isDefaultIndex = !PINECONE_INDEX || PINECONE_INDEX.trim() === "";
+  
+  if (isDefaultIndex) {
     warnings.push("PINECONE_INDEX manquant");
   }
   
@@ -92,7 +111,9 @@ export function validateConfig() {
       hasPineconeIndex: Boolean(PINECONE_INDEX),
       pineconeUrlStatus,
       effectiveUrl: getPineconeUrl(),
-      defaultIndex: PINECONE_INDEX || "dadvisor"
+      effectiveIndex: effectiveIndex,
+      isUsingDefaultIndex: isDefaultIndex,
+      defaultIndex: PINECONE_INDEX_FALLBACK
     }
   };
 }
@@ -107,3 +128,4 @@ export async function testPineconeConnection(): Promise<any> {
   const { testPineconeConnection: tester } = await import("./services/pinecone/index.ts");
   return await tester();
 }
+

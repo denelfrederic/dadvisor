@@ -1,6 +1,6 @@
 
 // Configuration pour les services Pinecone
-import { PINECONE_API_KEY, getPineconeUrl, PINECONE_INDEX } from "../../config.ts";
+import { PINECONE_API_KEY, getPineconeUrl, getPineconeIndex } from "../../config.ts";
 
 /**
  * Configurations pour les requêtes Pinecone
@@ -44,11 +44,19 @@ export function getPineconeOperationUrl(operation: string): string {
   // S'assurer que l'URL se termine par un slash
   const normalizedUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   
+  // Obtenir l'index actuel (celui configuré ou fallback)
+  const indexName = getPineconeIndex();
+  
+  // Logging détaillé
+  console.log(`Construction de l'URL d'opération: baseUrl=${normalizedUrl}, operation=${operation}, indexName=${indexName}`);
+  
   // Construire l'URL complète avec l'index
-  if (PINECONE_INDEX) {
-    return `${normalizedUrl}vectors/${operation}`;
+  if (indexName) {
+    const operationUrl = `${normalizedUrl}vectors/${operation}`;
+    console.log(`URL d'opération générée: ${operationUrl}`);
+    return operationUrl;
   } else {
-    console.warn("PINECONE_INDEX non défini, tentative d'utilisation de l'URL sans spécifier l'index");
+    console.warn("Aucun index défini, tentative d'utilisation de l'URL sans spécifier l'index");
     return `${normalizedUrl}${operation}`;
   }
 }
