@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw, Settings, Key, ExternalLink } from "lucide-react";
+import { AlertCircle, RefreshCw, Settings, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ErrorAlertProps {
@@ -24,13 +24,7 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
         solutions: [
           "Vérifiez que la clé API Pinecone est correctement configurée dans les secrets Supabase",
           "Vérifiez que l'index Pinecone configuré existe bien dans votre compte",
-          "Assurez-vous que votre clé API a les droits suffisants pour accéder à cet index",
-          "Vérifiez si vous avez atteint les limites de quota de votre compte Pinecone"
-        ],
-        quotaInfo: [
-          "Si l'erreur persiste, il est possible que vous ayez dépassé le quota de votre plan Pinecone",
-          "Consultez votre tableau de bord Pinecone pour vérifier votre utilisation et vos limites",
-          "Un plan gratuit de Pinecone a généralement des limites sur le nombre de vecteurs et d'opérations"
+          "Assurez-vous que votre clé API a les droits suffisants pour accéder à cet index"
         ]
       };
     }
@@ -87,30 +81,19 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
             ))}
           </ul>
           
-          {(errorSummary.includes("403") || errorSummary.includes("Forbidden")) && (
-            <div className="mt-3 pt-2 border-t border-destructive/20">
-              <p className="font-semibold mb-1">Informations sur les quotas Pinecone :</p>
-              <ul className="list-disc pl-5 space-y-1.5">
-                {errorDetails.quotaInfo?.map((info, index) => (
-                  <li key={index}>{info}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
           {errorSummary.includes("Pinecone") && (
             <div className="mt-3 pt-2 border-t border-destructive/20">
               <p className="font-semibold mb-1">Actions recommandées :</p>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>Vérifiez que la clé API Pinecone est valide et active</li>
                 <li>Vérifiez l'orthographe exacte de l'index Pinecone dans la configuration</li>
-                <li>Consultez votre tableau de bord Pinecone pour vérifier les limites de votre compte</li>
+                <li>Consultez les logs détaillés ci-dessous pour le message d'erreur précis</li>
               </ul>
             </div>
           )}
         </div>
         
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="flex gap-2 mt-3">
           <Button
             variant="outline"
             size="sm"
@@ -140,18 +123,6 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
             <Key className="h-4 w-4 mr-2" />
             Console Pinecone
           </Button>
-          
-          {(errorSummary.includes("403") || errorSummary.includes("Forbidden")) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open('https://docs.pinecone.io/docs/limits', '_blank')}
-              className="mt-2"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Documentation Quotas
-            </Button>
-          )}
         </div>
       </AlertDescription>
     </Alert>
