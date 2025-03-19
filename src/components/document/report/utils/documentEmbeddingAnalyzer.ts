@@ -73,6 +73,10 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
         // C'est un objet - peut-être PgVector?
         embeddings.type = "objet";
         embeddings.quality = "format inconnu";
+        
+        // Même si c'est un objet, essayons de déterminer s'il a une propriété length ou size
+        const objLength = (document.embedding as any).length || (document.embedding as any).size || 0;
+        embeddings.length = typeof objLength === 'number' ? objLength : 0;
       }
       
       analysis = `Le document possède un embedding de type "${embeddings.type}" avec ${embeddings.length} éléments. Qualité: ${embeddings.quality}.`;
