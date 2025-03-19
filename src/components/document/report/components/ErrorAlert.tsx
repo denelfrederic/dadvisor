@@ -129,7 +129,7 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open('https://console.pinecone.io', '_blank')}
+            onClick={() => window.open('https://app.pinecone.io', '_blank')}
             className="mt-2"
           >
             <Key className="h-4 w-4 mr-2" />
