@@ -67,16 +67,16 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
       } else if (Array.isArray(document.embedding)) {
         // C'est déjà un tableau
         embeddings.type = "array";
-        embeddings.length = document.embedding.length;
-        embeddings.quality = document.embedding.length > 0 ? "valide" : "vide";
+        embeddings.length = (document.embedding as any[]).length;
+        embeddings.quality = (document.embedding as any[]).length > 0 ? "valide" : "vide";
       } else if (typeof document.embedding === 'object' && document.embedding !== null) {
         // C'est un objet - peut-être PgVector?
         embeddings.type = "objet";
         embeddings.quality = "format inconnu";
         
         // Si c'est un objet avec une propriété 'elements', essayer de l'utiliser
-        if (document.embedding.elements && Array.isArray(document.embedding.elements)) {
-          embeddings.length = document.embedding.elements.length;
+        if ((document.embedding as any).elements && Array.isArray((document.embedding as any).elements)) {
+          embeddings.length = (document.embedding as any).elements.length;
         } else {
           embeddings.length = 0;
         }

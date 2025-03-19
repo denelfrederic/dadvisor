@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "sonner";
 
-import { AuthProvider } from "./context/AuthContext";
-import { ScrollToTop } from "./components/ScrollToTop";
+import { AuthProvider } from "./contexts/auth";
+import ScrollToTop from "./components/ScrollToTop";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminCheck } from "./components/AdminCheck";
 import { ProfileCheck } from "./components/ProfileCheck";
