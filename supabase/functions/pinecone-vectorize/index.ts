@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -19,6 +18,117 @@ if (!PINECONE_API_KEY) {
 
 if (!OPENAI_API_KEY) {
   console.error("ERREUR CRITIQUE: Clé API OpenAI manquante");
+}
+
+// Add this code block after the existing imports but before the serve function
+// Add a function to test the Pinecone configuration
+async function testPineconeConnection() {
+  console.log("Testant la connexion à Pinecone...");
+  console.log(`URL de base: ${PINECONE_BASE_URL}`);
+  
+  try {
+    if (!PINECONE_API_KEY) {
+      return {
+        success: false,
+        error: "Clé API Pinecone non configurée",
+        details: { 
+          apiKeyStatus: 'missing',
+          environment: PINECONE_ENVIRONMENT,
+          index: PINECONE_INDEX,
+          suggestions: [
+            "Configurez la clé API Pinecone dans les secrets Supabase",
+            "Vérifiez que la clé est correctement nommée PINECONE_API_KEY"
+          ]
+        }
+      };
+    }
+    
+    // Tester la connexion à l'API Pinecone avec un appel simple
+    const response = await fetch(`${PINECONE_BASE_URL}/describe_index_stats`, {
+      method: 'POST',
+      headers: {
+        'Api-Key': PINECONE_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ namespace: 'documents' }),
+    });
+    
+    console.log(`Statut de la réponse Pinecone: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Erreur API Pinecone (${response.status}): ${errorText}`);
+      
+      let suggestedActions = [];
+      if (response.status === 404) {
+        suggestedActions = [
+          "Vérifiez que l'index existe dans votre compte Pinecone",
+          "Vérifiez que le nom de l'index est correctement orthographié",
+          "Vérifiez que l'environnement est correct"
+        ];
+      } else if (response.status === 401 || response.status === 403) {
+        suggestedActions = [
+          "Vérifiez que votre clé API Pinecone est valide",
+          "Vérifiez que votre clé API a les permissions nécessaires pour cet index",
+          "Régénérez votre clé API Pinecone si nécessaire"
+        ];
+      } else {
+        suggestedActions = [
+          "Vérifiez la configuration de l'environnement et de l'index",
+          "Vérifiez que l'index est actif et n'est pas en pause",
+          "Contactez le support Pinecone si le problème persiste"
+        ];
+      }
+      
+      return {
+        success: false,
+        error: `Erreur API Pinecone (${response.status}): ${errorText}`,
+        details: {
+          apiKeyStatus: 'invalid',
+          environment: PINECONE_ENVIRONMENT,
+          index: PINECONE_INDEX,
+          httpStatus: response.status,
+          connectionError: errorText,
+          suggestions: suggestedActions
+        }
+      };
+    }
+    
+    // Analyser la réponse
+    const data = await response.json();
+    console.log("Réponse de Pinecone:", data);
+    
+    // Succès
+    return {
+      success: true,
+      details: {
+        environment: PINECONE_ENVIRONMENT,
+        index: PINECONE_INDEX,
+        serverVersion: response.headers.get('server'),
+        dimension: data.dimension,
+        count: data.totalVectorCount,
+        namespaces: Object.keys(data.namespaces || {})
+      }
+    };
+  } catch (error) {
+    console.error("Erreur lors du test de connexion à Pinecone:", error);
+    
+    return {
+      success: false,
+      error: `Erreur de connexion: ${error instanceof Error ? error.message : String(error)}`,
+      details: {
+        environment: PINECONE_ENVIRONMENT,
+        index: PINECONE_INDEX,
+        connectionError: error instanceof Error ? error.message : String(error),
+        suggestions: [
+          "Vérifiez votre connexion Internet",
+          "Vérifiez que les paramètres d'environnement et d'index sont corrects",
+          "Vérifiez que l'URL Pinecone est accessible"
+        ]
+      }
+    };
+  }
 }
 
 // OpenAI function to generate embeddings
@@ -330,6 +440,24 @@ serve(async (req) => {
         }
       }
       
+      case 'test-config': {
+        addLog(`Test de la configuration Pinecone (environnement: ${PINECONE_ENVIRONMENT}, index: ${PINECONE_INDEX})`);
+        
+        // Test the connection to Pinecone
+        const testResult = await testPineconeConnection();
+        
+        // Log the result
+        if (testResult.success) {
+          addLog(`Test de connexion Pinecone réussi! Dimension: ${testResult.details.dimension}, Vecteurs: ${testResult.details.count}`);
+        } else {
+          addLog(`Échec du test de connexion Pinecone: ${testResult.error}`);
+        }
+        
+        return new Response(JSON.stringify(testResult), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       default:
         console.error(`Action inconnue: ${action}`);
         throw new Error(`Unknown action: ${action}`);
@@ -345,3 +473,9 @@ serve(async (req) => {
     });
   }
 });
+
+// Add a simple logging function if it doesn't exist
+function addLog(message) {
+  console.log(message);
+  return message;
+}
