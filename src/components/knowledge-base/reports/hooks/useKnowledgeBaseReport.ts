@@ -44,10 +44,17 @@ export const useKnowledgeBaseReport = () => {
           try {
             // Afficher une partie de l'embedding pour debug
             if (entry.embedding) {
-              // Sécuriser l'accès à la propriété length en vérifiant le type
-              const embeddingInfo = typeof entry.embedding === 'string' 
-                ? `String length: ${entry.embedding.length}` 
-                : `Array length: ${Array.isArray(entry.embedding) ? entry.embedding.length : 'not array'}`;
+              // Fixed: Properly check embedding type and handle the length property safely
+              let embeddingInfo = "Unknown format";
+              
+              if (typeof entry.embedding === 'string') {
+                embeddingInfo = `String length: ${entry.embedding.length}`;
+              } else if (Array.isArray(entry.embedding)) {
+                embeddingInfo = `Array length: ${entry.embedding.length}`;
+              } else {
+                embeddingInfo = `Type: ${typeof entry.embedding}`;
+              }
+              
               console.log(`Entry ${entry.id.substring(0, 8)} embedding info: ${embeddingInfo}`);
             }
             
