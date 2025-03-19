@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -60,7 +61,8 @@ export const useEmbeddingsUpdate = () => {
     
     try {
       const result = await updateKnowledgeEntries(
-        (progressValue) => setProgress(progressValue),
+        // Round the progress to an integer for display
+        (progressValue) => setProgress(Math.round(progressValue)),
         addLog
       );
       
@@ -97,7 +99,8 @@ export const useEmbeddingsUpdate = () => {
     
     try {
       const result = await updateAllEmbeddings(
-        (progressValue) => setProgress(progressValue),
+        // Round the progress to an integer for display
+        (progressValue) => setProgress(Math.round(progressValue)),
         addLog
       );
       

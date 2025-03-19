@@ -11,10 +11,11 @@ export const isValidEmbedding = (embedding: any): boolean => {
     
     // Vérifier si c'est un tableau non vide
     if (!Array.isArray(embeddingArray) || embeddingArray.length === 0) {
+      console.log(`Embedding invalide: n'est pas un tableau non vide`);
       return false;
     }
     
-    // Vérifier les dimensions - accepter 384 et 768 (modèles miniLM et mpnet)
+    // Vérifier les dimensions - accepter 384, 768 et 1536 (modèles courants)
     const validDimensions = [384, 768, 1536];
     if (!validDimensions.includes(embeddingArray.length)) {
       console.log(`Embedding de dimensions non valides: ${embeddingArray.length}, attendu l'un de: ${validDimensions.join(', ')}`);
@@ -24,6 +25,7 @@ export const isValidEmbedding = (embedding: any): boolean => {
     // Vérifier que tous les éléments sont des nombres
     const allNumbers = embeddingArray.every(val => typeof val === 'number' && !isNaN(val));
     if (!allNumbers) {
+      console.log(`Embedding contient des valeurs non numériques`);
       return false;
     }
     
@@ -49,6 +51,7 @@ export const parseEmbedding = (embeddingString: string): number[] => {
     
     // Vérifier si c'est un tableau valide après l'analyse
     if (!Array.isArray(parsed)) {
+      console.error("L'embedding parsé n'est pas un tableau");
       return [];
     }
     
@@ -83,6 +86,15 @@ export const processEntryForEmbedding = (question: string, answer: string): stri
 
 // Fonction pour valider les dimensions d'un embedding
 export const validateEmbeddingDimensions = (embedding: number[], expectedDimension = 384): boolean => {
-  if (!Array.isArray(embedding)) return false;
-  return embedding.length === expectedDimension;
+  if (!Array.isArray(embedding)) {
+    console.log("L'embedding n'est pas un tableau");
+    return false;
+  }
+  
+  const isValid = embedding.length === expectedDimension;
+  if (!isValid) {
+    console.log(`Dimensions incorrectes: ${embedding.length}, attendu: ${expectedDimension}`);
+  }
+  
+  return isValid;
 };

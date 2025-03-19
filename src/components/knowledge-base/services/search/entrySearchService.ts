@@ -102,7 +102,7 @@ export const searchEntriesSemanticByText = async (query: string, limit = 5): Pro
 export const processEntryEmbeddings = (entries: KnowledgeEntry[]): KnowledgeEntry[] => {
   return entries.map(entry => ({
     ...entry,
-    embedding: parseEmbedding(entry.embedding)
+    embedding: typeof entry.embedding === 'string' ? parseEmbedding(entry.embedding) : entry.embedding
   }));
 };
 

@@ -131,7 +131,7 @@ const KnowledgeBaseReport = () => {
                 console.log(`Embedding parsé: ${Array.isArray(parsed) ? `Tableau de longueur ${parsed.length}` : 'Non tableau'}`);
                 console.log(`Premiers éléments:`, parsed.slice(0, 5));
               } catch (e) {
-                console.log(`Impossible de parser l'embedding: ${e.message}`);
+                console.log(`Impossible de parser l'embedding: ${(e as Error).message}`);
               }
             } else {
               console.log(`Embedding brut:`, entry.embedding);

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,9 @@ const EmbeddingMaintenance = () => {
     updateKnowledgeEntryEmbeddings,
     updateAllEmbeddings
   } = useEmbeddingsUpdate();
+
+  // Format progress as an integer
+  const displayProgress = Math.round(progress);
 
   return (
     <Card className="w-full">
@@ -79,8 +83,8 @@ const EmbeddingMaintenance = () => {
         
         {isUpdating && (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Progression: {progress}%</p>
-            <Progress value={progress} className="h-2" />
+            <p className="text-sm font-medium">Progression: {displayProgress}%</p>
+            <Progress value={displayProgress} className="h-2" />
           </div>
         )}
         

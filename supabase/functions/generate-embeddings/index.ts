@@ -5,7 +5,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const HUGGINGFACE_API_KEY = Deno.env.get('HUGGINGFACE_API_KEY');
 
 // Modèle spécifique pour tous les types d'embedding, tous sur 384 dimensions
-const EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L12-v2'; // 384 dimensions (plus consistant)
+const EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L12-v2'; // 384 dimensions (consistant)
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,7 +27,7 @@ serve(async (req) => {
 
     console.log(`Generating embedding for ${modelType} text: ${text.substring(0, 100)}...`);
 
-    // Utiliser le même modèle pour tous les types pour garantir la cohérence
+    // Toujours utiliser le même modèle avec 384 dimensions
     const modelName = EMBEDDING_MODEL;
 
     // Utiliser Hugging Face avec le modèle choisi
