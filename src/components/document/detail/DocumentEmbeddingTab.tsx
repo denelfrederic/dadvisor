@@ -10,6 +10,7 @@ interface DocumentEmbeddingTabProps {
   updateResult: { success: boolean; message: string } | null;
   updatingEmbedding: boolean;
   onUpdateEmbedding: () => void;
+  onFixEmbedding?: () => void; // Add this missing prop with optional type
   onReloadDocument: () => void;
 }
 
@@ -19,6 +20,7 @@ const DocumentEmbeddingTab = ({
   updateResult,
   updatingEmbedding,
   onUpdateEmbedding,
+  onFixEmbedding,
   onReloadDocument,
 }: DocumentEmbeddingTabProps) => {
   const { toast } = useToast();
@@ -116,6 +118,19 @@ const DocumentEmbeddingTab = ({
         )}
       </Button>
 
+      {/* Only render the Fix button if onFixEmbedding is provided */}
+      {onFixEmbedding && updateResult && !updateResult.success && (
+        <Button 
+          onClick={onFixEmbedding}
+          variant="outline"
+          size="sm"
+          className="w-full mt-2"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Réessayer l'indexation
+        </Button>
+      )}
+
       {updateResult && !updateResult.success && (
         <Button 
           onClick={onReloadDocument}
@@ -129,6 +144,6 @@ const DocumentEmbeddingTab = ({
       )}
     </div>
   );
-};
+}
 
 export default DocumentEmbeddingTab;
