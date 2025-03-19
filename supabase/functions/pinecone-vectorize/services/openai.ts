@@ -7,7 +7,7 @@ import { OPENAI_API_KEY } from "../config.ts";
  */
 export async function checkOpenAIStatus(): Promise<any> {
   try {
-    console.log("Vérification de la configuration OpenAI...");
+    console.log(`[${new Date().toISOString()}] Vérification de la configuration OpenAI...`);
     
     // Vérifier si la clé API est configurée
     if (!OPENAI_API_KEY) {
@@ -19,12 +19,20 @@ export async function checkOpenAIStatus(): Promise<any> {
     }
     
     // Faire une requête simple pour vérifier l'accès à l'API
+    console.log("Tentative d'accès à l'API OpenAI...");
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
+    
     const modelResponse = await fetch("https://api.openai.com/v1/models", {
       headers: {
         "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
-      }
+      },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!modelResponse.ok) {
       const errorText = await modelResponse.text();
@@ -46,10 +54,13 @@ export async function checkOpenAIStatus(): Promise<any> {
     }
     
     const models = await modelResponse.json();
+    console.log(`Modèles disponibles: ${models.data.length}`);
     
     // Vérifier si un modèle d'embedding est disponible
     const embeddingModels = models.data.filter((model: any) => 
       model.id.includes("text-embedding"));
+    
+    console.log(`Modèles d'embedding disponibles: ${embeddingModels.length}`);
     
     if (embeddingModels.length === 0) {
       return {
@@ -68,9 +79,16 @@ export async function checkOpenAIStatus(): Promise<any> {
     };
   } catch (error) {
     console.error("Erreur lors de la vérification OpenAI:", error);
+    
+    // Vérifier si c'est une erreur de timeout
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isTimeout = errorMessage.includes("abort") || errorMessage.includes("timeout");
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: isTimeout ? 
+        "La connexion à l'API OpenAI a expiré" : 
+        errorMessage
     };
   }
 }
@@ -88,6 +106,8 @@ export async function generateEmbeddingWithOpenAI(text: string): Promise<number[
       console.error("Clé API OpenAI manquante");
       throw new Error("Clé API OpenAI non configurée");
     }
+    
+    console.log("Appel de l'API OpenAI pour générer un embedding...");
     
     const response = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
@@ -108,6 +128,7 @@ export async function generateEmbeddingWithOpenAI(text: string): Promise<number[
     }
     
     const result = await response.json();
+    console.log("Réponse OpenAI reçue pour l'embedding");
     
     if (!result.data || !result.data[0] || !result.data[0].embedding) {
       console.error("Format de réponse OpenAI inattendu:", result);
@@ -128,7 +149,7 @@ export async function generateEmbeddingWithOpenAI(text: string): Promise<number[
  */
 export async function generateTestEmbedding(text: string): Promise<any> {
   try {
-    console.log(`Génération d'embedding de test pour: "${text.substring(0, 30)}..."`);
+    console.log(`[${new Date().toISOString()}] Génération d'embedding de test pour: "${text.substring(0, 30)}..."`);
     
     if (!OPENAI_API_KEY) {
       console.error("Clé API OpenAI manquante");
@@ -137,6 +158,11 @@ export async function generateTestEmbedding(text: string): Promise<any> {
         error: "Clé API OpenAI non configurée"
       };
     }
+    
+    console.log("Appel de l'API OpenAI...");
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 secondes timeout
     
     const response = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
@@ -147,8 +173,11 @@ export async function generateTestEmbedding(text: string): Promise<any> {
       body: JSON.stringify({
         input: text,
         model: "text-embedding-3-small"
-      })
+      }),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -160,6 +189,7 @@ export async function generateTestEmbedding(text: string): Promise<any> {
     }
     
     const result = await response.json();
+    console.log("Réponse OpenAI reçue pour l'embedding de test");
     
     if (!result.data || !result.data[0] || !result.data[0].embedding) {
       console.error("Format de réponse OpenAI inattendu:", result);
@@ -177,9 +207,16 @@ export async function generateTestEmbedding(text: string): Promise<any> {
     };
   } catch (error) {
     console.error("Erreur lors de la génération d'embedding de test:", error);
+    
+    // Vérifier si c'est une erreur de timeout
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isTimeout = errorMessage.includes("abort") || errorMessage.includes("timeout");
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: isTimeout ? 
+        "La génération de l'embedding a expiré après 20 secondes" : 
+        errorMessage
     };
   }
 }

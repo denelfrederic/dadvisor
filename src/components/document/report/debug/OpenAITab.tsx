@@ -4,7 +4,8 @@ import { useOpenAICheck } from "./hooks/useOpenAICheck";
 import OpenAIConfigCheck from "./components/OpenAIConfigCheck";
 import EmbeddingGenerator from "./components/EmbeddingGenerator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface OpenAITabProps {
   addLog: (message: string) => void;
@@ -21,21 +22,28 @@ const OpenAITab: React.FC<OpenAITabProps> = ({ addLog }) => {
     setTestText,
     testResult,
     isGenerating,
+    edgeFunctionError,
     checkOpenAIConfig,
     generateTestEmbedding
   } = useOpenAICheck(addLog);
 
   // Si une erreur de communication est détectée
   const hasEdgeFunctionError = 
+    edgeFunctionError || 
     (openaiStatus?.error && openaiStatus.error.includes("Failed to send")) ||
     (testResult?.error && testResult.error.includes("Failed to send"));
+
+  // Fonction pour actualiser la page
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   return (
     <div className="space-y-4">
       {hasEdgeFunctionError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Problème de connexion</AlertTitle>
+          <AlertTitle>Problème de connexion aux fonctions edge</AlertTitle>
           <AlertDescription>
             <p>Impossible de communiquer avec les fonctions edge. Cela peut être dû à:</p>
             <ul className="list-disc pl-5 mt-2 text-sm">
@@ -43,9 +51,25 @@ const OpenAITab: React.FC<OpenAITabProps> = ({ addLog }) => {
               <li>Un problème temporaire avec Supabase Edge Functions</li>
               <li>Un bloqueur de publicités ou un pare-feu qui bloque les requêtes</li>
             </ul>
-            <p className="mt-2 text-sm">
-              Conseil: essayez de rafraîchir la page ou de réessayer dans quelques instants.
-            </p>
+            <div className="mt-2 flex flex-col gap-2">
+              <p className="text-sm">
+                Conseils:
+              </p>
+              <ul className="list-disc pl-5 text-sm">
+                <li>Patientez quelques minutes pour que le déploiement se termine</li>
+                <li>Vérifiez que vous n'avez pas d'extension qui bloque les requêtes</li>
+                <li>Essayez d'actualiser la page</li>
+              </ul>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                className="mt-2 self-start"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualiser la page
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}

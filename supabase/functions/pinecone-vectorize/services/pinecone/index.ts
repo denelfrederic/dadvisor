@@ -1,3 +1,4 @@
+
 import { PINECONE_API_KEY, getPineconeUrl, PINECONE_INDEX, PINECONE_NAMESPACE } from "../../config.ts";
 import { PINECONE_HEADERS, getPineconeOperationUrl } from "./config.ts";
 import { generateEmbeddingWithOpenAI } from "../openai.ts";
@@ -8,7 +9,7 @@ import { generateEmbeddingWithOpenAI } from "../openai.ts";
  */
 export async function testPineconeConnection(): Promise<any> {
   try {
-    console.log("Test de connexion à Pinecone...");
+    console.log(`[${new Date().toISOString()}] Test de connexion à Pinecone...`);
     
     // Vérification de la clé API
     if (!PINECONE_API_KEY) {
@@ -22,6 +23,7 @@ export async function testPineconeConnection(): Promise<any> {
     
     // Récupération de l'URL Pinecone
     const pineconeUrl = getPineconeUrl();
+    console.log(`URL Pinecone utilisée: ${pineconeUrl}`);
     
     if (!pineconeUrl || pineconeUrl.trim() === '') {
       console.error("URL Pinecone manquante ou vide");
@@ -63,24 +65,40 @@ export async function testPineconeConnection(): Promise<any> {
     
     try {
       // Test simple avec HEAD pour vérifier si le domaine est valide
+      console.log(`Envoi de la requête de test à ${testUrl}...`);
+      console.log(`En-têtes: ${JSON.stringify(PINECONE_HEADERS)}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
+      
       const response = await fetch(testUrl, {
         method: 'GET',
-        headers: PINECONE_HEADERS
+        headers: PINECONE_HEADERS,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       console.log(`Réponse du test: ${response.status} ${response.statusText}`);
       
       // Traiter la réponse
       if (response.ok) {
+        const responseData = await response.text();
+        console.log(`Réponse reçue: ${responseData.substring(0, 100)}...`);
+        
         return {
           success: true,
           message: "Connexion Pinecone réussie",
           status: response.status,
           timestamp: new Date().toISOString(),
-          url: testUrl
+          url: testUrl,
+          response: responseData.substring(0, 200)
         };
       } else {
         const errorText = await response.text();
+        console.error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+        console.error(`Corps de l'erreur: ${errorText}`);
+        
         return {
           success: false,
           message: `Connexion échouée: ${response.status} ${response.statusText}`,
@@ -92,10 +110,17 @@ export async function testPineconeConnection(): Promise<any> {
       }
     } catch (fetchError) {
       console.error("Erreur de fetch:", fetchError);
+      
+      // Vérifier si c'est une erreur de timeout
+      const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      const isTimeout = errorMessage.includes("abort") || errorMessage.includes("timeout");
+      
       return {
         success: false,
-        message: "Exception lors de la connexion à Pinecone",
-        error: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        message: isTimeout ? 
+          "La connexion a expiré, le serveur Pinecone n'a pas répondu à temps" : 
+          "Exception lors de la connexion à Pinecone",
+        error: errorMessage,
         timestamp: new Date().toISOString(),
         url: testUrl
       };
@@ -105,6 +130,49 @@ export async function testPineconeConnection(): Promise<any> {
     return {
       success: false,
       message: `Exception: ${error instanceof Error ? error.message : String(error)}`,
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+/**
+ * Récupère la configuration Pinecone
+ * @returns La configuration Pinecone
+ */
+export async function getPineconeConfig(): Promise<any> {
+  try {
+    console.log(`[${new Date().toISOString()}] Récupération de la configuration Pinecone...`);
+    
+    // Validation de la configuration
+    const { validateConfig } = await import("../../config.ts");
+    const configValidation = validateConfig();
+    
+    console.log(`Résultat de la validation: ${JSON.stringify(configValidation)}`);
+    
+    // Informations sur l'environnement
+    const apiKeysInfo = {
+      hasPineconeKey: Boolean(PINECONE_API_KEY),
+      pineconeKeyLength: PINECONE_API_KEY ? PINECONE_API_KEY.length : 0,
+      openAiKey: Boolean(Deno.env.get("OPENAI_API_KEY")),
+    };
+    
+    console.log(`API keys disponibles: Pinecone: ${apiKeysInfo.hasPineconeKey ? "Oui" : "Non"}, OpenAI: ${apiKeysInfo.openAiKey ? "Oui" : "Non"}`);
+    
+    return {
+      ...configValidation,
+      apiStatus: apiKeysInfo,
+      environmentCheck: {
+        denoVersion: Deno.version.deno,
+        v8Version: Deno.version.v8,
+        typescript: Deno.version.typescript,
+      },
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error("Erreur lors de la récupération de la configuration Pinecone:", error);
+    return {
+      success: false,
       error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
     };
@@ -150,6 +218,8 @@ export async function indexDocumentInPinecone(
     });
     
     // Envoi de la requête à Pinecone
+    console.log(`Envoi de la requête d'upsert à ${upsertUrl}...`);
+    
     const response = await fetch(upsertUrl, {
       method: 'POST',
       headers: PINECONE_HEADERS,
