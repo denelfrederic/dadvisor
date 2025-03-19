@@ -14,7 +14,8 @@ export const portfolios: Portfolio[] = [
     description: "Une approche conservatrice axée sur la préservation du capital avec une volatilité minimale.",
     expectedReturn: "3% - 5% par an",
     assets: [
-      { name: "Obligations", percentage: 60 },
+      { name: "Métaux Précieux", percentage: 40 },
+      { name: "Bitcoin", percentage: 20 },
       { name: "Actions", percentage: 20 },
       { name: "Immobilier", percentage: 10 },
       { name: "Liquidités", percentage: 10 }
