@@ -20,6 +20,10 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest, onRet
   const is404Error = connectionTest.status === 404 || connectionTest.message?.includes("404");
   const is403Error = connectionTest.status === 403 || connectionTest.message?.includes("403");
   
+  // Extraction des informations de namespace (si disponibles)
+  const namespace = connectionTest.namespace || "documents"; // Valeur par défaut
+  const indexName = connectionTest.indexName || connectionTest.apiType || "Non spécifié";
+  
   return (
     <Alert variant="destructive" className="mb-4">
       <AlertTriangle className="h-4 w-4" />
@@ -51,6 +55,16 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest, onRet
             </ul>
           </div>
         )}
+        
+        {/* Afficher les informations sur le namespace et l'index */}
+        <div className="mt-2 text-xs border-l-2 border-blue-500 pl-2">
+          <p className="font-medium">Informations de configuration:</p>
+          <ul className="list-disc pl-5 mt-1 space-y-1 text-xs">
+            <li><strong>Index:</strong> {indexName}</li>
+            <li><strong>Namespace:</strong> {namespace}</li>
+            <li><strong>Important:</strong> Dans la console Pinecone, vérifiez que vous consultez le bon namespace ({namespace})</li>
+          </ul>
+        </div>
         
         {connectionTest.testedUrls && (
           <div className="mt-2 text-xs">

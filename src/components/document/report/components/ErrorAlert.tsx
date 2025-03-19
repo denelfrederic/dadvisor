@@ -56,6 +56,18 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
       };
     }
     
+    // Erreur de namespace
+    if (errorSummary.includes("namespace") || errorSummary.includes("Namespace")) {
+      return {
+        title: "Erreur de namespace Pinecone",
+        solutions: [
+          "Vérifiez que vous consultez le bon namespace dans la console Pinecone (généralement 'documents')",
+          "Le namespace par défaut utilisé est 'documents', assurez-vous qu'il correspond à votre configuration",
+          "Si vous avez modifié le namespace, vérifiez que les fonctions edge utilisent le même"
+        ]
+      };
+    }
+    
     // Erreur générique
     return {
       title: "Erreur d'indexation",
@@ -105,6 +117,13 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
                 <li>Vérifiez l'orthographe exacte de l'index Pinecone dans la configuration</li>
                 <li>Si vous utilisez un plan gratuit, attendez quelques minutes et réessayez</li>
               </ul>
+            </div>
+          )}
+          
+          {errorSummary.includes("namespace") && (
+            <div className="mt-3 pt-2 border-t border-destructive/20">
+              <p className="font-semibold mb-1">Note sur les namespaces :</p>
+              <p>Dans la console Pinecone, assurez-vous de sélectionner le namespace approprié pour voir vos documents. Par défaut, l'application utilise le namespace "documents".</p>
             </div>
           )}
         </div>
