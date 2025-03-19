@@ -43,12 +43,20 @@ export const vectorizeDocument = async (
       // Log détaillé pour diagnostic
       onLog?.(`Détails de l'erreur: ${JSON.stringify(pineconeError)}`);
       
-      // Tentative de diagnostic de l'erreur 403
-      if (pineconeError.message.includes("403") || (pineconeData && pineconeData.error && pineconeData.error.includes("403"))) {
-        onLog?.("ERREUR 403 DÉTECTÉE: Problème d'autorisation avec Pinecone. Vérifiez que:");
-        onLog?.("1. La clé API Pinecone est correctement configurée dans les secrets Supabase");
-        onLog?.("2. L'index Pinecone existe et est accessible avec cette clé API");
-        onLog?.("3. L'URL de l'API Pinecone est correcte et accessible");
+      // Tentative de diagnostic plus précise pour les erreurs edge function
+      if (pineconeError.message.includes("Edge Function") || pineconeError.message.includes("non-2xx status code")) {
+        onLog?.("ERREUR EDGE FUNCTION: Problème avec la fonction Pinecone-vectorize.");
+        onLog?.("Cette erreur peut être due à:");
+        onLog?.("1. Une erreur 403 Forbidden renvoyée par Pinecone (quota dépassé ou plan gratuit en pause)");
+        onLog?.("2. Un problème de configuration dans les variables d'environnement de la fonction edge");
+        onLog?.("3. Un problème temporaire avec l'API Pinecone");
+        
+        // Détection spécifique du quota des plans gratuits
+        onLog?.("Si vous utilisez un plan gratuit Pinecone, il est possible que:");
+        onLog?.("- Votre index soit en pause (après une période d'inactivité)");
+        onLog?.("- Vous ayez atteint la limite de requêtes de votre plan");
+        onLog?.("- Votre index soit encore en cours de démarrage");
+        onLog?.("Conseil: Patientez quelques minutes et réessayez, ou vérifiez l'état de votre index dans la console Pinecone");
       }
       
       return false;
@@ -61,11 +69,23 @@ export const vectorizeDocument = async (
       // Diagnostic pour les erreurs Pinecone
       if (pineconeData && pineconeData.error) {
         if (pineconeData.error.includes("Forbidden") || pineconeData.error.includes("403")) {
-          onLog?.("ERREUR D'AUTORISATION: Accès refusé à Pinecone. Vérifiez les clés API et permissions.");
+          onLog?.("ERREUR D'AUTORISATION (403): Accès refusé à Pinecone.");
+          onLog?.("Causes possibles:");
+          onLog?.("1. Clé API invalide ou insuffisante");
+          onLog?.("2. Quota dépassé (plan gratuit)");
+          onLog?.("3. Index en pause ou en cours de démarrage");
+          onLog?.("4. Restriction IP (peu probable)");
+          onLog?.("Conseil: Vérifiez l'état de votre index dans la console Pinecone et patientez quelques minutes avant de réessayer");
         } else if (pineconeData.error.includes("timeout") || pineconeData.error.includes("ETIMEDOUT")) {
-          onLog?.("ERREUR DE TIMEOUT: Le serveur Pinecone n'a pas répondu à temps. Vérifiez la connectivité réseau.");
+          onLog?.("ERREUR DE TIMEOUT: Le serveur Pinecone n'a pas répondu à temps.");
+          onLog?.("Cela peut être dû à:");
+          onLog?.("1. Un index en cours de démarrage (plan gratuit)");
+          onLog?.("2. Une surcharge temporaire du service Pinecone"); 
+          onLog?.("3. Un problème de connectivité réseau");
+          onLog?.("Conseil: Patientez quelques minutes et réessayez");
         } else if (pineconeData.error.includes("not found") || pineconeData.error.includes("404")) {
-          onLog?.("ERREUR 404: Index Pinecone non trouvé. Vérifiez le nom de l'index dans la configuration.");
+          onLog?.("ERREUR 404: Index Pinecone non trouvé.");
+          onLog?.("Vérifiez le nom de l'index dans la configuration (actuellement: " + (pineconeData.indexName || "non spécifié") + ")");
         }
       }
       

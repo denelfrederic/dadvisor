@@ -25,7 +25,20 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
           "Vérifiez que la clé API Pinecone est correctement configurée dans les secrets Supabase",
           "Vérifiez que l'index Pinecone configuré existe bien dans votre compte",
           "Assurez-vous que votre clé API a les droits suffisants pour accéder à cet index",
-          "Vérifiez si vous avez atteint les limites de quota de votre compte Pinecone"
+          "Vérifiez si vous avez atteint les limites de quota de votre compte Pinecone (plan gratuit)"
+        ]
+      };
+    }
+    
+    // Erreur Edge Function
+    if (errorSummary.includes("Edge Function") || errorSummary.includes("non-2xx status code")) {
+      return {
+        title: "Erreur de la fonction Edge",
+        solutions: [
+          "Une erreur s'est produite dans la fonction Supabase qui communique avec Pinecone",
+          "Il peut s'agir d'une erreur d'autorisation relayée par Pinecone (403 Forbidden)",
+          "Vérifiez les variables d'environnement PINECONE_API_KEY et PINECONE_BASE_URL dans la console Supabase",
+          "Assurez-vous que la configuration de l'index Pinecone est correcte (PINECONE_INDEX)"
         ]
       };
     }
@@ -38,18 +51,6 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
           "Vérifiez que la clé API OpenAI est correctement configurée dans les secrets Supabase",
           "Assurez-vous que votre compte OpenAI dispose de crédits suffisants",
           "Vérifiez que vous utilisez un modèle compatible avec les embeddings (ada-002)"
-        ]
-      };
-    }
-    
-    // Erreur Edge Function
-    if (errorSummary.includes("Edge Function") || errorSummary.includes("non-2xx status code")) {
-      return {
-        title: "Erreur de la fonction Edge",
-        solutions: [
-          "Une erreur s'est produite dans la fonction Supabase qui communique avec Pinecone",
-          "Vérifiez les variables d'environnement PINECONE_API_KEY et PINECONE_BASE_URL dans la console Supabase",
-          "Assurez-vous que la configuration de l'index Pinecone est correcte (PINECONE_INDEX)"
         ]
       };
     }
@@ -82,24 +83,26 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
             ))}
           </ul>
           
-          {errorSummary.includes("403") && (
+          {(errorSummary.includes("403") || errorSummary.includes("Forbidden") || errorSummary.includes("Edge Function")) && (
             <div className="mt-3 pt-2 border-t border-destructive/20">
-              <p className="font-semibold mb-1">Informations sur les quotas :</p>
+              <p className="font-semibold mb-1">Informations sur les quotas Pinecone :</p>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>Les plans gratuits de Pinecone ont des limites strictes sur le nombre de requêtes</li>
-                <li>Vérifiez si vous avez dépassé votre quota mensuel dans la console Pinecone</li>
-                <li>Si nécessaire, envisagez de passer à un plan supérieur ou d'attendre le renouvellement du quota</li>
+                <li>Si vous utilisez un plan gratuit, vous avez peut-être dépassé votre quota</li>
+                <li>L'erreur 403 peut également indiquer que votre index est en cours de démarrage ou a été mis en pause</li>
+                <li>Consultez votre tableau de bord Pinecone pour vérifier l'état de votre index</li>
               </ul>
             </div>
           )}
           
-          {errorSummary.includes("Pinecone") && (
+          {(errorSummary.includes("Pinecone") || errorSummary.includes("Edge Function")) && (
             <div className="mt-3 pt-2 border-t border-destructive/20">
               <p className="font-semibold mb-1">Actions recommandées :</p>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>Vérifiez que la clé API Pinecone est valide et active</li>
+                <li>Vérifiez que votre index est actif et n'est pas en pause (plan gratuit)</li>
                 <li>Vérifiez l'orthographe exacte de l'index Pinecone dans la configuration</li>
-                <li>Consultez les logs détaillés ci-dessous pour le message d'erreur précis</li>
+                <li>Si vous utilisez un plan gratuit, attendez quelques minutes et réessayez</li>
               </ul>
             </div>
           )}

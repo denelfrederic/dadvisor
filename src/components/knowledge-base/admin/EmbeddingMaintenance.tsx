@@ -37,6 +37,7 @@ const EmbeddingMaintenance = () => {
   const [configInfo, setConfigInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("indexation");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Format progress as an integer
   const displayProgress = Math.round(progress);
@@ -51,9 +52,18 @@ const EmbeddingMaintenance = () => {
     updateDocumentEmbeddings(true);
   };
 
+  // Récupération de la configuration Pinecone - exécutée au montage et lors du changement d'onglet
+  useEffect(() => {
+    if (activeTab === "config") {
+      fetchPineconeConfig();
+    }
+  }, [activeTab]);
+
   // Récupération de la configuration Pinecone
   const fetchPineconeConfig = async () => {
     setIsLoading(true);
+    setFetchError(null);
+    
     try {
       const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
         body: { action: 'config' }
@@ -61,11 +71,16 @@ const EmbeddingMaintenance = () => {
       
       if (error) {
         console.error("Erreur lors de la récupération de la configuration:", error);
+        setFetchError(`Erreur: ${error.message || "Impossible de contacter la fonction edge"}`);
+        setConfigInfo(null);
       } else {
+        console.log("Configuration Pinecone récupérée:", data);
         setConfigInfo(data);
       }
     } catch (err) {
       console.error("Exception lors de la récupération de la configuration:", err);
+      setFetchError(`Exception: ${err instanceof Error ? err.message : String(err)}`);
+      setConfigInfo(null);
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +103,7 @@ const EmbeddingMaintenance = () => {
               <Database className="h-4 w-4 mr-2" />
               Indexation
             </TabsTrigger>
-            <TabsTrigger value="config" onClick={fetchPineconeConfig}>
+            <TabsTrigger value="config">
               <Settings className="h-4 w-4 mr-2" />
               Configuration
             </TabsTrigger>
@@ -213,6 +228,23 @@ const EmbeddingMaintenance = () => {
               <div className="flex items-center justify-center h-40">
                 <p className="text-sm text-muted-foreground">Chargement de la configuration...</p>
               </div>
+            ) : fetchError ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Erreur de chargement</AlertTitle>
+                <AlertDescription>
+                  <p>{fetchError}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={fetchPineconeConfig}
+                    className="mt-2"
+                  >
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    Réessayer
+                  </Button>
+                </AlertDescription>
+              </Alert>
             ) : configInfo ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,7 +303,7 @@ const EmbeddingMaintenance = () => {
                       <div className="flex flex-col mt-2">
                         <span className="text-xs text-muted-foreground">Dernière vérification:</span>
                         <span className="text-xs font-mono">
-                          {new Date(configInfo.timestamp).toLocaleString()}
+                          {configInfo.timestamp ? new Date(configInfo.timestamp).toLocaleString() : "N/A"}
                         </span>
                       </div>
                     </div>
