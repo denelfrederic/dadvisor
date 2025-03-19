@@ -67,8 +67,10 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
       } else if (Array.isArray(document.embedding)) {
         // C'est déjà un tableau
         embeddings.type = "array";
-        embeddings.length = document.embedding.length;
-        embeddings.quality = document.embedding.length > 0 ? "valide" : "vide";
+        // Type assertion to avoid 'never' type error
+        const embeddingArray = document.embedding as unknown[];
+        embeddings.length = embeddingArray.length;
+        embeddings.quality = embeddingArray.length > 0 ? "valide" : "vide";
       } else if (typeof document.embedding === 'object' && document.embedding !== null) {
         // C'est un objet - peut-être PgVector?
         embeddings.type = "objet";
