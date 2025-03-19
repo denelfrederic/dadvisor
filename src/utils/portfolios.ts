@@ -1,4 +1,3 @@
-
 /**
  * Données et utilitaires pour les portefeuilles d'investissement
  */
@@ -53,10 +52,9 @@ export const portfolios: Portfolio[] = [
     description: "Une approche dynamique visant une croissance significative du capital sur le long terme.",
     expectedReturn: "8% - 12% par an",
     assets: [
-      { name: "Actions", percentage: 75 },
-      { name: "Obligations", percentage: 10 },
-      { name: "Cryptomonnaies", percentage: 10 },
-      { name: "Liquidités", percentage: 5 }
+      { name: "Actions", percentage: 60 },
+      { name: "Cryptomonnaies", percentage: 30 },
+      { name: "DEFI", percentage: 10 }
     ],
     suitableFor: [
       "Investisseurs avec un horizon à long terme",
