@@ -52,6 +52,7 @@ export const useKnowledgeBaseReport = () => {
               } else if (Array.isArray(entry.embedding)) {
                 embeddingInfo = `Array length: ${entry.embedding.length}`;
               } else {
+                // Safely handle object type without accessing length property
                 embeddingInfo = `Type: ${typeof entry.embedding}`;
               }
               
