@@ -32,6 +32,7 @@ export const useIndexationReport = () => {
     const timestamp = new Date().toISOString();
     const logEntry = `[${timestamp}] ${message}`;
     setLogs(prevLogs => [logEntry, ...prevLogs.slice(0, 49)]); // Keep last 50 logs
+    console.log(logEntry); // Also log to console for debugging
   };
 
   const generateReport = async () => {
@@ -51,6 +52,7 @@ export const useIndexationReport = () => {
       }
       
       addLog(`${documents?.length || 0} documents récupérés pour analyse`);
+      console.log("Documents retrieved:", documents);
       
       if (!documents || documents.length === 0) {
         setReport({
@@ -61,6 +63,7 @@ export const useIndexationReport = () => {
           documentsByType: {},
           recentDocuments: []
         });
+        addLog("Aucun document trouvé dans la base de données");
         return;
       }
       
@@ -73,10 +76,15 @@ export const useIndexationReport = () => {
         const type = doc.type || "inconnu";
         documentsByType[type] = (documentsByType[type] || 0) + 1;
         
+        // Check if embedding exists by checking if it's not null
+        const hasEmbedding = !!doc.embedding;
+        
         // Compter documents avec embedding
-        if (doc.embedding) {
+        if (hasEmbedding) {
           documentsWithEmbeddings++;
         }
+        
+        console.log(`Document ${doc.id} has embedding: ${hasEmbedding}, type: ${type}`);
       });
       
       const totalDocuments = documents.length;
@@ -105,6 +113,7 @@ export const useIndexationReport = () => {
         recentDocuments
       };
       
+      console.log("Generated report:", newReport);
       setReport(newReport);
       addLog(`Rapport généré avec succès: ${documentsWithEmbeddings}/${totalDocuments} documents avec embeddings (${embeddingsPercentage}%)`);
       
@@ -115,6 +124,7 @@ export const useIndexationReport = () => {
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
+      console.error("Error generating report:", err);
       setError(errorMessage);
       addLog(`ERREUR: ${errorMessage}`);
       
