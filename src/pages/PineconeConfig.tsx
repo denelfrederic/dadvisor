@@ -39,15 +39,15 @@ const PineconeConfig = () => {
         
         setApiStatus({
           loading: false,
-          error: data.error || null,
-          missingKeys: data.missingKeys || []
+          error: data?.error || null,
+          missingKeys: data?.missingKeys || []
         });
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.error("Failed to check API status:", errorMessage);
         
         // Check if we got an HTML response, which indicates the Edge function failed
-        if (errorMessage.includes("<") && errorMessage.includes(">")) {
+        if (typeof errorMessage === 'string' && errorMessage.includes("<") && errorMessage.includes(">")) {
           setApiStatus({
             loading: false,
             error: "La fonction Edge a échoué. Vérifiez les logs dans la console Supabase.",

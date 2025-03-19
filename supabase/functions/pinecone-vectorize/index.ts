@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -299,6 +300,29 @@ serve(async (req) => {
     
     console.log(`Action demandée: ${action}, Document ID: ${documentId || 'N/A'}`);
     
+    // Check-keys action to verify API keys are configured
+    if (action === 'check-keys') {
+      console.log("Vérification des clés API...");
+      const missingKeys = [];
+      
+      if (!PINECONE_API_KEY) {
+        missingKeys.push("PINECONE_API_KEY");
+      }
+      
+      if (!OPENAI_API_KEY) {
+        missingKeys.push("OPENAI_API_KEY");
+      }
+      
+      return new Response(JSON.stringify({
+        missingKeys,
+        error: missingKeys.length > 0 
+          ? `Clés API manquantes: ${missingKeys.join(", ")}` 
+          : null
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     // Vérification des clés API et message d'erreur détaillé
     if (!OPENAI_API_KEY && !PINECONE_API_KEY) {
       console.error("ERREUR CRITIQUE: Les clés API OpenAI et Pinecone sont manquantes");
@@ -441,16 +465,16 @@ serve(async (req) => {
       }
       
       case 'test-config': {
-        addLog(`Test de la configuration Pinecone (environnement: ${PINECONE_ENVIRONMENT}, index: ${PINECONE_INDEX})`);
+        console.log(`Test de la configuration Pinecone (environnement: ${PINECONE_ENVIRONMENT}, index: ${PINECONE_INDEX})`);
         
         // Test the connection to Pinecone
         const testResult = await testPineconeConnection();
         
         // Log the result
         if (testResult.success) {
-          addLog(`Test de connexion Pinecone réussi! Dimension: ${testResult.details.dimension}, Vecteurs: ${testResult.details.count}`);
+          console.log(`Test de connexion Pinecone réussi! Dimension: ${testResult.details.dimension}, Vecteurs: ${testResult.details.count}`);
         } else {
-          addLog(`Échec du test de connexion Pinecone: ${testResult.error}`);
+          console.log(`Échec du test de connexion Pinecone: ${testResult.error}`);
         }
         
         return new Response(JSON.stringify(testResult), {
