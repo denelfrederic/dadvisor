@@ -123,12 +123,13 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({ errorSummary, onRetry }) => {
           <Button
             variant="outline"
             size="sm"
-            component={Link}
-            to="/adminllm"
+            asChild
             className="mt-2"
           >
-            <Settings className="h-4 w-4 mr-2" />
-            Paramètres
+            <Link to="/adminllm">
+              <Settings className="h-4 w-4 mr-2" />
+              Paramètres
+            </Link>
           </Button>
           
           <Button

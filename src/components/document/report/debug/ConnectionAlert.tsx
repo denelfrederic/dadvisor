@@ -98,12 +98,13 @@ const ConnectionAlert: React.FC<ConnectionAlertProps> = ({ connectionTest, onRet
           <Button
             size="sm"
             variant="outline"
-            component={Link}
-            to="/adminllm"
+            asChild
             className="flex items-center gap-1"
           >
-            <ExternalLink className="h-3 w-3" />
-            Paramètres
+            <Link to="/adminllm">
+              <ExternalLink className="h-3 w-3" />
+              Paramètres
+            </Link>
           </Button>
         </div>
       </AlertDescription>
