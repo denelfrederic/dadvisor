@@ -45,15 +45,15 @@ const HeroSection = ({
               Investissez en toute autonomie et sécurité
             </motion.div>
             
-            {/* Titre principal avec animation */}
+            {/* Titre principal avec animation - TEXTE MODIFIÉ ICI */}
             <motion.h1 
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight" 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              Découvrez votre profil d'investisseur,{" "}
-              <span className="text-primary">choisissez en toute liberté</span>
+              Investissez en autonomie,{" "}
+              <span className="text-primary">maîtrisez votre patrimoine</span>
             </motion.h1>
             
             {/* Description avec animation */}
