@@ -35,9 +35,9 @@ export const portfolios: Portfolio[] = [
     expectedReturn: "5% - 8% par an",
     assets: [
       { name: "Actions", percentage: 50 },
-      { name: "Obligations", percentage: 30 },
+      { name: "Bitcoin", percentage: 30 },
       { name: "Immobilier", percentage: 15 },
-      { name: "Liquidités", percentage: 5 }
+      { name: "Or", percentage: 5 }
     ],
     suitableFor: [
       "Investisseurs avec un horizon à moyen terme",
