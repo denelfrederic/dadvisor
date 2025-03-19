@@ -1,38 +1,78 @@
 
-import { generateEmbedding } from "../../../embeddingService";
-import { isValidEmbedding, prepareEmbeddingForStorage } from "../../../embeddingUtils";
+import { KnowledgeEntry } from "@/components/knowledge-base/types";
+import { generateEmbedding } from "@/components/knowledge-base/services/embedding/embeddingService";
+import { isValidEmbedding } from "@/components/knowledge-base/services/embedding/embeddingUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { processEntryForEmbedding } from "./processor";
+import { isValidEntry } from "./validation";
 
 /**
- * Mettre à jour l'embedding d'une entrée en mode batch
+ * Process a batch of knowledge entries for embedding generation
  */
-export const updateEntryEmbeddingBatch = async (entryId: string, content: string): Promise<boolean> => {
-  try {
-    // Générer l'embedding pour le contenu
-    const embedding = await generateEmbedding(content);
+export const processBatchEmbeddings = async (
+  entries: KnowledgeEntry[],
+  batchSize: number = 5,
+  onProgress?: (message: string) => void
+): Promise<{ succeeded: number; failures: number }> => {
+  let succeeded = 0;
+  let failures = 0;
+  
+  // Filter valid entries
+  const validEntries = entries.filter(entry => isValidEntry(entry));
+  onProgress?.(`${validEntries.length} entrées valides sur ${entries.length} à traiter`);
+  
+  // Process in batches
+  for (let i = 0; i < validEntries.length; i += batchSize) {
+    const batch = validEntries.slice(i, i + batchSize);
+    onProgress?.(`Traitement du lot ${i/batchSize + 1}/${Math.ceil(validEntries.length/batchSize)}...`);
     
-    if (!embedding || !isValidEmbedding(embedding)) {
-      console.error(`Generated invalid embedding, dimensions: ${embedding ? embedding.length : 'null'} for entry ${entryId}`);
-      return false;
+    // Process each entry in the batch
+    const batchPromises = batch.map(async (entry) => {
+      try {
+        // Prepare content
+        const processedContent = processEntryForEmbedding(entry);
+        
+        // Generate embedding
+        const embedding = await generateEmbedding(processedContent);
+        
+        if (!embedding || !isValidEmbedding(embedding)) {
+          onProgress?.(`Échec de génération d'embedding pour "${entry.title}"`);
+          return { success: false, entry };
+        }
+        
+        // Update entry with embedding
+        const { error } = await supabase
+          .from('knowledge_entries')
+          .update({ embedding })
+          .eq('id', entry.id);
+        
+        if (error) {
+          onProgress?.(`Erreur de mise à jour pour "${entry.title}": ${error.message}`);
+          return { success: false, entry };
+        }
+        
+        onProgress?.(`Embedding généré avec succès pour "${entry.title}"`);
+        return { success: true, entry };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        onProgress?.(`Exception pour "${entry.title}": ${message}`);
+        return { success: false, entry, error };
+      }
+    });
+    
+    // Wait for all entries in this batch to complete
+    const results = await Promise.all(batchPromises);
+    
+    // Tally results
+    succeeded += results.filter(r => r.success).length;
+    failures += results.filter(r => !r.success).length;
+    
+    // Small delay between batches to avoid rate limiting
+    if (i + batchSize < validEntries.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    
-    // Préparer l'embedding pour le stockage
-    const embeddingForStorage = prepareEmbeddingForStorage(embedding);
-    
-    // Mettre à jour l'entrée dans la base de données
-    const { error } = await supabase
-      .from('knowledge_entries')
-      .update({ embedding: embeddingForStorage })
-      .eq('id', entryId);
-    
-    if (error) {
-      console.error(`Error updating embedding for entry ${entryId}:`, error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error(`Error in updateEntryEmbeddingBatch for entry ${entryId}:`, error);
-    return false;
   }
+  
+  onProgress?.(`Traitement terminé. Réussis: ${succeeded}, Échecs: ${failures}`);
+  return { succeeded, failures };
 };

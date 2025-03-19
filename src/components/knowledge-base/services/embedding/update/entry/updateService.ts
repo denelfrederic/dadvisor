@@ -1,88 +1,81 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { isValidEmbedding } from "../../embeddingUtils";
-import { updateEntryEmbeddingBatch } from "./batchService";
+import { toast } from "@/components/ui/use-toast";
+import { KnowledgeEntry } from "@/components/knowledge-base/types";
+import { processEntryForEmbedding } from "./processor";
+import { isValidEntry } from "./validation";
 
 /**
- * Updates embeddings for all knowledge entries
- * @param progressCallback Function to call with progress updates
- * @param logCallback Function to call with log messages
- * @returns Object with success status and counts of processed/succeeded entries
+ * Updates embedding for a single knowledge entry
  */
-export const updateKnowledgeEntries = async (
-  progressCallback?: (progress: number) => void,
-  logCallback?: (message: string) => void
-): Promise<{ 
-  success: boolean; 
-  processed: number; 
-  succeeded: number; 
-  failures?: {id: string, reason: string}[];
-  error?: string 
-}> => {
+export const updateEntryEmbedding = async (
+  entry: KnowledgeEntry,
+  onProgress?: (message: string) => void
+): Promise<boolean> => {
   try {
-    const log = (message: string) => {
-      console.log(message);
-      if (logCallback) logCallback(message);
-    };
-
-    log("Fetching knowledge entries without embeddings...");
-    
-    // Get entries that don't have embeddings or have invalid embeddings
-    const { data: entries, error } = await supabase
-      .from('knowledge_entries')
-      .select('*');
-
-    if (error) {
-      log(`Error fetching entries: ${error.message}`);
-      return { success: false, processed: 0, succeeded: 0, error: error.message };
+    if (!isValidEntry(entry)) {
+      onProgress?.(`Entrée invalide: ${entry.title}`);
+      return false;
     }
 
-    if (!entries || entries.length === 0) {
-      log("No entries found without embeddings");
-      return { success: true, processed: 0, succeeded: 0 };
-    }
+    onProgress?.(`Traitement de l'entrée: ${entry.title}...`);
     
-    // Filter entries without valid embeddings
-    const entriesToUpdate = entries.filter(entry => {
-      if (!entry.embedding) return true;
-      
-      if (typeof entry.embedding === 'string') {
-        try {
-          const parsed = JSON.parse(entry.embedding);
-          return !Array.isArray(parsed) || parsed.length !== 384;
-        } catch {
-          return true;
-        }
+    // Process the entry content for embedding
+    const processedContent = processEntryForEmbedding(entry);
+    
+    // Generate embedding
+    const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke(
+      'generate-embeddings',
+      {
+        body: { text: processedContent }
       }
-      
-      return !isValidEmbedding(entry.embedding);
-    });
-    
-    if (entriesToUpdate.length === 0) {
-      log("All entries already have valid embeddings");
-      return { success: true, processed: 0, succeeded: 0 };
+    );
+
+    if (embeddingError || !embeddingData || !embeddingData.embedding) {
+      onProgress?.(`Erreur de génération d'embedding pour ${entry.title}: ${embeddingError?.message || 'Réponse invalide'}`);
+      return false;
     }
 
-    log(`Found ${entriesToUpdate.length} entries without valid embeddings. Starting update...`);
-    
-    // Update the entries in batches
-    const result = await updateEntryEmbeddingBatch(entriesToUpdate, progressCallback, logCallback);
-    
-    log(`Finished updating ${entriesToUpdate.length} entries, ${result.succeeded} succeeded`);
-    
-    return { 
-      success: true, 
-      processed: entriesToUpdate.length,
-      succeeded: result.succeeded,
-      failures: result.failures
-    };
+    // Update the entry with the new embedding
+    const { error: updateError } = await supabase
+      .from('knowledge_entries')
+      .update({ embedding: embeddingData.embedding })
+      .eq('id', entry.id);
+
+    if (updateError) {
+      onProgress?.(`Erreur de mise à jour pour ${entry.title}: ${updateError.message}`);
+      return false;
+    }
+
+    onProgress?.(`Embedding mis à jour avec succès pour: ${entry.title}`);
+    return true;
   } catch (error) {
-    console.error("Error in updateKnowledgeEntries:", error);
-    return { 
-      success: false, 
-      processed: 0, 
-      succeeded: 0, 
-      error: error instanceof Error ? error.message : String(error) 
-    };
+    const message = error instanceof Error ? error.message : String(error);
+    onProgress?.(`Exception lors de la mise à jour: ${message}`);
+    return false;
   }
+};
+
+/**
+ * Updates embeddings for multiple knowledge entries
+ */
+export const updateEntriesEmbeddings = async (
+  entries: KnowledgeEntry[],
+  onProgress?: (message: string) => void
+): Promise<{ succeeded: number; failures: number }> => {
+  let succeeded = 0;
+  let failures = 0;
+
+  onProgress?.(`Démarrage de la mise à jour pour ${entries.length} entrées...`);
+
+  for (const entry of entries) {
+    const success = await updateEntryEmbedding(entry, onProgress);
+    if (success) {
+      succeeded++;
+    } else {
+      failures++;
+    }
+  }
+
+  return { succeeded, failures };
 };
