@@ -1,168 +1,125 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { OpenAI } from "https://deno.land/x/openai@v4.20.1/mod.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+import { createClient } from "@supabase/supabase-js";
+import { generateEmbeddingWithOpenAI } from "./services/openai.ts";
+import { testPineconeConnection, getPineconeConfig, indexDocumentInPinecone } from "./services/pinecone.ts";
 
-// Import configuration
-import { 
-  OPENAI_API_KEY, 
-  validateConfig,
-  testPineconeConnection
-} from "./config.ts";
+// Importation de nos services OpenAI
+import { checkOpenAIStatus, generateTestEmbedding } from "./services/openai.ts";
 
-// Import Pinecone services
-import { 
-  upsertToPinecone, 
-  queryPinecone 
-} from "./services/pinecone/index.ts";
+const supabaseClient = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+);
 
-// Enable CORS
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+const corsedResponse = (response: any, status = 200) => {
+  return new Response(JSON.stringify(response), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 };
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-});
-
-// Function to generate OpenAI embeddings
-async function generateOpenAIEmbedding(content) {
-  try {
-    const embeddingResponse = await openai.embeddings.create({
-      model: 'text-embedding-ada-002',
-      input: content,
-    });
-    return embeddingResponse.data[0].embedding;
-  } catch (error) {
-    console.error('Error generating embedding:', error);
-    throw error;
-  }
-}
-
-// Helper function to create a successful response
-function createSuccessResponse(data) {
-  return new Response(JSON.stringify({ ...data, success: true }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    status: 200,
-  });
-}
-
-// Helper function to create an error response
-function createErrorResponse(message, details = {}) {
-  console.error('Error Response:', message, details);
-  return new Response(JSON.stringify({ message, details, success: false }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    status: 500,
-  });
-}
-
-// Gestionnaire de requête
-Deno.serve(async (req) => {
-  console.log(`Received request: ${req.method} ${req.url}`);
-  
-  // Gestion CORS pour les requêtes OPTIONS
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Validation de la configuration au démarrage
-    const configValidation = validateConfig();
-    console.log("Configuration validée:", configValidation.valid);
-    
-    if (!configValidation.valid) {
-      return createErrorResponse("Configuration Pinecone invalide: " + configValidation.warnings.join(", "));
-    }
-    
-    // Parse request body
-    let reqBody;
-    try {
-      reqBody = await req.json();
-      console.log("Request body action:", reqBody.action);
-    } catch (error) {
-      console.error("Error parsing request body:", error);
-      return createErrorResponse("Invalid request body");
-    }
-    
-    const { action, documentId, documentContent, documentTitle, documentType } = reqBody;
+    const { action, ...body } = await req.json();
 
-    // Action de vérification de configuration (pour debugging)
+    if (!action) {
+      return corsedResponse({ success: false, error: "Action manquante" }, 400);
+    }
+    
     if (action === 'config') {
-      return createSuccessResponse(configValidation);
+      try {
+        const config = await getPineconeConfig();
+        return corsedResponse(config);
+      } catch (error) {
+        console.error("Erreur lors de la récupération de la configuration Pinecone:", error);
+        return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
+      }
     }
     
-    // Action de test de connexion
     if (action === 'test-connection') {
       try {
-        console.log("Testing Pinecone connection...");
-        const connectionResult = await testPineconeConnection();
-        
-        console.log("Connection test result:", connectionResult);
-        
-        return createSuccessResponse(connectionResult);
+        const connectionStatus = await testPineconeConnection();
+        return corsedResponse(connectionStatus);
       } catch (error) {
-        console.error("Connection test error:", error);
-        return createErrorResponse(`Erreur lors du test de connexion: ${error.message}`, {
-          error: error instanceof Error ? error.message : String(error)
-        });
+        console.error("Erreur lors du test de connexion à Pinecone:", error);
+        return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
       }
     }
-
-    // Action de vectorisation
+    
     if (action === 'vectorize') {
-      // Validation des paramètres
-      if (!documentId || !documentContent) {
-        return createErrorResponse("Paramètres manquants pour la vectorisation");
-      }
-      
       try {
-        console.log(`Génération d'embedding pour le document ${documentId}`);
+        const { documentId, documentContent, documentTitle, documentType } = body;
         
-        // Génération d'embedding via OpenAI
-        const embedding = await generateOpenAIEmbedding(documentContent);
-        
-        if (!embedding) {
-          return createErrorResponse("Échec de la génération d'embedding");
+        if (!documentId || !documentContent) {
+          return corsedResponse({ success: false, error: "Document ID et contenu sont requis" }, 400);
         }
         
-        // Préparation des données pour Pinecone
-        const metadata = {
-          title: documentTitle || "Sans titre",
-          type: documentType || "document",
-          chars: documentContent.length
-        };
+        const indexResult = await indexDocumentInPinecone(documentId, documentContent, documentTitle, documentType);
         
-        // Upsert to Pinecone
-        console.log(`Tentative d'upsert pour le document ${documentId}`);
-        const upsertResult = await upsertToPinecone(documentId, embedding, metadata);
+        if (!indexResult.success) {
+          return corsedResponse(indexResult, 500);
+        }
         
-        console.log(`Vectorisation réussie:`, upsertResult);
-        return createSuccessResponse({
-          success: true,
-          embedding: embedding.slice(0, 5) + "...", // Truncated for response size
-          upsertResult: upsertResult
+        return corsedResponse({ 
+          success: true, 
+          message: "Document indexé avec succès dans Pinecone",
+          embedding: indexResult.embedding
         });
       } catch (error) {
-        console.error(`Erreur lors de la vectorisation: ${error.message}`);
-        
-        // Detailed error information
-        const errorDetails = {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        };
-        
-        return createErrorResponse(`Erreur lors de la vectorisation: ${error.message}`, errorDetails);
+        console.error("Erreur lors de l'indexation du document dans Pinecone:", error);
+        return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
+      }
+    }
+    
+    // Ajoutez ces blocs de code pour gérer les nouvelles actions
+    if (action === 'check-openai') {
+      try {
+        const status = await checkOpenAIStatus();
+        return corsedResponse(status);
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la configuration OpenAI:", error);
+        return corsedResponse({ 
+          success: false, 
+          error: error instanceof Error ? error.message : String(error) 
+        }, 500);
       }
     }
 
-    // Action non reconnue
-    return createErrorResponse(`Action non reconnue: ${action}`);
+    if (action === 'generate-embedding') {
+      try {
+        const { text } = body;
+        
+        if (!text) {
+          return corsedResponse({ 
+            success: false, 
+            error: "Le texte est requis pour générer un embedding" 
+          }, 400);
+        }
+        
+        const result = await generateTestEmbedding(text);
+        return corsedResponse({ 
+          success: true, 
+          embedding: result.embedding,
+          model: result.modelName,
+          dimensions: result.embedding.length
+        });
+      } catch (error) {
+        console.error("Erreur lors de la génération de l'embedding de test:", error);
+        return corsedResponse({ 
+          success: false, 
+          error: error instanceof Error ? error.message : String(error) 
+        }, 500);
+      }
+    }
     
+    return corsedResponse({ success: false, error: "Action inconnue" }, 400);
   } catch (error) {
-    console.error(`Erreur générale: ${error.message}`);
-    return createErrorResponse(`Erreur générale: ${error.message}`);
+    console.error("Erreur inattendue:", error);
+    return corsedResponse({ success: false, error: error instanceof Error ? error.message : String(error) }, 500);
   }
 });

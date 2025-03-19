@@ -133,3 +133,21 @@ export async function checkOpenAIStatus(): Promise<{success: boolean; model?: st
     };
   }
 }
+
+/**
+ * Génère un embedding de test
+ */
+export async function generateTestEmbedding(text: string): Promise<{embedding: number[], modelName: string}> {
+  try {
+    console.log(`Génération d'un embedding de test pour: "${text.substring(0, 30)}..."`);
+    const embedding = await generateEmbeddingWithOpenAI(text);
+    
+    return {
+      embedding,
+      modelName: 'text-embedding-3-small'
+    };
+  } catch (error) {
+    console.error("Erreur lors de la génération d'embedding de test:", error instanceof Error ? error.message : String(error));
+    throw error;
+  }
+}

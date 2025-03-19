@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConfigTab from "./debug/ConfigTab";
 import ConnectionTestTab from "./debug/ConnectionTestTab";
 import LogsTab from "./debug/LogsTab";
+import OpenAITab from "./debug/OpenAITab";
 import ConnectionAlert from "./debug/ConnectionAlert";
 import DebugActions from "./debug/DebugActions";
 import DebugFooter from "./debug/DebugFooter";
@@ -159,6 +160,7 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
         <TabsList className="mb-2">
           <TabsTrigger value="config">Configuration</TabsTrigger>
           <TabsTrigger value="test">Test de connexion</TabsTrigger>
+          <TabsTrigger value="openai">OpenAI</TabsTrigger>
           <TabsTrigger value="logs">Logs détaillés</TabsTrigger>
         </TabsList>
         
@@ -171,6 +173,10 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
         
         <TabsContent value="test">
           <ConnectionTestTab connectionTest={connectionTest} />
+        </TabsContent>
+        
+        <TabsContent value="openai">
+          <OpenAITab addLog={addLog} />
         </TabsContent>
         
         <TabsContent value="logs">
