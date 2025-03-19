@@ -13,6 +13,7 @@ const ReportTab = () => {
   useEffect(() => {
     if (report) {
       (window as any).__documentReport = report;
+      console.log("Document report saved to window.__documentReport for testing", report);
     }
     
     // Also expose the manual test functions
@@ -36,6 +37,13 @@ const ReportTab = () => {
         les embeddings manquants pour améliorer la recherche sémantique. Le modèle utilisé génère 
         des embeddings de 384 dimensions.
       </p>
+      
+      <div className="bg-muted/30 p-3 rounded-md text-xs mb-4">
+        <p className="font-medium mb-1">📋 Tests manuels disponibles:</p>
+        <code className="block text-xs my-1">window.testDocumentReporting.testReportGeneration()</code>
+        <code className="block text-xs my-1">window.testDocumentReporting.testEmbeddingUpdate()</code>
+        <code className="block text-xs my-1">window.testDocumentReporting.verifyReportAccuracy()</code>
+      </div>
       
       <DocumentReport />
     </div>
