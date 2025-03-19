@@ -1,3 +1,4 @@
+
 /**
  * Données et utilitaires pour les portefeuilles d'investissement
  */
@@ -50,7 +51,7 @@ export const portfolios: Portfolio[] = [
     name: "Portefeuille Croissance",
     riskLevel: "Élevé",
     description: "Une approche dynamique visant une croissance significative du capital sur le long terme.",
-    expectedReturn: "8% - 12% par an",
+    expectedReturn: "6% - 40% par an",
     assets: [
       { name: "Actions", percentage: 60 },
       { name: "Cryptomonnaies", percentage: 30 },
