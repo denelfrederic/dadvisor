@@ -34,18 +34,20 @@ export const useEmbeddingsUpdate = () => {
     exportLogsToFile(logs);
   }, [logs]);
 
-  const updateDocumentEmbeddings = useCallback(async () => {
+  const updateDocumentEmbeddings = useCallback(async (forceReindex = false) => {
     setIsUpdating(true);
     setProgress(0);
     setErrorSummary(null);
-    addLog("Début de l'indexation Pinecone des documents...");
+    
+    const actionType = forceReindex ? "réindexation forcée" : "indexation";
+    addLog(`Début de ${actionType} Pinecone des documents...`);
     
     try {
       // Vérification que les API keys sont configurées
       addLog("Vérification de la configuration...");
       
-      // Call the updateDocuments function with the addLog callback
-      const result = await updateDocuments(addLog);
+      // Call the updateDocuments function with the addLog callback and forceReindex parameter
+      const result = await updateDocuments(addLog, forceReindex);
       
       if (result.success) {
         addLog(`${result.count} documents indexés avec succès.`);
@@ -55,14 +57,14 @@ export const useEmbeddingsUpdate = () => {
           description: `${result.count} documents ont été indexés dans Pinecone.`
         });
       } else {
-        addLog("Échec de l'indexation Pinecone des documents.");
+        addLog(`Échec de ${actionType} Pinecone des documents.`);
         if (result.error) {
           addLog(`Erreur: ${result.error}`);
           setErrorSummary(result.error);
         }
         toast({
           title: "Erreur",
-          description: result.error || "Une erreur est survenue lors de l'indexation Pinecone.",
+          description: result.error || `Une erreur est survenue lors de ${actionType} Pinecone.`,
           variant: "destructive"
         });
       }
@@ -72,7 +74,7 @@ export const useEmbeddingsUpdate = () => {
       setErrorSummary(errorMsg);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de l'indexation Pinecone.",
+        description: `Une erreur est survenue lors de ${actionType} Pinecone.`,
         variant: "destructive"
       });
     } finally {
@@ -83,7 +85,7 @@ export const useEmbeddingsUpdate = () => {
   const retryLastOperation = useCallback(async () => {
     addLog("Nouvelle tentative d'indexation avec configuration alternative...");
     setErrorSummary(null);
-    await updateDocumentEmbeddings();
+    await updateDocumentEmbeddings(false);
   }, [updateDocumentEmbeddings, addLog]);
 
   return {

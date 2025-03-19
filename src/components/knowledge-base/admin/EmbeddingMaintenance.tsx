@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useEmbeddingsUpdate } from "../search/hooks/useEmbeddingsUpdate";
-import { Database, RefreshCcw, AlertCircle, Info, Download } from "lucide-react";
+import { Database, RefreshCcw, AlertCircle, Info, Download, Repeat } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -23,6 +23,16 @@ const EmbeddingMaintenance = () => {
   // Format progress as an integer
   const displayProgress = Math.round(progress);
 
+  // Handler pour indexation standard
+  const handleStandardUpdate = () => {
+    updateDocumentEmbeddings(false);
+  };
+
+  // Handler pour indexation forcée
+  const handleForceUpdate = () => {
+    updateDocumentEmbeddings(true);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -36,19 +46,36 @@ const EmbeddingMaintenance = () => {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <Button 
-          className="w-full flex items-center justify-center gap-2 h-auto py-6"
-          onClick={updateDocumentEmbeddings}
-          disabled={isUpdating}
-        >
-          <div className="flex items-center">
-            <Database className="h-5 w-5 mr-2 text-blue-500" />
-            <div className="text-left">
-              <div className="font-semibold">Indexer tous les documents</div>
-              <div className="text-xs text-muted-foreground">Mettre à jour les documents non indexés</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Button 
+            className="flex items-center justify-center gap-2 h-auto py-6"
+            onClick={handleStandardUpdate}
+            disabled={isUpdating}
+          >
+            <div className="flex items-center">
+              <Database className="h-5 w-5 mr-2 text-blue-500" />
+              <div className="text-left">
+                <div className="font-semibold">Indexer nouveaux documents</div>
+                <div className="text-xs text-muted-foreground">Mettre à jour les documents non indexés</div>
+              </div>
             </div>
-          </div>
-        </Button>
+          </Button>
+          
+          <Button 
+            className="flex items-center justify-center gap-2 h-auto py-6"
+            onClick={handleForceUpdate}
+            disabled={isUpdating}
+            variant="outline"
+          >
+            <div className="flex items-center">
+              <Repeat className="h-5 w-5 mr-2 text-orange-500" />
+              <div className="text-left">
+                <div className="font-semibold">Réindexer TOUS les documents</div>
+                <div className="text-xs text-muted-foreground">Forcer la réindexation même des documents déjà indexés</div>
+              </div>
+            </div>
+          </Button>
+        </div>
         
         {isUpdating && (
           <div className="space-y-2">

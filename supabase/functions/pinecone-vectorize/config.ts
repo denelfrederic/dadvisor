@@ -128,4 +128,3 @@ export async function testPineconeConnection(): Promise<any> {
   const { testPineconeConnection: tester } = await import("./services/pinecone/index.ts");
   return await tester();
 }
-

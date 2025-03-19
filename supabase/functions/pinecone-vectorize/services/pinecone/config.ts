@@ -31,6 +31,10 @@ export function validatePineconeConfig(): boolean {
     return false;
   }
   
+  // Vérifier l'index actuel
+  const index = getPineconeIndex();
+  console.log(`Index Pinecone utilisé: ${index}`);
+  
   return true;
 }
 

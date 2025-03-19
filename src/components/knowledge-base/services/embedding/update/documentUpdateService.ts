@@ -2,14 +2,15 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const updateDocuments = async (
-  onLog?: (message: string) => void
+  onLog?: (message: string) => void,
+  forceReindex = false
 ): Promise<{
   success: boolean;
   count?: number;
   error?: string;
 }> => {
   try {
-    onLog?.("Recherche des documents non indexés dans Pinecone...");
+    onLog?.("Recherche des documents à indexer...");
     
     // Récupérer d'abord le nombre total de documents
     const { count: totalCount, error: countError } = await supabase
@@ -24,15 +25,22 @@ export const updateDocuments = async (
     
     onLog?.(`Nombre total de documents: ${totalCount || 0}`);
     
-    // Récupérer les documents sans indexation Pinecone
-    // Modifié pour inclure ceux avec pinecone_indexed à NULL ou FALSE
-    // ET ajouter plus de détails de diagnostic
-    const { data: documents, error: fetchError } = await supabase
+    // Construire la requête en fonction du mode (forceReindex ou non)
+    let query = supabase
       .from('documents')
       .select('id, content, title, type, pinecone_indexed, created_at')
-      .or('pinecone_indexed.is.null,pinecone_indexed.eq.false')
       .not('content', 'is', null)
       .not('content', 'eq', '');
+    
+    // Si forceReindex est false, on ne récupère que les documents non indexés
+    if (!forceReindex) {
+      query = query.or('pinecone_indexed.is.null,pinecone_indexed.eq.false');
+      onLog?.("Mode standard: indexation des documents non encore indexés");
+    } else {
+      onLog?.("Mode FORCE: réindexation de TOUS les documents, même ceux déjà indexés");
+    }
+    
+    const { data: documents, error: fetchError } = await query;
     
     if (fetchError) {
       const errorMsg = `Erreur lors de la récupération des documents: ${fetchError.message}`;
@@ -60,27 +68,14 @@ export const updateDocuments = async (
           onLog?.(`- Document "${doc.title}" (${doc.id.substring(0, 8)}): pinecone_indexed = ${doc.pinecone_indexed === null ? 'NULL' : doc.pinecone_indexed}, contenu: ${contentStatus}`);
         }
         
-        // Essayer de comprendre pourquoi aucun document n'est considéré comme non indexé
-        if (checkData.every(doc => doc.pinecone_indexed === true)) {
-          onLog?.("Tous les documents sont déjà marqués comme indexés dans Pinecone.");
+        if (forceReindex && checkData.length > 0) {
+          onLog?.("Mode FORCE activé mais aucun document avec contenu trouvé. Vérifiez que vos documents ont bien un contenu non vide.");
+        } else if (!forceReindex && checkData.every(doc => doc.pinecone_indexed === true)) {
+          onLog?.("Tous les documents sont déjà marqués comme indexés dans Pinecone. Utilisez le mode FORCE pour les réindexer.");
         } else if (checkData.every(doc => !doc.content || doc.content === '')) {
           onLog?.("Tous les documents ont un contenu vide, ils ne peuvent pas être indexés.");
         } else {
           onLog?.("Certains documents ne sont pas indexés mais n'ont pas été récupérés par la requête, vérifiez les filtres.");
-          
-          // Essayer une requête sans filtre sur le contenu pour voir s'il y a des documents
-          const { data: rawDocs, error: rawError } = await supabase
-            .from('documents')
-            .select('id, title, pinecone_indexed')
-            .or('pinecone_indexed.is.null,pinecone_indexed.eq.false')
-            .limit(5);
-            
-          if (!rawError && rawDocs && rawDocs.length > 0) {
-            onLog?.("Documents non indexés trouvés sans filtre de contenu:");
-            for (const doc of rawDocs) {
-              onLog?.(`- Document "${doc.title}" (${doc.id.substring(0, 8)}): pinecone_indexed = ${doc.pinecone_indexed === null ? 'NULL' : doc.pinecone_indexed}`);
-            }
-          }
         }
       }
       
@@ -97,28 +92,6 @@ export const updateDocuments = async (
         for (const doc of simpleData) {
           onLog?.(`- Document "${doc.title}" (${doc.id.substring(0, 8)})`);
         }
-        
-        // Tenter de forcer l'indexation du premier document trouvé
-        if (simpleData[0]) {
-          const docId = simpleData[0].id;
-          onLog?.(`Tentative de forcer l'indexation du document ${docId}...`);
-          
-          // Récupérer le document complet
-          const { data: fullDoc, error: fullDocError } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('id', docId)
-            .single();
-            
-          if (fullDocError) {
-            onLog?.(`Erreur lors de la récupération du document complet: ${fullDocError.message}`);
-          } else if (!fullDoc.content || fullDoc.content.trim() === '') {
-            onLog?.(`Document ${docId} trouvé mais sans contenu, impossible de l'indexer.`);
-          } else {
-            onLog?.(`Document ${docId} récupéré avec succès, contenu: ${fullDoc.content.substring(0, 100)}...`);
-            onLog?.("Mais ce document sera ignoré pour le moment car nous n'implémentons pas l'indexation forcée ici.");
-          }
-        }
       } else {
         onLog?.("Aucun document avec pinecone_indexed NULL trouvé");
       }
@@ -134,7 +107,8 @@ export const updateDocuments = async (
       onLog?.(`Aperçu des ${sampleSize} premiers documents à indexer:`);
       for (let i = 0; i < sampleSize; i++) {
         const doc = documents[i];
-        onLog?.(`- Document "${doc.title}" (${doc.id.substring(0, 8)}): ${doc.content?.length || 0} caractères`);
+        const status = doc.pinecone_indexed ? "déjà indexé" : "non indexé";
+        onLog?.(`- Document "${doc.title}" (${doc.id.substring(0, 8)}): ${doc.content?.length || 0} caractères, statut: ${status}`);
       }
     }
     
@@ -144,7 +118,8 @@ export const updateDocuments = async (
     // Traiter chaque document
     for (const doc of documents) {
       try {
-        onLog?.(`Indexation de "${doc.title}" (${doc.id.substring(0, 8)})...`);
+        const status = doc.pinecone_indexed ? "déjà indexé" : "non indexé";
+        onLog?.(`Indexation de "${doc.title}" (${doc.id.substring(0, 8)}) - statut actuel: ${status}...`);
         
         // Tronquer le contenu pour les grands documents
         const contentLength = doc.content?.length || 0;
