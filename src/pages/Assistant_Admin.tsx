@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, Database, Search, PenSquare, ArrowRight, BarChart3, Brain, FileText, Upload, Settings } from "lucide-react";
+import { Home, Database, Search, PenSquare, ArrowRight, BarChart3, Brain, FileText, Upload } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import KnowledgeSearch from "@/components/knowledge-base/KnowledgeSearch";
@@ -52,16 +53,6 @@ const Assistant_Admin = () => {
               <Link to="/">
                 <Home size={18} />
                 Accueil
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              asChild
-              className="flex items-center gap-2"
-            >
-              <Link to="/pinecone-config">
-                <Settings size={18} />
-                Configuration Pinecone
               </Link>
             </Button>
           </div>

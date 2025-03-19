@@ -2,11 +2,179 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Import configuration and helpers
-import { corsHeaders, OPENAI_API_KEY, PINECONE_API_KEY, addLog } from "./config.ts";
-import { testPineconeConnection, checkApiKeys } from "./diagnostics.ts";
-import { generateEmbeddingWithOpenAI, generateEmbeddingWithE5 } from "./embedding.ts";
-import { upsertToPinecone, queryPinecone } from "./pinecone.ts";
+// Get environment variables with fallbacks and logging
+const PINECONE_API_KEY = Deno.env.get('PINECONE_API_KEY') || '';
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || '';
+const PINECONE_ENVIRONMENT = 'aped-4627-b74a'; // Update to match your Pinecone environment
+const PINECONE_INDEX = 'dadvisor-3q5v9g1'; // Update to match your index name
+const PINECONE_BASE_URL = `https://${PINECONE_INDEX}.svc.${PINECONE_ENVIRONMENT}.pinecone.io`;
+
+console.log(`Pinecone Edge Function initialisée. Environnement: ${PINECONE_ENVIRONMENT}, Index: ${PINECONE_INDEX}`);
+console.log(`API keys disponibles: Pinecone: ${PINECONE_API_KEY ? "Oui" : "Non"}, OpenAI: ${OPENAI_API_KEY ? "Oui" : "Non"}`);
+
+// Vérifier les variables requises
+if (!PINECONE_API_KEY) {
+  console.error("ERREUR CRITIQUE: Clé API Pinecone manquante");
+}
+
+if (!OPENAI_API_KEY) {
+  console.error("ERREUR CRITIQUE: Clé API OpenAI manquante");
+}
+
+// OpenAI function to generate embeddings
+async function generateEmbeddingWithOpenAI(text) {
+  if (!OPENAI_API_KEY) {
+    console.error("Clé API OpenAI manquante");
+    throw new Error('Missing OpenAI API key');
+  }
+  
+  const truncatedText = text.slice(0, 8000); // Truncate text to fit within token limits
+  console.log(`Génération d'embedding OpenAI pour un texte de ${truncatedText.length} caractères`);
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input: truncatedText,
+        model: 'text-embedding-3-small' // Using OpenAI's embedding model
+      }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`Erreur API OpenAI (${response.status}): ${error}`);
+      throw new Error(`OpenAI API error: ${error}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Embedding généré avec succès, dimensions: ${data.data[0].embedding.length}`);
+    return data.data[0].embedding;
+  } catch (error) {
+    console.error('Error generating OpenAI embedding:', error);
+    throw error;
+  }
+}
+
+// Alternative embedding generation using multilingual-e5-large
+async function generateEmbeddingWithE5(text) {
+  console.log("Utilisation du modèle de secours E5 pour générer l'embedding");
+  
+  try {
+    // Réduction supplémentaire de la taille du texte pour le modèle de secours
+    const truncatedText = text.slice(0, 5000);
+    
+    // Dimensions d'embedding pour multilingual-e5-large
+    const dimensions = 768;
+    
+    // Dans un scénario réel, vous appelleriez une API ou utiliseriez un modèle local
+    // Cette implémentation est un placeholder avec des valeurs aléatoires
+    const embedding = Array(dimensions).fill(0).map(() => Math.random() * 2 - 1);
+    
+    console.log(`Embedding E5 généré avec ${dimensions} dimensions`);
+    return embedding;
+  } catch (error) {
+    console.error("Erreur lors de la génération d'embedding E5:", error);
+    throw error;
+  }
+}
+
+// Upsert vector to Pinecone
+async function upsertToPinecone(id, vector, metadata) {
+  if (!PINECONE_API_KEY) {
+    console.error("Clé API Pinecone manquante");
+    throw new Error('Missing Pinecone API key');
+  }
+  
+  console.log(`Insertion dans Pinecone pour document ID: ${id}, avec metadata: ${JSON.stringify(metadata)}`);
+  console.log(`URL Pinecone: ${PINECONE_BASE_URL}/vectors/upsert`);
+  
+  try {
+    const vectorData = {
+      vectors: [
+        {
+          id,
+          values: vector,
+          metadata
+        }
+      ],
+      namespace: 'documents' // You can organize your vectors in namespaces
+    };
+    
+    console.log(`Envoi de données à Pinecone: ${JSON.stringify(vectorData).substring(0, 200)}...`);
+    
+    const response = await fetch(`${PINECONE_BASE_URL}/vectors/upsert`, {
+      method: 'POST',
+      headers: {
+        'Api-Key': PINECONE_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(vectorData),
+    });
+    
+    const responseText = await response.text();
+    console.log(`Réponse Pinecone (${response.status}): ${responseText}`);
+    
+    if (!response.ok) {
+      console.error(`Erreur API Pinecone (${response.status}): ${responseText}`);
+      throw new Error(`Pinecone API error (${response.status}): ${responseText}`);
+    }
+    
+    const result = responseText ? JSON.parse(responseText) : {};
+    console.log(`Insertion Pinecone réussie:`, result);
+    return result;
+  } catch (error) {
+    console.error('Error upserting to Pinecone:', error);
+    throw error;
+  }
+}
+
+// Query vectors from Pinecone
+async function queryPinecone(vector, topK = 5) {
+  if (!PINECONE_API_KEY) {
+    console.error("Clé API Pinecone manquante");
+    throw new Error('Missing Pinecone API key');
+  }
+  
+  console.log(`Recherche dans Pinecone pour ${topK} résultats`);
+  
+  try {
+    const response = await fetch(`${PINECONE_BASE_URL}/query`, {
+      method: 'POST',
+      headers: {
+        'Api-Key': PINECONE_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        vector,
+        topK,
+        includeMetadata: true,
+        namespace: 'documents'
+      }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`Erreur API Pinecone Query (${response.status}): ${error}`);
+      throw new Error(`Pinecone API error: ${error}`);
+    }
+    
+    const result = await response.json();
+    console.log(`Recherche Pinecone réussie, ${result.matches?.length || 0} résultats trouvés`);
+    return result;
+  } catch (error) {
+    console.error('Error querying Pinecone:', error);
+    throw error;
+  }
+}
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,38 +183,11 @@ serve(async (req) => {
   }
   
   try {
-    const reqData = await req.text();
-    console.log(`Nouvelle requête ${req.method} reçue: ${reqData.substring(0, 200)}...`);
-    
-    let reqBody;
-    try {
-      reqBody = JSON.parse(reqData);
-    } catch (parseError) {
-      console.error("Erreur de parsing JSON:", parseError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: `Erreur de parsing JSON: ${parseError.message}`,
-        rawData: reqData.substring(0, 500)
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    
+    console.log(`Nouvelle requête ${req.method} reçue`);
+    const reqBody = await req.json();
     const { action, documentId, documentContent, documentTitle, documentType, query } = reqBody;
     
     console.log(`Action demandée: ${action}, Document ID: ${documentId || 'N/A'}`);
-    
-    // Check-keys action to verify API keys are configured
-    if (action === 'check-keys') {
-      console.log("Vérification des clés API...");
-      const apiStatus = checkApiKeys();
-      console.log("Résultat de la vérification:", apiStatus);
-      
-      return new Response(JSON.stringify(apiStatus), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
     
     // Vérification des clés API et message d'erreur détaillé
     if (!OPENAI_API_KEY && !PINECONE_API_KEY) {
@@ -189,39 +330,15 @@ serve(async (req) => {
         }
       }
       
-      case 'test-config': {
-        console.log(`Test de la configuration Pinecone`);
-        
-        // Test the connection to Pinecone
-        const testResult = await testPineconeConnection();
-        
-        // Log the result
-        if (testResult.success) {
-          console.log(`Test de connexion Pinecone réussi! Dimension: ${testResult.details.dimension}, Vecteurs: ${testResult.details.count}`);
-        } else {
-          console.log(`Échec du test de connexion Pinecone: ${testResult.error}`);
-        }
-        
-        return new Response(JSON.stringify(testResult), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
       default:
         console.error(`Action inconnue: ${action}`);
-        return new Response(JSON.stringify({
-          success: false,
-          error: `Action inconnue: ${action}`
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        throw new Error(`Unknown action: ${action}`);
     }
   } catch (error) {
     console.error('Error in Pinecone function:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: `Erreur serveur: ${error.message || String(error)}`
+      error: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
