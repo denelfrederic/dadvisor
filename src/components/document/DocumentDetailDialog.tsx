@@ -25,7 +25,8 @@ const DocumentDetailDialog = ({ documentId, isOpen, onClose }: DocumentDetailDia
     updateResult,
     setActiveTab,
     updateEmbedding,
-    fixEmbedding
+    fixEmbedding,
+    reloadDocument
   } = useDocumentDetail(documentId, isOpen);
 
   const renderContent = () => {
@@ -61,6 +62,7 @@ const DocumentDetailDialog = ({ documentId, isOpen, onClose }: DocumentDetailDia
             updatingEmbedding={updatingEmbedding}
             onUpdateEmbedding={updateEmbedding}
             onFixEmbedding={fixEmbedding}
+            onReloadDocument={reloadDocument}
           />
         </TabsContent>
       </Tabs>

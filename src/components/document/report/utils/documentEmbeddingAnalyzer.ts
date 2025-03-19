@@ -42,17 +42,17 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string): Promise
     }
     // Vérifier si le document est un PDF 
     else if (document.type === 'application/pdf') {
-      analysis = "Le document est un PDF dont le texte n'a pas été correctement extrait ou est trop complexe pour un embedding standard. Un traitement optimisé peut être tenté.";
+      analysis = "Le document est un PDF dont le texte n'a pas été correctement extrait ou est trop complexe pour un embedding standard. Un traitement optimisé avec une réduction significative du contenu peut être tenté.";
       canFix = true;
     }
     // Vérifier si le contenu est trop grand
     else if (document.content.length > 10000) {
-      analysis = `Le document a un contenu très volumineux (${document.content.length} caractères) qui peut dépasser les limites de l'API d'embedding. Un embedding avec un texte tronqué peut être tenté.`;
+      analysis = `Le document a un contenu très volumineux (${document.content.length} caractères) qui dépasse les limites de l'API d'embedding. Un embedding avec un texte tronqué à 6000 caractères peut être tenté.`;
       canFix = true;
     }
     // Autre cas
     else {
-      analysis = "Le document a du contenu qui semble valide mais l'embedding n'a pas été généré, possiblement en raison d'une erreur temporaire ou d'un problème avec l'API d'embedding. Une nouvelle tentative peut être effectuée.";
+      analysis = "Le document a du contenu qui semble valide mais l'embedding n'a pas été généré, possiblement en raison d'une erreur temporaire ou d'un problème avec l'API d'embedding. Une nouvelle tentative peut être effectuée avec un modèle plus léger.";
       canFix = true;
     }
     

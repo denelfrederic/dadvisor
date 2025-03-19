@@ -30,15 +30,25 @@ serve(async (req) => {
     // Log attempt information
     const attemptNumber = options.attemptNumber || 1;
     const totalAttempts = options.totalAttempts || 1;
+    const useBackupModel = options.useBackupModel || false;
+    
     console.log(`Génération d'embedding (${modelType}): tentative ${attemptNumber}/${totalAttempts} pour texte de ${text.length} caractères`);
 
     // Choisir le modèle en fonction de la tentative et de la taille du texte
     // Pour la première tentative, utiliser le modèle standard
     // Pour les tentatives ultérieures ou les textes très longs, utiliser le modèle de secours
-    const shouldUseBackupModel = attemptNumber > 1 || text.length > 15000;
+    const shouldUseBackupModel = useBackupModel || attemptNumber > 1 || text.length > 10000;
     const modelName = shouldUseBackupModel ? BACKUP_MODEL : EMBEDDING_MODEL;
     
     console.log(`Utilisation du modèle: ${modelName} ${shouldUseBackupModel ? '(modèle de secours)' : '(modèle standard)'}`);
+
+    // Sanitize text - nettoyer le texte si nécessaire
+    let processedText = text;
+    if (text.length > 10000) {
+      // Tronquer le texte et ajouter une indication
+      processedText = text.slice(0, 10000) + "\n[Texte tronqué en raison de sa longueur]";
+      console.log(`Texte tronqué de ${text.length} à 10000 caractères`);
+    }
 
     // Utilize Hugging Face with the chosen model
     const response = await fetch(`https://api-inference.huggingface.co/pipeline/feature-extraction/${modelName}`, {
@@ -48,7 +58,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: text,
+        inputs: processedText,
         options: {
           wait_for_model: true,
           use_cache: attemptNumber === 1 // Utiliser le cache uniquement pour la première tentative
@@ -108,7 +118,9 @@ serve(async (req) => {
       dimensions: embedding.length,
       modelType,
       modelName,
-      attempt: attemptNumber
+      attempt: attemptNumber,
+      originalTextLength: text.length,
+      processedTextLength: processedText.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

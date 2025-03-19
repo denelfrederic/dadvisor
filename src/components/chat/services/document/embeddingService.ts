@@ -13,8 +13,8 @@ export const generateEmbedding = async (text: string, modelType = "document", op
 
     // Configuration par défaut
     const defaultOptions = {
-      maxLength: 10000,
-      retries: 1,
+      maxLength: 8000, // Réduit la taille maximale par défaut
+      retries: 2,
       chunkSize: 0, // 0 signifie pas de découpage
       ...options
     };
@@ -22,7 +22,7 @@ export const generateEmbedding = async (text: string, modelType = "document", op
     // Tronquer le texte si nécessaire
     const truncatedText = text.slice(0, defaultOptions.maxLength);
     
-    console.log(`Générant embedding pour ${modelType}, longueur texte: ${truncatedText.length} caractères`);
+    console.log(`Générant embedding pour ${modelType}, longueur texte: ${truncatedText.length} caractères (texte original: ${text.length} caractères)`);
     
     let lastError = null;
     let retryCount = 0;
@@ -30,20 +30,27 @@ export const generateEmbedding = async (text: string, modelType = "document", op
     // Tentatives multiples avec différentes configurations
     while (retryCount <= defaultOptions.retries) {
       try {
+        // Pour les gros textes, on réduit la taille à chaque tentative
+        const adjustedMaxLength = defaultOptions.maxLength - (retryCount * 1000);
+        const currentText = text.slice(0, Math.max(3000, adjustedMaxLength));
+        
+        console.log(`Tentative ${retryCount + 1}/${defaultOptions.retries + 1} avec ${currentText.length} caractères`);
+        
         // Appel à notre fonction edge pour générer l'embedding
         const { data, error } = await supabase.functions.invoke("generate-embeddings", {
           body: { 
-            text: truncatedText,
+            text: currentText,
             modelType,
             options: {
               attemptNumber: retryCount + 1,
-              totalAttempts: defaultOptions.retries + 1
+              totalAttempts: defaultOptions.retries + 1,
+              useBackupModel: retryCount > 0 // Utiliser le modèle de secours dès la deuxième tentative
             }
           }
         });
         
         if (error) {
-          console.error(`Erreur lors de la tentative ${retryCount + 1}:`, error);
+          console.error(`Erreur Supabase lors de la tentative ${retryCount + 1}:`, error);
           lastError = error;
           retryCount++;
           continue;
@@ -108,9 +115,15 @@ export const forceGenerateEmbedding = async (documentId: string): Promise<boolea
     
     // Options optimisées pour les cas difficiles
     const options = {
-      maxLength: 8000, // Réduire la taille pour les documents problématiques
-      retries: 2,      // Faire plus de tentatives
+      maxLength: 6000, // Réduire davantage la taille pour les documents problématiques
+      retries: 3,      // Faire plus de tentatives
     };
+    
+    // Pour les PDF, réduire encore plus la taille
+    if (document.type === 'application/pdf') {
+      options.maxLength = 4000;
+      console.log("Document PDF détecté, taille maximale réduite à 4000 caractères");
+    }
     
     // Générer l'embedding avec les options optimisées
     const embedding = await generateEmbedding(document.content, "document", options);

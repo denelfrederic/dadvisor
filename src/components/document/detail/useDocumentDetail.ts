@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateEmbedding } from "../../chat/services/document/embeddingService";
 import { analyzeDocumentEmbeddingIssue, fixDocumentEmbedding } from "../report/utils/documentEmbeddingAnalyzer";
@@ -12,18 +12,7 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
   const [updatingEmbedding, setUpdatingEmbedding] = useState(false);
   const [updateResult, setUpdateResult] = useState<{success: boolean; message: string} | null>(null);
 
-  useEffect(() => {
-    if (isOpen && documentId) {
-      loadDocument();
-      analyzeDocument();
-    } else {
-      setDocument(null);
-      setAnalysis(null);
-      setUpdateResult(null);
-    }
-  }, [isOpen, documentId]);
-
-  const loadDocument = async () => {
+  const loadDocument = useCallback(async () => {
     if (!documentId) return;
     
     setLoading(true);
@@ -36,14 +25,21 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
       
       if (error) throw error;
       setDocument(data);
+      
+      // Vérifier si l'embedding est valide après rechargement
+      if (data && data.embedding) {
+        console.log(`Document ${documentId} rechargé avec embedding (longueur: ${typeof data.embedding === 'string' ? data.embedding.length : 'non-string'})`);
+      } else {
+        console.log(`Document ${documentId} rechargé sans embedding`);
+      }
     } catch (error) {
       console.error("Erreur lors du chargement du document:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [documentId]);
 
-  const analyzeDocument = async () => {
+  const analyzeDocument = useCallback(async () => {
     if (!documentId) return;
     
     try {
@@ -52,7 +48,18 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     } catch (error) {
       console.error("Erreur lors de l'analyse du document:", error);
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    if (isOpen && documentId) {
+      loadDocument();
+      analyzeDocument();
+    } else {
+      setDocument(null);
+      setAnalysis(null);
+      setUpdateResult(null);
+    }
+  }, [isOpen, documentId, loadDocument, analyzeDocument]);
 
   // Mise à jour standard de l'embedding
   const updateEmbedding = async () => {
@@ -62,6 +69,8 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     setUpdateResult(null);
     
     try {
+      console.log(`Tentative de génération d'embedding standard pour le document ${document.id} (${document.title})`);
+      
       // Générer un embedding
       const embedding = await generateEmbedding(document.content, "document");
       
@@ -69,6 +78,8 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
       if (!embedding) {
         throw new Error("Échec de génération de l'embedding");
       }
+      
+      console.log(`Embedding généré avec succès pour ${document.title}`);
       
       // Convertir l'embedding au format de stockage
       const embeddingForStorage = 
@@ -80,10 +91,12 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
         .update({ embedding: embeddingForStorage })
         .eq('id', document.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error(`Erreur lors de la mise à jour du document dans Supabase:`, error);
+        throw error;
+      }
       
-      // Recharger le document
-      loadDocument();
+      console.log(`Document ${document.id} mis à jour avec succès dans Supabase`);
       
       setUpdateResult({
         success: true,
@@ -108,11 +121,14 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     setUpdateResult(null);
     
     try {
+      console.log(`Tentative de génération optimisée d'embedding pour le document ${documentId}`);
+      
       const result = await fixDocumentEmbedding(documentId);
       
       if (result.success) {
-        // Recharger le document pour voir les changements
-        await loadDocument();
+        console.log(`Embedding réparé avec succès pour le document ${documentId}`);
+      } else {
+        console.error(`Échec de la réparation de l'embedding: ${result.message}`);
       }
       
       setUpdateResult(result);
@@ -127,6 +143,13 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     }
   };
 
+  // Fonction explicite pour recharger le document
+  const reloadDocument = useCallback(async () => {
+    console.log(`Rechargement explicite du document ${documentId}`);
+    await loadDocument();
+    await analyzeDocument();
+  }, [documentId, loadDocument, analyzeDocument]);
+
   return {
     document,
     loading,
@@ -136,6 +159,7 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     updateResult,
     setActiveTab,
     updateEmbedding,
-    fixEmbedding
+    fixEmbedding,
+    reloadDocument
   };
 };
