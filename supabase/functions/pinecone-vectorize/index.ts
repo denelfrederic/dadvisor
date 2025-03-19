@@ -1,8 +1,9 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.5";
 import { generateEmbeddingWithOpenAI } from "./services/openai.ts";
-import { testPineconeConnection, getPineconeConfig, indexDocumentInPinecone } from "./services/pinecone.ts";
+import { testPineconeConnection, getPineconeConfig, indexDocumentInPinecone } from "./services/pinecone/index.ts";
 
 // Importation de nos services OpenAI
 import { checkOpenAIStatus, generateTestEmbedding } from "./services/openai.ts";
