@@ -26,6 +26,8 @@ import { QuestionnaireProvider } from './contexts/questionnaire';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
+  console.log("App component rendering");
+  
   return (
     <div className="App">
       <AuthProvider>

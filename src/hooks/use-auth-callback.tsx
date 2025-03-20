@@ -12,6 +12,8 @@ export function useAuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        console.log("Traitement du callback d'authentification OAuth...");
+        
         // Add a timeout to prevent indefinite loading
         const timeoutId = setTimeout(() => {
           console.error("Auth callback timeout - redirecting to login");
@@ -26,6 +28,7 @@ export function useAuthCallback() {
         clearTimeout(timeoutId);
         
         if (error) {
+          console.error("Erreur lors de la récupération de la session:", error);
           throw error;
         }
         

@@ -39,6 +39,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Ajouter des logs pour déboguer
+  useEffect(() => {
+    console.log("AuthProvider - État actuel:", { user, isLoading, error });
+  }, [user, isLoading, error]);
+
   // Le contexte utilise maintenant directement les données du hook useAuthStatus
   return (
     <AuthContext.Provider value={{ user, isLoading, error, logout }}>

@@ -159,7 +159,7 @@ export const getLoggedInUser = async (): Promise<User | null> => {
     return user;
   } else {
     // S'il n'y a pas de session, s'assurer que le localStorage est nettoyé
-    localStorage.removeItem("dadvisor_user");
+    localStorage.removeItem("user");
     return null;
   }
 };
@@ -168,7 +168,7 @@ export const getLoggedInUser = async (): Promise<User | null> => {
  * Stocke les informations de l'utilisateur après connexion
  */
 export const storeUserSession = (user: User): void => {
-  localStorage.setItem("dadvisor_user", JSON.stringify(user));
+  localStorage.setItem("user", JSON.stringify(user));
 };
 
 /**
@@ -176,5 +176,5 @@ export const storeUserSession = (user: User): void => {
  */
 export const logout = async (): Promise<void> => {
   await supabase.auth.signOut();
-  localStorage.removeItem("dadvisor_user");
+  localStorage.removeItem("user");
 };
