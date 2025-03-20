@@ -25,6 +25,7 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
   const [connectionTest, setConnectionTest] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("config");
   const [detailedLogs, setDetailedLogs] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const addLog = (message: string) => {
     setDetailedLogs(prev => [...prev, `[${new Date().toISOString().substring(11, 19)}] ${message}`]);
@@ -34,10 +35,15 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
     setDetailedLogs([]);
   };
 
+  const handleTestConnection = async (result: any) => {
+    setConnectionTest(result);
+  };
+
   const getPineconeConfig = async () => {
     setPineconeStatus('loading');
     setDetailedLogs([]);
     addLog("Récupération de la configuration Pinecone...");
+    setIsLoading(true);
     
     try {
       toast({
@@ -77,11 +83,14 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
         description: `Exception: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testPineconeConnection = async () => {
     addLog("Début du test de connexion à Pinecone...");
+    setIsLoading(true);
     
     try {
       toast({
@@ -133,6 +142,8 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
         description: `Exception lors du test: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -167,12 +178,17 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
         <TabsContent value="config">
           <ConfigTab 
             diagnosticInfo={diagnosticInfo} 
-            pineconeStatus={pineconeStatus} 
+            pineconeStatus={pineconeStatus}
+            onRefresh={getPineconeConfig}
           />
         </TabsContent>
         
         <TabsContent value="test">
-          <ConnectionTestTab connectionTest={connectionTest} />
+          <ConnectionTestTab 
+            connectionTest={connectionTest} 
+            onTestConnection={handleTestConnection}
+            isLoading={isLoading}
+          />
         </TabsContent>
         
         <TabsContent value="openai">
@@ -180,7 +196,22 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
         </TabsContent>
         
         <TabsContent value="logs">
-          <LogsTab detailedLogs={detailedLogs} />
+          <LogsTab 
+            logs={detailedLogs}
+            onClearLogs={clearLogs}
+            onExportLogs={() => {
+              // Logique d'export des logs
+              const blob = new Blob([detailedLogs.join('\n')], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `pinecone-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }}
+          />
         </TabsContent>
       </Tabs>
       

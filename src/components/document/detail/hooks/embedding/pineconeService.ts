@@ -1,4 +1,3 @@
-
 /**
  * Service pour interagir avec Pinecone via les fonctions edge de Supabase
  */
@@ -38,6 +37,8 @@ export const vectorizeDocument = async (
     
     // Appeler l'edge function Pinecone avec un timestamp pour éviter la mise en cache
     addLog("Appel à l'API Pinecone via l'edge function...");
+    
+    // Version compatible avec les types existants
     const { data: pineconeData, error: pineconeError } = await supabase.functions.invoke('pinecone-vectorize', {
       body: {
         action: 'vectorize',
@@ -46,53 +47,21 @@ export const vectorizeDocument = async (
         documentTitle: document.title,
         documentType: document.type,
         _timestamp: new Date().getTime() // Éviter le cache
-      },
-      signal: controller.signal
+      }
+      // Nous n'utilisons pas signal ici pour maintenir la compatibilité avec les types existants
     });
     
-    // Annuler le timeout si la requête a réussi
+    // Annuler le timeout manuellement
     clearTimeout(timeoutId);
     
+    // Vérifier si la requête a été annulée manuellement
+    if (controller.signal.aborted) {
+      const timeoutMessage = `Timeout: La requête d'indexation a expiré après ${TIMEOUT/1000} secondes`;
+      addLog(timeoutMessage);
+      throw new Error(timeoutMessage);
+    }
+    
     if (pineconeError) {
-      // Gestion spécifique pour les erreurs de timeout
-      if (pineconeError.message && pineconeError.message.includes("abort")) {
-        const timeoutMessage = `Timeout: La requête d'indexation a expiré après ${TIMEOUT/1000} secondes`;
-        addLog(timeoutMessage);
-        addLog("Vérifiez l'état de l'edge function et des secrets configurés");
-        
-        // Vérifier l'état de configuration
-        try {
-          addLog("Tentative de diagnostic de configuration...");
-          const { data: configData } = await supabase.functions.invoke('pinecone-vectorize', {
-            body: { action: 'config' }
-          });
-          
-          if (configData) {
-            addLog(`Diagnostic: ${configData.valid ? "Configuration valide" : "Configuration invalide"}`);
-            if (configData.warnings && configData.warnings.length > 0) {
-              addLog("Problèmes détectés:");
-              configData.warnings.forEach((warning: string) => addLog(`- ${warning}`));
-            }
-            
-            // Vérifier les variables d'environnement critiques
-            if (configData.envStatus) {
-              const missingVars = [];
-              for (const [key, value] of Object.entries(configData.envStatus)) {
-                if (!value) missingVars.push(key);
-              }
-              
-              if (missingVars.length > 0) {
-                addLog(`Variables d'environnement manquantes: ${missingVars.join(", ")}`);
-              }
-            }
-          }
-        } catch (diagError) {
-          addLog(`Échec du diagnostic: ${diagError instanceof Error ? diagError.message : String(diagError)}`);
-        }
-        
-        throw new Error(timeoutMessage);
-      }
-      
       addLog(`Erreur lors de l'appel à l'API Pinecone: ${pineconeError.message}`);
       throw new Error(`Erreur lors de l'appel à l'API Pinecone: ${pineconeError.message}`);
     }

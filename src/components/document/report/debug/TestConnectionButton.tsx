@@ -30,13 +30,35 @@ const TestConnectionButton: React.FC<TestConnectionButtonProps> = ({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
       
+      // Version compatible avec les types existants
       const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
-        body: { action: 'test-connection' },
-        signal: controller.signal
+        body: { action: 'test-connection' }
+        // Nous n'utilisons pas signal ici pour maintenir la compatibilité avec les types existants
       });
       
-      // Annuler le timeout si la requête a réussi
+      // Annuler le timeout manuellement
       clearTimeout(timeoutId);
+      
+      // Vérifier si la requête a été annulée manuellement
+      if (controller.signal.aborted) {
+        const timeoutMessage = "La requête a expiré après 10 secondes. Le serveur ne répond pas.";
+        console.error("Timeout de la requête:", timeoutMessage);
+        
+        toast({
+          title: "Échec du test",
+          description: timeoutMessage,
+          variant: "destructive"
+        });
+        
+        onTestComplete({
+          success: false,
+          error: "Request timeout after 10 seconds",
+          status: 408,
+          message: timeoutMessage,
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
       
       if (error) {
         const errorMessage = `Erreur de connexion: ${error.message || "Erreur inconnue"}`;

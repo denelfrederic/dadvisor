@@ -39,7 +39,7 @@ const ConnectionTestTab: React.FC<ConnectionTestTabProps> = ({
   return (
     <div className="space-y-4">
       {connectionTest.success ? (
-        <Alert variant="success" className="border-green-200 bg-green-50">
+        <Alert className="border-green-200 bg-green-50">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertTitle className="text-green-800">Connexion réussie</AlertTitle>
           <AlertDescription className="text-green-700">
@@ -76,7 +76,7 @@ const ConnectionTestTab: React.FC<ConnectionTestTabProps> = ({
         <div className="space-y-3 text-xs">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Statut:</span>
-            <Badge variant={connectionTest.success ? "success" : "destructive"}>
+            <Badge variant={connectionTest.success ? "outline" : "destructive"}>
               {connectionTest.success ? "Connecté" : "Échec"}
             </Badge>
           </div>
@@ -84,7 +84,7 @@ const ConnectionTestTab: React.FC<ConnectionTestTabProps> = ({
           {connectionTest.status && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Code HTTP:</span>
-              <Badge variant={connectionTest.status === 200 ? "success" : "destructive"}>
+              <Badge variant={connectionTest.status === 200 ? "outline" : "destructive"}>
                 {connectionTest.status}
               </Badge>
             </div>

@@ -1,65 +1,31 @@
 
 /**
- * Service de gestion de la configuration Pinecone
+ * Service pour gérer la configuration Pinecone
  */
 
-import { validateConfig, getPineconeIndex } from "../../config.ts";
+import { validateConfig } from "../../config.ts";
+import { corsedResponse } from "../../utils/cors.ts";
 import { logMessage } from "../../utils/logging.ts";
 
 /**
- * Récupère la configuration Pinecone actuelle et effectue des vérifications
- * @returns La configuration Pinecone avec détails de diagnostic
+ * Récupère la configuration Pinecone actuelle
+ * @returns Informations de configuration Pinecone
  */
-export async function getPineconeConfig(): Promise<any> {
+export async function getPineconeConfig() {
   try {
-    console.log(`[${new Date().toISOString()}] Récupération de la configuration Pinecone...`);
+    logMessage("Récupération de la configuration Pinecone", 'info');
     
-    // Validation de la configuration
-    const configValidation = validateConfig();
+    // Valider la configuration
+    const config = validateConfig();
     
-    console.log(`Résultat de la validation: ${JSON.stringify(configValidation)}`);
-    
-    // Informations sur l'environnement et les clés API
-    const apiKeysInfo = {
-      hasPineconeKey: Boolean(Deno.env.get("PINECONE_API_KEY")),
-      pineconeKeyLength: Deno.env.get("PINECONE_API_KEY") ? Deno.env.get("PINECONE_API_KEY")!.length : 0,
-      openAiKey: Boolean(Deno.env.get("OPENAI_API_KEY")),
-    };
-    
-    console.log(`API keys disponibles: Pinecone: ${apiKeysInfo.hasPineconeKey ? "Oui" : "Non"}, OpenAI: ${apiKeysInfo.openAiKey ? "Oui" : "Non"}`);
-    
-    // Vérifier l'URL Pinecone
-    const pineconeUrl = Deno.env.get("PINECONE_BASE_URL") || "";
-    let urlStatus = "non configurée";
-    
-    if (pineconeUrl) {
-      if (pineconeUrl.includes("pinecone.io")) {
-        urlStatus = "format valide";
-      } else {
-        urlStatus = "format potentiellement invalide";
-      }
-    }
-    
-    return {
-      ...configValidation,
-      apiStatus: apiKeysInfo,
-      urlCheck: {
-        url: pineconeUrl,
-        status: urlStatus
-      },
-      environmentCheck: {
-        denoVersion: Deno.version.deno,
-        v8Version: Deno.version.v8,
-        typescript: Deno.version.typescript,
-      },
-      timestamp: new Date().toISOString()
-    };
+    return corsedResponse(config);
   } catch (error) {
-    console.error("Erreur lors de la récupération de la configuration Pinecone:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString()
-    };
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logMessage(`Erreur lors de la récupération de la configuration: ${errorMessage}`, 'error');
+    
+    return corsedResponse({ 
+      success: false, 
+      error: errorMessage 
+    }, 500);
   }
 }

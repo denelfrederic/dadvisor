@@ -16,7 +16,7 @@ export const searchEntriesWithPinecone = async (query: string, limit = 5): Promi
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
     
-    // Appel à notre fonction edge améliorée avec signal d'abort
+    // Appel à notre fonction edge améliorée sans utiliser signal (pour compatibilité avec les types)
     const { data, error } = await supabase.functions.invoke("pinecone-vectorize", {
       body: { 
         action: "search-knowledge-base",
@@ -25,12 +25,16 @@ export const searchEntriesWithPinecone = async (query: string, limit = 5): Promi
         limit,
         hybrid: true, // Activer la recherche hybride
         _cacheKey: Date.now() // Éviter la mise en cache
-      },
-      signal: controller.signal
+      }
     });
     
-    // Annuler le timeout si la requête a réussi
+    // Annuler le timeout manuellement
     clearTimeout(timeoutId);
+    
+    if (controller.signal.aborted) {
+      console.warn("La requête à l'edge function a expiré après 10 secondes");
+      throw new Error("Timeout de la requête à l'edge function");
+    }
     
     if (error) {
       console.error("Erreur lors de la recherche via Pinecone:", error);
