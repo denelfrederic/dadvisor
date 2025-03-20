@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -5,6 +6,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, getLoggedInUser } from "@/utils/auth";
 import LogoutButton from "@/components/account/LogoutButton";
+import DeleteAccountButton from "@/components/account/DeleteAccountButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { UserRound, BarChartBig } from "lucide-react";
@@ -136,7 +138,10 @@ const Account = () => {
           
           <Separator className="my-8" />
           
-          <LogoutButton />
+          <div className="space-y-4">
+            <LogoutButton />
+            <DeleteAccountButton />
+          </div>
         </>
       )}
     </div>
