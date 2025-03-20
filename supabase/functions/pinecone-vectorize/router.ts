@@ -2,7 +2,7 @@
 import { logMessage, logError } from "./utils/logging.ts";
 import { corsedResponse } from "./utils/response.ts";
 import { validateConfig } from "./config.ts";
-import { corsHeaders } from "./_shared/cors.ts";
+import { corsHeaders } from "./utils/cors.ts";
 
 // Importation des gestionnaires d'action
 import { handleConfigAction } from "./handlers/configHandler.ts";
