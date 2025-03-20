@@ -3,7 +3,7 @@
  * Service d'indexation de documents dans Pinecone
  */
 
-import { PINECONE_API_KEY, PINECONE_NAMESPACE } from "../../config.ts";
+import { PINECONE_API_KEY, PINECONE_NAMESPACE, PINECONE_INDEX, getPineconeUrl } from "../../config.ts";
 import { PINECONE_HEADERS, getPineconeOperationUrl } from "./config.ts";
 import { generateEmbeddingWithOpenAI } from "../openai.ts";
 import { logMessage, logError } from "../../utils/logging.ts";
@@ -37,7 +37,12 @@ export async function indexDocumentInPinecone(
     };
     
     // Construction de l'URL d'upsert
-    const upsertUrl = getPineconeOperationUrl('upsert');
+    const upsertUrl = getPineconeOperationUrl('vectors/upsert');
+    const baseUrl = getPineconeUrl();
+    const indexName = PINECONE_INDEX || "dadvisor";
+    
+    console.log(`URL Pinecone de base: ${baseUrl}`);
+    console.log(`Index utilisé: ${indexName}`);
     console.log(`URL d'upsert: ${upsertUrl}`);
     
     // Préparation du corps de la requête
@@ -68,6 +73,29 @@ export async function indexDocumentInPinecone(
           console.error("ERREUR 403: Accès refusé à Pinecone. Vérifiez votre clé API et les permissions.");
         } else if (response.status === 404) {
           console.error("ERREUR 404: Index Pinecone non trouvé. Vérifiez le nom de l'index dans la configuration.");
+          console.error(`Index configuré: "${indexName}"`);
+          console.error(`URL complète utilisée: ${upsertUrl}`);
+          
+          // Tenter d'extraire le vrai nom de l'index à partir de l'URL
+          try {
+            // Pour une URL de type: https://dadvisor-xpcwv7u.svc.aped-4627-b74a.pinecone.io
+            // le vrai index est souvent la partie avant le premier tiret (dadvisor)
+            const urlObj = new URL(baseUrl);
+            const hostname = urlObj.hostname;
+            const potentialIndex = hostname.split('.')[0];
+            let suggestedIndex = potentialIndex;
+            
+            // Si le hostname contient un tiret, le vrai index est souvent ce qui précède le premier tiret
+            if (potentialIndex.includes('-')) {
+              suggestedIndex = potentialIndex.split('-')[0];
+            }
+            
+            if (suggestedIndex !== indexName) {
+              console.error(`SUGGESTION: Essayez d'utiliser "${suggestedIndex}" comme nom d'index au lieu de "${indexName}"`);
+            }
+          } catch (err) {
+            console.error("Impossible d'analyser l'URL pour suggérer un index");
+          }
         } else if (response.status === 400) {
           console.error("ERREUR 400: Requête invalide. Vérifiez le format de vos données.");
         }
@@ -88,13 +116,35 @@ export async function indexDocumentInPinecone(
       };
     } catch (fetchError) {
       console.error(`Erreur lors de la requête Pinecone: ${fetchError}`);
+      
+      // Diagnostics supplémentaires pour les erreurs de réseau
+      if (fetchError instanceof TypeError && fetchError.message.includes("fetch failed")) {
+        console.error("Erreur réseau: Impossible d'atteindre le serveur Pinecone");
+        console.error("Vérifiez que l'URL est correcte et que le service est accessible");
+      }
+      
+      // Si l'erreur semble liée à l'URL, essayer de fournir plus d'informations
+      const errorMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      if (errorMsg.includes("404") || errorMsg.includes("not found")) {
+        console.error("ERREUR 404 DÉTECTÉE: L'URL semble incorrecte ou l'index n'existe pas");
+        console.error(`URL utilisée: ${upsertUrl}`);
+        console.error(`Index configuré: "${indexName}"`);
+        console.error("Vérifiez que l'URL et l'index correspondent exactement à ce qui est dans la console Pinecone");
+      }
+      
       // Retourner quand même l'embedding pour que le document puisse être marqué comme indexé
       // dans Supabase même si Pinecone a échoué
       return {
-        success: true, // Marquer comme succès pour permettre la mise à jour Supabase
+        success: false,
         documentId: id,
         embedding: embedding,
-        warning: `Possible problème avec Pinecone, mais l'embedding a été généré: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
+        error: `Erreur Pinecone: ${errorMsg}`,
+        errorDetails: {
+          message: errorMsg,
+          url: upsertUrl,
+          index: indexName,
+          namespace: PINECONE_NAMESPACE
+        },
         timestamp: new Date().toISOString()
       };
     }

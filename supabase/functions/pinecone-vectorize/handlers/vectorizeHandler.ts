@@ -1,6 +1,6 @@
 
 import { indexDocumentInPinecone } from "../services/pinecone/index.ts";
-import { getPineconeIndex, validateConfig } from "../config.ts";
+import { getPineconeIndex, validateConfig, getPineconeUrl } from "../config.ts";
 import { logMessage, logError } from "../utils/logging.ts";
 import { corsedResponse } from "../utils/response.ts";
 
@@ -20,7 +20,13 @@ export async function handleVectorizeAction(body: any) {
     }
     
     logMessage(`Indexation du document ${documentId}...`, 'info');
-    logMessage(`Index Pinecone utilisé pour l'indexation: ${getPineconeIndex()}`, 'info');
+    
+    // Information sur la configuration utilisée
+    const pineconeUrl = getPineconeUrl();
+    const pineconeIndex = getPineconeIndex();
+    
+    logMessage(`URL Pinecone utilisée: ${pineconeUrl}`, 'info');
+    logMessage(`Index Pinecone utilisé pour l'indexation: ${pineconeIndex}`, 'info');
     
     // Avant d'indexer, vérifier la configuration
     const configCheck = validateConfig();
@@ -42,8 +48,21 @@ export async function handleVectorizeAction(body: any) {
     );
     
     if (!indexResult.success) {
-      logMessage(`Échec de l'indexation du document ${documentId}: ${indexResult.error}`, 'error');
-      return corsedResponse(indexResult, 500);
+      const errorMessage = indexResult.error || "Raison inconnue";
+      logMessage(`Échec de l'indexation du document ${documentId}: ${errorMessage}`, 'error');
+      
+      // Retourner les détails de configuration pour le diagnostic côté client
+      return corsedResponse({
+        success: false,
+        error: errorMessage,
+        documentId: documentId,
+        config: {
+          pineconeUrl: pineconeUrl,
+          pineconeIndex: pineconeIndex,
+          ...configCheck.config
+        },
+        errorDetails: indexResult.errorDetails || {}
+      }, 500);
     }
     
     logMessage(`Document ${documentId} indexé avec succès`, 'info');
@@ -56,7 +75,9 @@ export async function handleVectorizeAction(body: any) {
     const errorMsg = logError("Erreur lors de l'indexation du document dans Pinecone", error);
     return corsedResponse({ 
       success: false, 
-      error: errorMsg
+      error: errorMsg,
+      pineconeUrl: getPineconeUrl(),
+      pineconeIndex: getPineconeIndex()
     }, 500);
   }
 }

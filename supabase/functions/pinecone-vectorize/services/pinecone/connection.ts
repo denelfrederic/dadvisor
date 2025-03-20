@@ -83,6 +83,9 @@ export async function testPineconeConnection(): Promise<any> {
       testUrls.push(`${normalizedUrl}describe_index_stats`); // Stats d'index (serverless)
       testUrls.push(`${normalizedUrl}query`); // Endpoint query (legacy)
       
+      // Essayer aussi avec un endpoint vectors/upsert pour tester l'opération qui échoue
+      testUrls.push(`${normalizedUrl}vectors/upsert`);
+      
       // Essayer aussi avec databases
       if (!normalizedUrl.includes("databases")) {
         testUrls.push(`${normalizedUrl}databases`);
@@ -135,6 +138,7 @@ export async function testPineconeConnection(): Promise<any> {
             url: testUrl,
             apiType: apiType,
             indexName: indexName,
+            namespace: PINECONE_NAMESPACE,
             response: responseData.substring(0, 200)
           };
         } else {
@@ -189,26 +193,22 @@ export async function testPineconeConnection(): Promise<any> {
         testedUrls: testUrls,
         apiType: apiType,
         indexName: indexName,
+        namespace: PINECONE_NAMESPACE,
         lastError: lastError,
         lastResponse: lastResponse,
-        recommendedAction: "Vérifiez votre URL Pinecone dans la console Pinecone. L'URL doit inclure le nom de votre index et la région correcte."
+        suggestedActions: [
+          "Vérifiez que l'URL Pinecone configurée est correcte",
+          "Vérifiez que le nom de l'index est correct",
+          "Vérifiez que la clé API est valide",
+          "Vérifiez que votre index Pinecone est bien actif (non en pause)"
+        ]
       };
     }
-    
-    // Ce code ne devrait jamais être atteint si tout va bien, mais au cas où
-    return {
-      success: true,
-      message: "Connexion Pinecone réussie (fallback)",
-      timestamp: new Date().toISOString(),
-      url: successUrl,
-      apiType: apiType,
-      indexName: indexName
-    };
   } catch (error) {
-    console.error("Erreur lors du test de connexion Pinecone:", error);
+    console.error("Exception lors du test de connexion à Pinecone:", error);
     return {
       success: false,
-      message: `Exception: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Exception lors du test de connexion à Pinecone: ${error instanceof Error ? error.message : String(error)}`,
       error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
     };
