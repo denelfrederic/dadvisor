@@ -3,7 +3,6 @@ import React from 'react';
 import Navbar from "@/components/Navbar";
 import ContactHeader from "@/components/contact/ContactHeader";
 import ContactSection from "@/components/contact/ContactSection";
-import FaqSection from "@/components/contact/FaqSection";
 
 /**
  * Page Contact - Permet aux utilisateurs de contacter directement DADVISOR
@@ -17,7 +16,6 @@ const Contact = () => {
         <div className="container mx-auto max-w-3xl">
           <ContactHeader />
           <ContactSection />
-          <FaqSection />
         </div>
       </div>
     </>
