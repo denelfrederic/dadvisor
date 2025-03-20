@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, AlertTriangle, RefreshCw, Loader2, Database, Sync } from "lucide-react";
+import { Check, AlertTriangle, RefreshCw, Loader2, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentEmbeddingTabProps {
@@ -111,7 +111,7 @@ const DocumentEmbeddingTab = ({
           variant="outline" 
           className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
         >
-          <Sync className="h-4 w-4 mr-2" />
+          <RefreshCw className="h-4 w-4 mr-2" />
           Synchroniser le statut Pinecone
         </Button>
       )}
