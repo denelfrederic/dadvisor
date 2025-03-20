@@ -8,7 +8,7 @@ import { User, getLoggedInUser } from "@/utils/auth";
 import { useNavbarScroll } from "@/hooks/use-navbar-scroll";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { NavLink } from "@/components/navbar/NavLink";
-import { Menu, Home } from "lucide-react";
+import { Menu } from "lucide-react";
 import MobileMenu from "@/components/navbar/MobileMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -89,10 +89,10 @@ const Navbar = () => {
           {user ? (
             <Button 
               variant="outline" 
-              className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm whitespace-nowrap" 
+              className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]" 
               onClick={handleAccountManagement}
             >
-              {user.email && user.email.length > 15 ? user.email.substring(0, 12) + '...' : user.email}
+              {user.email && user.email.length > 12 ? user.email.substring(0, 9) + '...' : user.email}
             </Button>
           ) : (
             <Button asChild className="ml-2 whitespace-nowrap">
