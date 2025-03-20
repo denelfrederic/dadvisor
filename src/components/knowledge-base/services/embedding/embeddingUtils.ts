@@ -32,6 +32,36 @@ export const isValidEmbedding = (embedding: any): boolean => {
 };
 
 /**
+ * Vérifie si les dimensions d'un embedding correspondent aux attentes
+ * @param embedding L'embedding à vérifier
+ * @param expectedDimension La dimension attendue (par défaut 1536 pour OpenAI)
+ * @returns true si les dimensions sont valides, false sinon
+ */
+export const validateEmbeddingDimensions = (
+  embedding: number[],
+  expectedDimension: number = 1536
+): boolean => {
+  // Accepter les dimensions 384, 768, ou la dimension attendue (généralement 1536)
+  // Cette flexibilité permet de gérer différents modèles d'embedding
+  return (
+    isValidEmbedding(embedding) && 
+    (embedding.length === expectedDimension || 
+     embedding.length === 384 || 
+     embedding.length === 768)
+  );
+};
+
+/**
+ * Prépare le texte d'une entrée pour la génération d'embedding
+ * @param question La question de l'entrée
+ * @param answer La réponse de l'entrée
+ * @returns Le texte combiné formaté pour la génération d'embedding
+ */
+export const processEntryForEmbedding = (question: string, answer: string): string => {
+  return `Question: ${question}\nRéponse: ${answer}`;
+};
+
+/**
  * Parse un embedding depuis le format stocké en base de données
  * @param embeddingData L'embedding tel que stocké en base de données
  * @returns L'embedding sous forme de tableau de nombres
@@ -83,3 +113,4 @@ export const prepareEmbeddingForStorage = (embedding: number[]): string => {
   
   return JSON.stringify(embedding);
 };
+
