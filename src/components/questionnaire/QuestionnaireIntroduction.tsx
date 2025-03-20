@@ -18,35 +18,29 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
       transition={{ duration: 0.5 }}
       className="glass-card p-8 rounded-2xl w-full max-w-2xl mx-auto mb-10"
     >
-      <h2 className="text-2xl font-bold mb-4 text-dadvisor-navy">Pourquoi ce questionnaire ?</h2>
+      <h2 className="text-2xl font-bold mb-4 text-dadvisor-navy">Découvrez votre profil d'investisseur</h2>
       
       <div className="space-y-4 text-gray-700">
         <p>
-          Ce questionnaire est conçu pour évaluer votre <strong>profil d'investisseur</strong> en fonction de plusieurs facteurs clés :
+          Ce questionnaire évalue votre profil d'investisseur selon quatre critères essentiels :
         </p>
         
-        <ul className="list-disc pl-6 space-y-2">
-          <li>Votre <strong>tolérance au risque</strong> - capacité à supporter les fluctuations du marché sans paniquer</li>
-          <li>Votre <strong>horizon d'investissement</strong> - durée pendant laquelle vous prévoyez de laisser votre argent investi</li>
-          <li>Vos <strong>objectifs financiers</strong> - préservation du capital, revenus, croissance, etc.</li>
-          <li>Votre <strong>expérience</strong> en matière d'investissement</li>
+        <ul className="list-disc pl-6 space-y-1">
+          <li><strong>Tolérance au risque</strong> - votre réaction face aux fluctuations du marché</li>
+          <li><strong>Horizon d'investissement</strong> - durée prévue de placement</li>
+          <li><strong>Objectifs financiers</strong> - préservation, revenus ou croissance</li>
+          <li><strong>Expérience d'investissement</strong> - votre niveau de connaissance</li>
         </ul>
         
-        <h3 className="text-xl font-medium mt-6 mb-2 text-dadvisor-navy">Notre méthode</h3>
-        
-        <p>
-          Notre questionnaire utilise une méthodologie reconnue. 
+        <p className="mt-2">
+          L'évaluation ne prend que quelques minutes et vous fournira une analyse détaillée de votre profil.
         </p>
         
-        <p>
-          Le questionnaire ne prend que quelques minutes à compléter. À la fin, vous recevrez une analyse détaillée de votre profil.
+        <p className="text-sm italic mt-2">
+          Vous pouvez revenir en arrière si nécessaire pour ajuster vos réponses.
         </p>
         
-        <p className="italic mt-4">
-          Note : Vous pouvez à tout moment revenir en arrière mais n'en abusez pos pour avoir la plus précise possible de votre profil d'investisseur.
-        </p>
-        
-        <div className="text-center mt-8">
+        <div className="text-center mt-6">
           <Button onClick={onStart} size="lg" className="px-8">
             Commencer le questionnaire
           </Button>
