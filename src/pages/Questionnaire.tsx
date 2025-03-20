@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
@@ -6,12 +7,17 @@ import { QuestionnaireProvider, useQuestionnaire } from "@/contexts/questionnair
 import QuestionnaireProgress from "@/components/questionnaire/QuestionnaireProgress";
 import QuestionnaireNavigation from "@/components/questionnaire/QuestionnaireNavigation";
 import ProfileAnalysisDisplay from "@/components/questionnaire/ProfileAnalysisDisplay";
+import QuestionnaireIntroduction from "@/components/questionnaire/QuestionnaireIntroduction";
 
 /**
  * Main content component for the questionnaire
  */
 const QuestionnaireContent = () => {
-  const { showAnalysis } = useQuestionnaire();
+  const { showAnalysis, showIntroduction, setShowIntroduction } = useQuestionnaire();
+
+  if (showIntroduction) {
+    return <QuestionnaireIntroduction onStart={() => setShowIntroduction(false)} />;
+  }
 
   return (
     <>

@@ -54,7 +54,7 @@ const QuestionnaireProgress = () => {
             <QuestionCard
               question={currentQuestion}
               onAnswer={handleAnswer}
-              isAnswered={!!answers[currentQuestion.id]}
+              isAnswered={false} // Toujours permettre de modifier les réponses
               selectedOptionId={answers[currentQuestion.id]?.optionId}
               previousScore={previousScore}
               currentScore={score}

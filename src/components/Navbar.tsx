@@ -84,6 +84,7 @@ const Navbar = () => {
           <NavLink to="/questionnaire" label="Questionnaire" currentPath={location.pathname} />
           <NavLink to="/portfolios" label="Portefeuilles" currentPath={location.pathname} />
           <NavLink to="/wallet" label="Wallet" currentPath={location.pathname} />
+          <NavLink to="/contact" label="Contact" currentPath={location.pathname} />
           
           {user ? (
             <Button 

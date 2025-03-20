@@ -1,9 +1,19 @@
 
-import { InvestorProfileAnalysis } from "@/utils/questionnaire";
-import { Json } from "@/integrations/supabase/types";
+import { InvestorProfileAnalysis, InsightItem } from "@/utils/questionnaire";
 
-export type QuestionnaireResponses = Record<string, { optionId: string, value: number }>;
+/**
+ * Interface pour les réponses au questionnaire
+ */
+export interface QuestionnaireResponses {
+  [questionId: string]: {
+    optionId: string;
+    value: number;
+  };
+}
 
+/**
+ * Interface pour le contexte du questionnaire
+ */
 export interface QuestionnaireContextType {
   currentQuestionIndex: number;
   setCurrentQuestionIndex: (index: number) => void;
@@ -12,24 +22,15 @@ export interface QuestionnaireContextType {
   setPreviousScore: (score: number) => void;
   score: number;
   isComplete: boolean;
-  setIsComplete: (complete: boolean) => void;
+  setIsComplete: (isComplete: boolean) => void;
   showAnalysis: boolean;
+  showIntroduction: boolean;
+  setShowIntroduction: (show: boolean) => void;
   saving: boolean;
   profileAnalysis: InvestorProfileAnalysis | null;
-  investmentStyleInsights: string[];
+  investmentStyleInsights: InsightItem[];
   handleAnswer: (questionId: string, optionId: string, value: number) => void;
   handleRetakeQuestionnaire: () => void;
   saveInvestmentProfile: () => Promise<void>;
   handleContinueToPortfolios: () => void;
-}
-
-// Keys for localStorage
-export const TEMP_ANSWERS_KEY = "dadvisor_temp_answers";
-export const TEMP_SCORE_KEY = "dadvisor_temp_score";
-export const TEMP_COMPLETE_KEY = "dadvisor_temp_complete";
-
-export interface ProfileDataForDb {
-  analysis: InvestorProfileAnalysis;
-  investmentStyleInsights: string[];
-  answers: QuestionnaireResponses;
 }

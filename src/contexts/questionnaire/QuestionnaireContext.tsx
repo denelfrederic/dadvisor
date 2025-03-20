@@ -25,6 +25,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   const [score, setScore] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showIntroduction, setShowIntroduction] = useState(true);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthStatus();
@@ -41,6 +42,8 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     
     if (savedAnswers) {
       setAnswers(savedAnswers);
+      // Si l'utilisateur a déjà commencé le questionnaire, ne pas afficher l'introduction
+      setShowIntroduction(Object.keys(savedAnswers).length === 0);
     }
     
     if (savedScore !== null) {
@@ -51,6 +54,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       setIsComplete(savedComplete);
       if (savedComplete) {
         setShowAnalysis(true);
+        setShowIntroduction(false);
       }
     }
   }, []);
@@ -122,6 +126,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     setAnswers({});
     setScore(0);
     setPreviousScore(0);
+    setShowIntroduction(true);
     
     // Clear localStorage
     clearQuestionnaireStorage();
@@ -154,6 +159,8 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       isComplete,
       setIsComplete,
       showAnalysis,
+      showIntroduction,
+      setShowIntroduction,
       saving,
       profileAnalysis,
       investmentStyleInsights,
