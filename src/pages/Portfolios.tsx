@@ -114,15 +114,7 @@ const Portfolios = () => {
       <Navbar />
       <div className="min-h-screen bg-gradient-radial py-20 px-4 pt-28">
         <div className="container mx-auto max-w-7xl">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Choisissez votre portefeuille</h1>
-            <Button variant="outline" asChild className="flex items-center gap-2">
-              <Link to="/">
-                <Home size={18} />
-                Accueil
-              </Link>
-            </Button>
-          </div>
+          <h1 className="text-3xl font-bold mb-8">Choisissez votre portefeuille</h1>
           
           <p className="text-muted-foreground text-center mb-10">
             Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté.
