@@ -1,124 +1,95 @@
 
-// Edge function principale pour les opérations Pinecone
+// Mise à jour de la fonction edge Pinecone pour ajouter la gestion de la mise à jour de configuration
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "./utils/cors.ts";
+import { logMessage, logError } from "./utils/logging.ts";
+import { corsedResponse } from "./utils/response.ts";
+
+// Import des gestionnaires d'action
 import { handleVectorizeAction } from "./handlers/vectorizeHandler.ts";
 import { handleQueryAction } from "./handlers/queryHandler.ts";
+import { handleTestConnectionAction } from "./handlers/testConnectionHandler.ts";
 import { handleConfigAction } from "./handlers/configHandler.ts";
-import { testPineconeConnection } from "./services/pinecone/connection.ts";
-import { handleSearchKnowledgeBaseAction } from "./handlers/knowledgeBaseHandler.ts";
-import { logMessage, logError } from "./utils/logging.ts";
-
-const ENABLE_DETAILED_DIAGNOSTICS = true;
+import { handleSearchKnowledgeBaseAction } from "./handlers/searchKnowledgeBaseHandler.ts";
+import { handleUpdateConfigAction } from "./handlers/updateConfigHandler.ts";
 
 serve(async (req) => {
-  // Log pour diagnostiquer le démarrage de la fonction
-  console.log(`[${new Date().toISOString()}] Edge function invoquée: ${req.url}`);
-  
-  // 1. Gestion des requêtes CORS OPTIONS
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   try {
-    // 2. Vérification initiale de l'environnement (diagnostics)
-    if (ENABLE_DETAILED_DIAGNOSTICS) {
-      console.log("Diagnostics d'environnement Deno:");
-      console.log(`Version Deno: ${Deno.version.deno}`);
-      console.log(`Variables d'environnement présentes:`);
-      const envVars = [
-        "PINECONE_API_KEY", 
-        "PINECONE_BASE_URL", 
-        "OPENAI_API_KEY",
-        "ALTERNATIVE_PINECONE_URL",
-        "PINECONE_INDEX"
-      ];
-      for (const envVar of envVars) {
-        const value = Deno.env.get(envVar);
-        console.log(`- ${envVar}: ${value ? "Présente" : "Manquante"}`);
-        // Pour les URL, valider le format sans exposer la valeur complète
-        if (value && envVar.includes("URL")) {
-          console.log(`  Format: ${value.startsWith("http") ? "Valide" : "Invalide"}`);
-          console.log(`  Longueur: ${value.length} caractères`);
-        }
-      }
+    // Gérer les requêtes preflight OPTIONS
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
     }
 
-    // 3. Extraction du corps de la requête
-    const requestData = await req.json();
-    const { action } = requestData;
-
-    if (!action) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Action manquante dans la requête" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
+    // Vérifier si la requête est POST
+    if (req.method !== "POST") {
+      return corsedResponse({
+        success: false,
+        error: `Méthode ${req.method} non supportée`
+      }, 405);
     }
 
-    console.log(`Action demandée: ${action}`);
-
-    // 4. Routage vers le gestionnaire approprié
+    // Récupérer les données de la requête
+    let requestData;
     try {
-      switch (action) {
-        case "vectorize":
-          return await handleVectorizeAction(requestData);
-        case "query":
-          return await handleQueryAction(requestData);
-        case "config":
-          return await handleConfigAction();
-        case "test-connection":
-          return new Response(
-            JSON.stringify(await testPineconeConnection()),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        case "search-knowledge-base":
-          return await handleSearchKnowledgeBaseAction(requestData);
-        default:
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: `Action inconnue: ${action}` 
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-          );
-      }
-    } catch (handlerError) {
-      // Log détaillé de l'erreur spécifique au gestionnaire
-      const errorMsg = logError(`Erreur lors du traitement de l'action "${action}"`, handlerError);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: errorMsg,
-          action: action,
-          diagnostics: ENABLE_DETAILED_DIAGNOSTICS ? {
-            errorType: handlerError.name,
-            errorStack: handlerError.stack,
-            timestamp: new Date().toISOString()
-          } : undefined
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-      );
+      requestData = await req.json();
+    } catch (error) {
+      return corsedResponse({
+        success: false,
+        error: "Format de requête invalide"
+      }, 400);
+    }
+
+    // Journal de la requête reçue (niveau debug)
+    logMessage(`Requête reçue: ${JSON.stringify(requestData)}`, "debug");
+
+    // Vérifier que l'action est spécifiée
+    if (!requestData.action) {
+      return corsedResponse({
+        success: false,
+        error: "Paramètre 'action' requis"
+      }, 400);
+    }
+
+    // Traitement des différentes actions
+    switch (requestData.action) {
+      case "vectorize":
+        // Vectorisation de document
+        return await handleVectorizeAction(requestData);
+
+      case "query":
+        // Recherche similaire
+        return await handleQueryAction(requestData);
+
+      case "test-connection":
+        // Test de connexion à Pinecone
+        return await handleTestConnectionAction(requestData);
+
+      case "config":
+        // Récupération de la configuration
+        return await handleConfigAction();
+        
+      case "search-knowledge-base":
+        // Recherche dans la base de connaissances
+        return await handleSearchKnowledgeBaseAction(requestData);
+        
+      case "update-config":
+        // Mise à jour de la configuration
+        return await handleUpdateConfigAction(requestData);
+
+      default:
+        // Action non reconnue
+        return corsedResponse({
+          success: false,
+          error: `Action '${requestData.action}' non reconnue`
+        }, 400);
     }
   } catch (error) {
-    // Erreur globale (comme une erreur de parsing JSON)
-    console.error("Erreur globale de l'edge function:", error);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: `Erreur lors du traitement de la requête: ${error instanceof Error ? error.message : String(error)}`,
-        diagnostics: ENABLE_DETAILED_DIAGNOSTICS ? {
-          errorType: error.name,
-          errorStack: error.stack,
-          timestamp: new Date().toISOString()
-        } : undefined
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    // Journaliser et renvoyer les erreurs non gérées
+    const errorMessage = logError("Erreur non gérée dans la fonction edge", error);
+    return corsedResponse({
+      success: false,
+      error: errorMessage
+    }, 500);
   }
 });
