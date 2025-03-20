@@ -54,7 +54,7 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
                   onClose();
                 }}
               >
-                {user.email?.length > 20 ? user.email.substring(0, 17) + '...' : user.email}
+                {user.email && user.email.length > 20 ? user.email.substring(0, 17) + '...' : user.email}
               </Button>
             ) : (
               <Button asChild className="w-full whitespace-nowrap" onClick={onClose}>

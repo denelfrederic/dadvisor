@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
 import { getPortfolios, getRecommendedPortfolio } from "@/utils/portfolios";
 import { Home } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
 /**
  * Page Portfolios - Présente les différents portefeuilles d'investissement
@@ -109,62 +110,65 @@ const Portfolios = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-radial py-20 px-4">
-      <div className="container mx-auto max-w-7xl">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Choisissez votre portefeuille</h1>
-          <Button variant="outline" asChild className="flex items-center gap-2">
-            <Link to="/">
-              <Home size={18} />
-              Accueil
-            </Link>
-          </Button>
-        </div>
-        
-        <p className="text-muted-foreground text-center mb-10">
-          Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté.
-          Vous pouvez toutefois sélectionner celui qui vous convient le mieux.
-        </p>
-        
-        {loading ? (
-          // Affichage du chargement
-          <div className="flex justify-center items-center py-20">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-radial py-20 px-4 pt-28">
+        <div className="container mx-auto max-w-7xl">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">Choisissez votre portefeuille</h1>
+            <Button variant="outline" asChild className="flex items-center gap-2">
+              <Link to="/">
+                <Home size={18} />
+                Accueil
+              </Link>
+            </Button>
           </div>
-        ) : (
-          <>
-            {/* Grille des portefeuilles disponibles */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              {portfolios.map((portfolio) => (
-                <PortfolioCard
-                  key={portfolio.id}
-                  portfolio={portfolio}
-                  isRecommended={portfolio.id === recommendedPortfolioId}
-                  onSelect={handleSelectPortfolio}
-                  isSelected={selectedPortfolioId === portfolio.id}
-                />
-              ))}
+          
+          <p className="text-muted-foreground text-center mb-10">
+            Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté.
+            Vous pouvez toutefois sélectionner celui qui vous convient le mieux.
+          </p>
+          
+          {loading ? (
+            // Affichage du chargement
+            <div className="flex justify-center items-center py-20">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
-            
-            {/* Bouton pour continuer avec le portefeuille sélectionné */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex justify-center"
-            >
-              <Button 
-                size="lg" 
-                onClick={handleProceed} 
-                disabled={!selectedPortfolioId}
+          ) : (
+            <>
+              {/* Grille des portefeuilles disponibles */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                {portfolios.map((portfolio) => (
+                  <PortfolioCard
+                    key={portfolio.id}
+                    portfolio={portfolio}
+                    isRecommended={portfolio.id === recommendedPortfolioId}
+                    onSelect={handleSelectPortfolio}
+                    isSelected={selectedPortfolioId === portfolio.id}
+                  />
+                ))}
+              </div>
+              
+              {/* Bouton pour continuer avec le portefeuille sélectionné */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex justify-center"
               >
-                Continuer avec ce portefeuille
-              </Button>
-            </motion.div>
-          </>
-        )}
+                <Button 
+                  size="lg" 
+                  onClick={handleProceed} 
+                  disabled={!selectedPortfolioId}
+                >
+                  Continuer avec ce portefeuille
+                </Button>
+              </motion.div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

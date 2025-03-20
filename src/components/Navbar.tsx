@@ -92,7 +92,7 @@ const Navbar = () => {
               className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm whitespace-nowrap" 
               onClick={handleAccountManagement}
             >
-              {user.email?.length > 20 ? user.email.substring(0, 17) + '...' : user.email}
+              {user.email && user.email.length > 15 ? user.email.substring(0, 12) + '...' : user.email}
             </Button>
           ) : (
             <Button asChild className="ml-2 whitespace-nowrap">

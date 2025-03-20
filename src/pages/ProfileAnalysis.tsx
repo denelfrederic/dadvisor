@@ -10,6 +10,7 @@ import { useProfileData } from "@/hooks/use-profile-data";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/utils/auth";
+import Navbar from "@/components/Navbar";
 
 const ProfileAnalysis = () => {
   const { user: authUser } = useAuthStatus();
@@ -45,34 +46,37 @@ const ProfileAnalysis = () => {
   } = useProfileData(user);
 
   return (
-    <div className="min-h-screen bg-gradient-radial py-20 px-4">
-      <div className="container mx-auto max-w-4xl">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Votre profil d'investisseur</h1>
-          <Button variant="outline" asChild className="flex items-center gap-2">
-            <Link to="/">
-              <Home size={18} />
-              Accueil
-            </Link>
-          </Button>
-        </div>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-radial py-20 px-4 pt-28">
+        <div className="container mx-auto max-w-4xl">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">Votre profil d'investisseur</h1>
+            <Button variant="outline" asChild className="flex items-center gap-2">
+              <Link to="/">
+                <Home size={18} />
+                Accueil
+              </Link>
+            </Button>
+          </div>
 
-        {loading ? (
-          <ProfileLoading />
-        ) : profileData ? (
-          <ProfileContent 
-            profileData={profileData}
-            hasTempProfile={hasTempData}
-            handleRetakeQuestionnaire={handleRetakeQuestionnaire}
-            handleSaveProfile={saveProfile}
-            navigate={path => window.location.href = path}
-            isLoggedIn={!!user}
-          />
-        ) : (
-          <ProfileEmptyState navigate={path => window.location.href = path} />
-        )}
+          {loading ? (
+            <ProfileLoading />
+          ) : profileData ? (
+            <ProfileContent 
+              profileData={profileData}
+              hasTempProfile={hasTempData}
+              handleRetakeQuestionnaire={handleRetakeQuestionnaire}
+              handleSaveProfile={saveProfile}
+              navigate={path => window.location.href = path}
+              isLoggedIn={!!user}
+            />
+          ) : (
+            <ProfileEmptyState navigate={path => window.location.href = path} />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
