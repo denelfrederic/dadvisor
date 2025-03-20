@@ -13,7 +13,7 @@ interface HeroSectionProps {
 
 /**
  * Composant HeroSection - Section principale de la page d'accueil
- * Affiche le message principal de l'application avec des animations et une vidéo
+ * Affiche le message principal de l'application avec des animations et une image
  */
 const HeroSection = ({
   parallaxOffset
@@ -82,7 +82,7 @@ const HeroSection = ({
             </motion.div>
           </motion.div>
           
-          {/* Vidéo illustrative avec animation - REMPLACE L'IMAGE PRÉCÉDENTE */}
+          {/* Image illustrative avec animation */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }} 
             animate={{ opacity: 1, scale: 1 }} 
@@ -90,17 +90,11 @@ const HeroSection = ({
             className="lg:w-1/2 hidden md:block"
           >
             <div className="relative rounded-2xl overflow-hidden shadow-dadvisor">
-              <video 
-                autoPlay 
-                muted 
-                loop
-                playsInline
+              <img 
+                src="/lovable-uploads/ff203da3-ea3b-4d92-865d-0899d2e0ebcd.png" 
+                alt="Conseiller financier professionnel expliquant un plan d'investissement à des clients" 
                 className="w-full h-auto rounded-2xl object-cover"
-              >
-                <source src="/lovable-uploads/investment-video.mp4" type="video/mp4" />
-                {/* Fallback pour les navigateurs qui ne supportent pas la vidéo */}
-                Votre navigateur ne supporte pas la lecture de vidéos.
-              </video>
+              />
               <div className="absolute inset-0 bg-dadvisor-blue/10 mix-blend-overlay"></div>
             </div>
           </motion.div>
