@@ -4,6 +4,14 @@ import { Message } from '../types';
 import { searchLocalDocuments } from './document/searchService';
 import { formatMessagesForApi } from './messageService';
 
+/**
+ * Envoie un message à l'API Gemini (modèle gemini-1.5-flash)
+ * @param prompt Le message à envoyer
+ * @param history L'historique des messages
+ * @param useLocalSearch Indique si on doit chercher dans les documents locaux
+ * @param additionalContext Contexte supplémentaire à fournir
+ * @returns La réponse de l'API
+ */
 export const sendMessageToGemini = async (
   prompt: string, 
   history: Message[], 

@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -99,7 +99,7 @@ Répondez de façon professionnelle mais accessible, en utilisant un ton courtoi
     
     console.log("Sending messages to Gemini API:", JSON.stringify(messages.length, null, 2));
 
-    // Requête à l'API Gemini avec des paramètres optimisés
+    // Requête à l'API Gemini avec des paramètres optimisés pour Flash
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
