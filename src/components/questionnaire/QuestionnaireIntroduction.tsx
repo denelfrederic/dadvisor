@@ -43,7 +43,7 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
         </p>
         
         <p className="italic mt-4">
-          Note : Vous pouvez à tout moment revenir en arrière mais n'en abusez pas avoir la plus précise possible de votre profil d'investisseur.
+          Note : Vous pouvez à tout moment revenir en arrière mais n'en abusez pos pour avoir la plus précise possible de votre profil d'investisseur.
         </p>
         
         <div className="text-center mt-8">
