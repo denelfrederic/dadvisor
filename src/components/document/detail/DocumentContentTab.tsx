@@ -2,10 +2,13 @@
 import React from "react";
 
 interface DocumentContentTabProps {
-  content: string | null;
+  document: any;
 }
 
-const DocumentContentTab = ({ content }: DocumentContentTabProps) => {
+const DocumentContentTab = ({ document }: DocumentContentTabProps) => {
+  // Extraire le contenu du document
+  const content = document?.content || null;
+  
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-muted-foreground">
