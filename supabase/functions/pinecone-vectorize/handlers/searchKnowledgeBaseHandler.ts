@@ -5,7 +5,8 @@
 
 import { corsedResponse } from "../utils/response.ts";
 import { logMessage, logError } from "../utils/logging.ts";
-import { querySimilarDocuments } from "../services/pinecone/query.ts";
+import { generateEmbeddingWithOpenAI } from "../services/openai.ts";
+import { searchSimilarDocumentsInPinecone } from "../services/pinecone/search.ts";
 import { validateConfig } from "../config.ts";
 
 /**
@@ -34,12 +35,51 @@ export async function handleSearchKnowledgeBaseAction(requestData: any) {
       }, 500);
     }
     
-    // Effectuer la recherche
-    const searchResults = await querySimilarDocuments(query, maxResults, threshold);
+    // Générer l'embedding pour la requête
+    logMessage("Génération de l'embedding pour la requête...", 'info');
+    const embedding = await generateEmbeddingWithOpenAI(query);
+    
+    if (!embedding) {
+      logMessage("Échec de la génération de l'embedding pour la requête", 'error');
+      return corsedResponse({ 
+        success: false, 
+        error: "Impossible de générer l'embedding pour la requête" 
+      }, 500);
+    }
+    
+    // Effectuer la recherche dans Pinecone
+    const searchOptions = {
+      threshold,
+      limit: maxResults,
+      includeMetadata: true
+    };
+    
+    const searchResults = await searchSimilarDocumentsInPinecone(embedding, searchOptions);
+    
+    if (!searchResults.success) {
+      return corsedResponse({
+        success: false,
+        error: searchResults.error || "Erreur lors de la recherche dans Pinecone",
+        details: searchResults.details || {}
+      }, 500);
+    }
+    
+    // Transformer les résultats pour le client
+    const results = searchResults.matches.map((match: any) => {
+      const metadata = match.metadata || {};
+      
+      return {
+        id: match.id,
+        question: metadata.question || "",
+        answer: metadata.answer || metadata.text || "",
+        source: metadata.source || "Inconnu",
+        similarity: match.score
+      };
+    });
     
     return corsedResponse({
       success: true,
-      results: searchResults,
+      results,
       query,
       maxResults,
       threshold
