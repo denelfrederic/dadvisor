@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useKnowledgeBaseService } from "../../services";
 import { sendMessageToGemini } from "../../../chat/services";
+import { searchEntriesWithPinecone } from "../../services/search/searchService";
 
 export const useLocalSearch = () => {
   const [response, setResponse] = useState("");
@@ -34,62 +35,17 @@ export const useLocalSearch = () => {
     setSources([]);
     
     try {
-      // Utilisation d'une recherche plus flexible et contextuelle
-      addLog(`Recherche dans la base de connaissances pour: "${query}"`);
+      // Utilisation de la recherche améliorée avec Pinecone
+      addLog(`Recherche améliorée dans la base de connaissances pour: "${query}"`);
       
-      // Amélioration de la recherche pour plus de flexibilité
-      const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
-      addLog(`Termes de recherche: ${searchTerms.join(', ')}`);
-      
-      // Récupérer toutes les entrées et filtrer côté client pour plus de flexibilité
-      const allEntries = await kb.getEntries();
-      addLog(`Nombre total d'entrées récupérées: ${allEntries.length}`);
-      
-      if (allEntries.length === 0) {
-        addLog("ALERTE: Aucune entrée trouvée dans la base de connaissances");
-        setResponse("Aucune entrée n'a été trouvée dans la base de connaissances. Veuillez ajouter des questions/réponses avant d'effectuer une recherche.");
-        setSources(["Base de connaissances vide"]);
-        setIsSearching(false);
-        return;
-      }
-      
-      // Algorithme de correspondance amélioré avec plus de logging
-      const matchScores: {entry: any, score: number}[] = [];
-      
-      for (const entry of allEntries) {
-        const questionLower = entry.question.toLowerCase();
-        const answerLower = entry.answer.toLowerCase();
-        
-        // Vérifier la correspondance exacte d'abord
-        if (questionLower.includes(query.toLowerCase())) {
-          matchScores.push({entry, score: 100});
-          continue;
-        }
-        
-        // Puis vérifier les correspondances partielles
-        let matchScore = 0;
-        for (const term of searchTerms) {
-          if (questionLower.includes(term)) matchScore += 2;
-          if (answerLower.includes(term)) matchScore += 1;
-        }
-        
-        // Critère de correspondance minimum
-        if (matchScore >= Math.min(2, searchTerms.length)) {
-          matchScores.push({entry, score: matchScore});
-        }
-      }
-      
-      // Trier les correspondances par score descendant
-      matchScores.sort((a, b) => b.score - a.score);
-      
-      const matchedEntries = matchScores.map(item => item.entry);
-      
+      // Utiliser la nouvelle fonction de recherche via Pinecone
+      const matchedEntries = await searchEntriesWithPinecone(query, 10);
       addLog(`Entrées correspondantes trouvées: ${matchedEntries.length}`);
       
       if (matchedEntries.length > 0) {
         // Log des meilleurs résultats pour debug
         matchedEntries.slice(0, 3).forEach((entry, idx) => {
-          addLog(`Top résultat #${idx + 1}: "${entry.question}" (score: ${matchScores[idx].score})`);
+          addLog(`Top résultat #${idx + 1}: "${entry.question}" (score: ${entry.similarity || 'N/A'})`);
         });
         
         // Formatage amélioré du contexte pour Gemini
@@ -101,7 +57,7 @@ export const useLocalSearch = () => {
             .join('\n\n');
         
         const usedSources = matchedEntries.slice(0, 5).map(entry => 
-          `Base de connaissances: ${entry.question}`
+          `Base de connaissances: ${entry.question} (similarité: ${entry.similarity?.toFixed(2) || 'N/A'})`
         );
         
         addLog("Envoi de la requête à Gemini avec contexte");
