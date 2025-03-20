@@ -51,7 +51,7 @@ export function useAuthStatus() {
                 id: sessionUser.id,
                 email: sessionUser.email || "",
                 name: sessionUser.email?.split('@')[0] || "",
-                authProvider: "email" as const
+                authProvider: "email"
               };
               setUser(basicUser);
               localStorage.setItem('user', JSON.stringify(basicUser));
@@ -94,12 +94,12 @@ export function useAuthStatus() {
             id: session.user.id,
             email: session.user.email || "",
             name: session.user.email?.split('@')[0] || "",
-            authProvider: "email" as const
+            authProvider: "email"
           };
           setUser(userObj);
           localStorage.setItem('user', JSON.stringify(userObj));
           setIsLoading(false);
-        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        } else if (event === 'SIGNED_OUT') {
           // Utilisateur déconnecté
           setUser(null);
           localStorage.removeItem('user');
@@ -110,7 +110,7 @@ export function useAuthStatus() {
             id: session.user.id,
             email: session.user.email || "",
             name: session.user.email?.split('@')[0] || "",
-            authProvider: "email" as const
+            authProvider: "email"
           };
           setUser(userObj);
           localStorage.setItem('user', JSON.stringify(userObj));
