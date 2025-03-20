@@ -95,7 +95,10 @@ const Navbar = () => {
               {user.email && user.email.length > 12 ? user.email.substring(0, 9) + '...' : user.email}
             </Button>
           ) : (
-            <Button asChild className="ml-2 whitespace-nowrap">
+            <Button 
+              asChild 
+              className="ml-2 whitespace-nowrap min-w-[120px] px-4"
+            >
               <Link to="/auth">Connexion</Link>
             </Button>
           )}

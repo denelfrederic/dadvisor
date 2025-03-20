@@ -46,7 +46,11 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
                 {user.email && user.email.length > 15 ? user.email.substring(0, 12) + '...' : user.email}
               </Button>
             ) : (
-              <Button asChild className="w-full whitespace-nowrap" onClick={onClose}>
+              <Button 
+                asChild 
+                className="w-full whitespace-nowrap py-2"
+                onClick={onClose}
+              >
                 <Link to="/auth">Connexion</Link>
               </Button>
             )}
