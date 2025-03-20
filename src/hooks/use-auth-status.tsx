@@ -8,77 +8,113 @@ export function useAuthStatus() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
+    // Fonction pour récupérer l'utilisateur depuis localStorage
+    const getUserFromLocalStorage = (): User | null => {
       try {
-        // D'abord essayer de récupérer l'utilisateur du localStorage pour éviter un flash d'écran blanc
-        try {
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            setUser(JSON.parse(storedUser));
-          }
-        } catch (err) {
-          console.error("Erreur lors de la récupération de l'utilisateur depuis localStorage:", err);
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          return JSON.parse(storedUser);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'utilisateur depuis localStorage:", error);
+      }
+      return null;
+    };
+
+    // Fonction pour vérifier l'état d'authentification
+    const checkAuth = async () => {
+      try {
+        // Essayer d'abord de récupérer depuis localStorage pour éviter un écran blanc
+        const localUser = getUserFromLocalStorage();
+        if (localUser) {
+          setUser(localUser);
+          setIsLoading(false); // Important: mettre fin au chargement même si on vérifie la session plus tard
         }
         
-        // Vérifier ensuite la session Supabase pour confirmer l'authenticité
+        // Vérifier la session avec Supabase
         const { data: sessionData } = await supabase.auth.getSession();
         
         if (sessionData && sessionData.session) {
-          console.log("Session trouvée:", sessionData.session.user);
-          // Essayer d'obtenir les données complètes de l'utilisateur
-          const currentUser = await getLoggedInUser();
+          // Session valide trouvée
+          const sessionUser = sessionData.session.user;
           
-          if (currentUser) {
-            setUser(currentUser);
-            // Mettre à jour le localStorage avec les données les plus récentes
-            localStorage.setItem('user', JSON.stringify(currentUser));
-          } else {
-            // Si getLoggedInUser échoue mais qu'une session existe, créer un utilisateur de base
-            const sessionUser = sessionData.session.user;
-            const basicUser: User = {
-              id: sessionUser.id,
-              email: sessionUser.email || "",
-              name: sessionUser.email?.split('@')[0] || "",
-              authProvider: "email" // Assurer que c'est du type "email" | "google" | "linkedin"
-            };
-            setUser(basicUser);
-            localStorage.setItem('user', JSON.stringify(basicUser));
+          try {
+            // Tenter de récupérer l'utilisateur complet
+            const currentUser = await getLoggedInUser();
+            
+            if (currentUser) {
+              setUser(currentUser);
+              localStorage.setItem('user', JSON.stringify(currentUser));
+            } else {
+              // Fallback vers les données de base de la session
+              const basicUser: User = {
+                id: sessionUser.id,
+                email: sessionUser.email || "",
+                name: sessionUser.email?.split('@')[0] || "",
+                authProvider: "email" as const
+              };
+              setUser(basicUser);
+              localStorage.setItem('user', JSON.stringify(basicUser));
+            }
+          } catch (error) {
+            console.error("Erreur lors de la récupération des données utilisateur:", error);
+          }
+        } else if (localUser) {
+          // Si aucune session n'est trouvée mais qu'un utilisateur local existe,
+          // vérifier si cet utilisateur est toujours valide
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            // Session invalide, nettoyer l'utilisateur
+            setUser(null);
+            localStorage.removeItem('user');
           }
         } else {
-          console.log("Aucune session trouvée");
-          // Si aucune session n'est trouvée, s'assurer que l'utilisateur est déconnecté
+          // Aucune session et aucun utilisateur local
           setUser(null);
           localStorage.removeItem('user');
         }
       } catch (error) {
-        console.error("Erreur lors de la vérification du statut d'authentification:", error);
-        setUser(null);
+        console.error("Erreur lors de la vérification d'authentification:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkUser();
+    // Effectuer la vérification initiale
+    checkAuth();
     
-    // Configurer l'écouteur d'état d'authentification
+    // Configurer l'écouteur pour les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("État d'authentification modifié:", event, session);
+        
         if (event === 'SIGNED_IN' && session) {
-          // Mettre à jour l'utilisateur lors de la connexion
+          // Utilisateur connecté
           const userObj: User = {
             id: session.user.id,
             email: session.user.email || "",
             name: session.user.email?.split('@')[0] || "",
-            authProvider: "email" // Assurer que c'est du type "email" | "google" | "linkedin"
+            authProvider: "email" as const
           };
           setUser(userObj);
           localStorage.setItem('user', JSON.stringify(userObj));
-        } else if (event === 'SIGNED_OUT') {
+          setIsLoading(false);
+        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          // Utilisateur déconnecté
           setUser(null);
           localStorage.removeItem('user');
+          setIsLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Mise à jour du token - s'assurer que les données utilisateur sont à jour
+          const userObj: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            name: session.user.email?.split('@')[0] || "",
+            authProvider: "email" as const
+          };
+          setUser(userObj);
+          localStorage.setItem('user', JSON.stringify(userObj));
         }
-        setIsLoading(false);
       }
     );
     
