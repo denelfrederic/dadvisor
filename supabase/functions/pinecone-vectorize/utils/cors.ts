@@ -1,39 +1,17 @@
 
-// Utilitaires pour la gestion des CORS
-
+// Utilitaires CORS pour les edge functions
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
-/**
- * Crée une réponse CORS pour les requêtes OPTIONS
- */
-export const handleCorsOptions = () => {
-  return new Response(null, { headers: corsHeaders });
-};
-
-/**
- * Créer une réponse d'erreur avec les en-têtes CORS
- */
-export const createErrorResponse = (message: string, status = 500) => {
+export const corsedResponse = (body: any, status = 200) => {
   return new Response(
-    JSON.stringify({ success: false, error: message }),
-    {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    }
-  );
-};
-
-/**
- * Créer une réponse de succès avec les en-têtes CORS
- */
-export const createSuccessResponse = (data: any) => {
-  return new Response(
-    JSON.stringify({ success: true, ...data }),
+    JSON.stringify(body),
     {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status
     }
   );
 };

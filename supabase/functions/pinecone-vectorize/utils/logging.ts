@@ -1,46 +1,57 @@
 
-// Utilitaires pour la journalisation
+/**
+ * Utilitaires de logging pour les edge functions
+ */
+
+// Niveau de log
+type LogLevel = 'info' | 'warning' | 'error' | 'debug';
 
 /**
- * Journal d'activité avec niveau de sévérité
+ * Journalise un message avec un niveau et un timestamp
+ * @param message Message à journaliser
+ * @param level Niveau de log (info, warning, error, debug)
+ * @returns Le message formaté
  */
-export const logMessage = (message: string, level: 'info' | 'warn' | 'error' = 'info') => {
+export function logMessage(message: string, level: LogLevel = 'info'): string {
   const timestamp = new Date().toISOString();
   const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
   
+  // Log console avec couleurs selon le niveau
   switch (level) {
     case 'error':
       console.error(formattedMessage);
       break;
-    case 'warn':
+    case 'warning':
       console.warn(formattedMessage);
+      break;
+    case 'debug':
+      console.debug(formattedMessage);
       break;
     default:
       console.log(formattedMessage);
   }
   
   return formattedMessage;
-};
+}
 
 /**
- * Journal sur les dimensions d'un vecteur
+ * Journalise une erreur avec détails
+ * @param message Message d'erreur
+ * @param error Objet d'erreur
+ * @returns Le message d'erreur formaté
  */
-export const logVectorInfo = (id: string, vector: number[], metadata?: any) => {
-  logMessage(`Vecteur ID: ${id}, dimensions: ${vector.length}`);
-  if (metadata) {
-    logMessage(`Métadonnées: ${JSON.stringify(metadata)}`);
-  }
-};
-
-/**
- * Journal d'une erreur avec stack trace
- */
-export const logError = (context: string, error: any) => {
+export function logError(message: string, error: any): string {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  const stackTrace = error instanceof Error ? error.stack : 'Pas de stack trace disponible';
+  const stackTrace = error instanceof Error ? error.stack : undefined;
   
-  logMessage(`${context}: ${errorMessage}`, 'error');
-  logMessage(`Stack trace: ${stackTrace}`, 'error');
+  // Log de l'erreur principale
+  logMessage(`${message}: ${errorMessage}`, 'error');
   
-  return errorMessage;
-};
+  // Log de la stack trace si disponible
+  if (stackTrace) {
+    console.error(`Stack trace: ${stackTrace}`);
+  }
+  
+  // Format pour le client
+  return `${message}: ${errorMessage}`;
+}

@@ -11,28 +11,58 @@ export const searchEntriesWithPinecone = async (query: string, limit = 5): Promi
   try {
     console.log(`Recherche avancée pour: "${query}" via Pinecone`);
     
-    // Appel à notre fonction edge améliorée
+    // Ajouter un hook de détection de timeout
+    const TIMEOUT = 10000; // 10 secondes
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+    
+    // Appel à notre fonction edge améliorée avec signal d'abort
     const { data, error } = await supabase.functions.invoke("pinecone-vectorize", {
       body: { 
         action: "search-knowledge-base",
         query,
         threshold: 0.4, // Seuil plus bas pour plus de résultats
         limit,
-        hybrid: true // Activer la recherche hybride
-      }
+        hybrid: true, // Activer la recherche hybride
+        _cacheKey: Date.now() // Éviter la mise en cache
+      },
+      signal: controller.signal
     });
+    
+    // Annuler le timeout si la requête a réussi
+    clearTimeout(timeoutId);
     
     if (error) {
       console.error("Erreur lors de la recherche via Pinecone:", error);
+      
+      // Log détaillé pour diagnostic
+      console.info("Erreur détaillée:", JSON.stringify(error));
+      
+      // En cas d'erreur de timeout, être plus explicite
+      if (error.message && error.message.includes("abort")) {
+        console.warn("La requête à l'edge function a expiré après 10 secondes");
+        throw new Error("Timeout de la requête à l'edge function");
+      }
+      
       throw error;
     }
     
-    if (!data.success) {
-      console.error("Échec de la recherche via Pinecone:", data.error);
-      return [];
+    if (!data || !data.success) {
+      console.error("Échec de la recherche via Pinecone:", data?.error || "Réponse invalide");
+      
+      // Fallback vers la recherche standard
+      console.info("Utilisation du fallback de recherche locale dans Supabase");
+      return await searchEntries(query, limit);
     }
     
-    console.log(`Résultats obtenus via Pinecone: ${data.results.length}`);
+    console.log(`Résultats obtenus via Pinecone: ${data.results?.length || 0}`);
+    
+    // Sanity check sur les résultats
+    if (!Array.isArray(data.results)) {
+      console.warn("Résultats non-valides reçus de Pinecone, utilisation du fallback");
+      return await searchEntries(query, limit);
+    }
+    
     return data.results;
   } catch (error) {
     console.error("Exception lors de la recherche avancée:", error);

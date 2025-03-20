@@ -1,46 +1,36 @@
 
-// services/supabase.ts
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+/**
+ * Service de connexion à Supabase pour les edge functions
+ */
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
 import { logMessage } from "../utils/logging.ts";
 
-// Récupérer les variables d'environnement
+// Variables d'environnement pour Supabase
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_KEY");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-// Vérifier si les variables d'environnement sont définies
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  logMessage("Variables d'environnement SUPABASE_URL ou SUPABASE_SERVICE_KEY non définies", "error");
-}
+// Initialiser le client Supabase si les variables sont disponibles
+export const supabaseClient = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
-// Créer le client Supabase
-export const supabaseClient = createClient(
-  SUPABASE_URL || "",
-  SUPABASE_SERVICE_KEY || ""
-);
-
-/**
- * Vérifie si la connexion à Supabase est fonctionnelle
- */
-export async function testSupabaseConnection() {
-  try {
-    // Effectuer une requête simple pour vérifier la connexion
-    const { data, error } = await supabaseClient
-      .from('knowledge_entries')
-      .select('count')
-      .limit(1);
-      
-    if (error) {
-      throw error;
-    }
-    
-    return {
-      success: true,
-      message: "Connexion à Supabase réussie"
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Échec de la connexion à Supabase: ${error.message || "Erreur inconnue"}`
-    };
+// Vérifier l'état de la connexion Supabase
+export function checkSupabaseConnection() {
+  if (!SUPABASE_URL) {
+    logMessage("URL Supabase non configurée", 'error');
+    return { success: false, error: "SUPABASE_URL manquante" };
   }
+  
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    logMessage("Clé de service Supabase non configurée", 'error');
+    return { success: false, error: "SUPABASE_SERVICE_ROLE_KEY manquante" };
+  }
+  
+  if (!supabaseClient) {
+    logMessage("Client Supabase non initialisé", 'error');
+    return { success: false, error: "Client Supabase non initialisé" };
+  }
+  
+  return { success: true };
 }
