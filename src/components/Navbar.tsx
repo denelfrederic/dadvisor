@@ -89,10 +89,14 @@ const Navbar = () => {
           {user ? (
             <Button 
               variant="outline" 
-              className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]" 
+              className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm whitespace-nowrap min-w-[150px] px-4" 
               onClick={handleAccountManagement}
+              title={user.email || user.name}
             >
-              {user.email && user.email.length > 12 ? user.email.substring(0, 9) + '...' : user.email}
+              {user.email ? 
+                (user.email.length > 15 ? user.email.substring(0, 12) + '...' : user.email) : 
+                (user.name.length > 15 ? user.name.substring(0, 12) + '...' : user.name)
+              }
             </Button>
           ) : (
             <Button 

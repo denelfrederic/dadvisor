@@ -37,13 +37,17 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
             {user ? (
               <Button 
                 variant="outline" 
-                className="w-full hover:bg-dadvisor-lightblue whitespace-nowrap" 
+                className="w-full hover:bg-dadvisor-lightblue whitespace-nowrap min-w-[180px]" 
                 onClick={() => {
                   onAccountClick();
                   onClose();
                 }}
+                title={user.email || user.name}
               >
-                {user.email && user.email.length > 15 ? user.email.substring(0, 12) + '...' : user.email}
+                {user.email ? 
+                  (user.email.length > 20 ? user.email.substring(0, 17) + '...' : user.email) : 
+                  (user.name.length > 20 ? user.name.substring(0, 17) + '...' : user.name)
+                }
               </Button>
             ) : (
               <Button 
