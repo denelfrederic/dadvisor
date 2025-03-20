@@ -3,7 +3,7 @@
 import { corsedResponse } from "../utils/response.ts";
 import { logMessage, logError } from "../utils/logging.ts";
 import { supabaseClient } from "../services/supabase.ts";
-import { generateEmbedding } from "../services/openai.ts";
+import { generateEmbeddingWithOpenAI } from "../services/openai.ts";
 
 /**
  * Gestionnaire pour la recherche dans la base de connaissances
@@ -23,7 +23,7 @@ export async function handleSearchKnowledgeBaseAction(body: any) {
     logMessage(`Recherche dans la base de connaissances pour: "${query}"`, 'info');
 
     // Générer l'embedding pour la requête
-    const embedding = await generateEmbedding(query);
+    const embedding = await generateEmbeddingWithOpenAI(query);
     
     if (!embedding || !Array.isArray(embedding)) {
       return corsedResponse({

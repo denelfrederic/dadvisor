@@ -48,7 +48,7 @@ export const useSearchService = () => {
     getEntries: getAllEntries,
     searchEntriesBySimilarity,
     updateEntryEmbeddingBatch,
-    searchEntriesWithPinecone // Nouvelle fonction
+    searchEntriesWithPinecone
   };
 };
 
@@ -57,6 +57,5 @@ export {
   searchEntries,
   getAllEntries,
   searchEntriesBySimilarity,
-  updateEntryEmbeddingBatch,
-  searchEntriesWithPinecone // Nouvelle fonction
+  updateEntryEmbeddingBatch
 };
