@@ -30,7 +30,6 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
           <li>Votre <strong>horizon d'investissement</strong> - durée pendant laquelle vous prévoyez de laisser votre argent investi</li>
           <li>Vos <strong>objectifs financiers</strong> - préservation du capital, revenus, croissance, etc.</li>
           <li>Votre <strong>expérience</strong> en matière d'investissement</li>
-          <li>Votre <strong>situation personnelle</strong> - âge, situation familiale, patrimoine, etc.</li>
         </ul>
         
         <h3 className="text-xl font-medium mt-6 mb-2 text-dadvisor-navy">Notre méthode</h3>
