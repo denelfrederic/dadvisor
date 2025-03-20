@@ -1,12 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, getLoggedInUser } from "@/utils/auth";
-import EmailUpdateForm from "@/components/account/EmailUpdateForm";
-import PasswordUpdateForm from "@/components/account/PasswordUpdateForm";
 import LogoutButton from "@/components/account/LogoutButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -120,7 +117,7 @@ const Account = () => {
             </div>
           </div>
           
-          {/* Nouveau bouton pour accéder au profil d'investisseur */}
+          {/* Bouton pour accéder au profil d'investisseur */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-semibold text-dadvisor-navy mb-4 flex items-center gap-2">
               <BarChartBig className="h-5 w-5" />
@@ -136,10 +133,6 @@ const Account = () => {
               Voir mon profil d'investisseur
             </Button>
           </div>
-          
-          <EmailUpdateForm user={user} refreshUserData={refreshUserData} />
-          
-          {user.authProvider === "email" && <PasswordUpdateForm />}
           
           <Separator className="my-8" />
           
