@@ -24,7 +24,38 @@ export async function indexDocumentInPinecone(
     console.log(`Indexation du document ${id} dans Pinecone...`);
     
     // Génération d'embedding pour le document
-    const embedding = await generateEmbeddingWithOpenAI(content);
+    const embeddingResult = await generateEmbeddingWithOpenAI(content);
+    
+    // S'assurer que l'embedding est un tableau de nombres (et non un objet ou une chaîne JSON)
+    let embedding: number[];
+    
+    if (Array.isArray(embeddingResult)) {
+      embedding = embeddingResult;
+    } else if (typeof embeddingResult === 'string') {
+      try {
+        // Si c'est une chaîne JSON, la parser
+        const parsed = JSON.parse(embeddingResult);
+        if (Array.isArray(parsed)) {
+          embedding = parsed;
+        } else {
+          throw new Error("L'embedding n'est pas un tableau après parsing");
+        }
+      } catch (parseError) {
+        console.error("Erreur de parsing de l'embedding:", parseError);
+        throw new Error(`Format d'embedding invalide: ${typeof embeddingResult}`);
+      }
+    } else {
+      console.error("Type d'embedding inattendu:", typeof embeddingResult);
+      throw new Error(`Format d'embedding non pris en charge: ${typeof embeddingResult}`);
+    }
+    
+    // Vérification que l'embedding est bien un tableau de nombres
+    if (!embedding.every(val => typeof val === 'number')) {
+      console.error("L'embedding contient des valeurs non numériques:", embedding.slice(0, 5));
+      throw new Error("L'embedding doit contenir uniquement des nombres");
+    }
+    
+    console.log(`Embedding généré avec succès: ${embedding.length} dimensions`);
     
     // Préparation du vecteur pour Pinecone
     const vector = {
@@ -45,9 +76,23 @@ export async function indexDocumentInPinecone(
     console.log(`Index utilisé: ${indexName}`);
     console.log(`URL d'upsert: ${upsertUrl}`);
     
+    // Log détaillé du format des données
+    console.log(`Format de l'ID: ${typeof id}`);
+    console.log(`Format des values: ${typeof embedding}, est un tableau: ${Array.isArray(embedding)}, longueur: ${embedding.length}`);
+    console.log(`Exemple des premières valeurs: ${embedding.slice(0, 5).join(', ')}`);
+    
     // Préparation du corps de la requête
     const requestBody = JSON.stringify({
-      vectors: [vector],
+      vectors: [
+        {
+          id,
+          values: embedding,
+          metadata: {
+            ...metadata,
+            text: content.substring(0, 1000)
+          }
+        }
+      ],
       namespace: PINECONE_NAMESPACE
     });
     
@@ -98,6 +143,7 @@ export async function indexDocumentInPinecone(
           }
         } else if (response.status === 400) {
           console.error("ERREUR 400: Requête invalide. Vérifiez le format de vos données.");
+          console.error("Payload envoyé:", requestBody.substring(0, 500) + "...");
         }
         
         throw new Error(`Erreur Pinecone: ${response.status} ${errorText}`);
