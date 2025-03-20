@@ -35,11 +35,11 @@ export function useAuthStatus() {
           } else {
             // Si getLoggedInUser échoue mais qu'une session existe, créer un utilisateur de base
             const sessionUser = sessionData.session.user;
-            const basicUser = {
+            const basicUser: User = {
               id: sessionUser.id,
               email: sessionUser.email || "",
               name: sessionUser.email?.split('@')[0] || "",
-              authProvider: "email"
+              authProvider: "email" // Assurer que c'est du type "email" | "google" | "linkedin"
             };
             setUser(basicUser);
             localStorage.setItem('user', JSON.stringify(basicUser));
@@ -66,11 +66,11 @@ export function useAuthStatus() {
         console.log("État d'authentification modifié:", event, session);
         if (event === 'SIGNED_IN' && session) {
           // Mettre à jour l'utilisateur lors de la connexion
-          const userObj = {
+          const userObj: User = {
             id: session.user.id,
             email: session.user.email || "",
             name: session.user.email?.split('@')[0] || "",
-            authProvider: "email"
+            authProvider: "email" // Assurer que c'est du type "email" | "google" | "linkedin"
           };
           setUser(userObj);
           localStorage.setItem('user', JSON.stringify(userObj));
