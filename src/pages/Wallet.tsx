@@ -1,12 +1,11 @@
 
 import { useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import WalletCreation from "@/components/WalletCreation";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
 import { getPortfolioById } from "@/utils/portfolios";
-import { Home } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 /**
@@ -63,15 +62,7 @@ const Wallet = () => {
       <Navbar />
       <div className="min-h-screen bg-dadvisor-gray py-20 px-4 pt-28">
         <div className="dadvisor-container">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold font-heading text-dadvisor-navy">Wallet</h1>
-            <Button variant="outline" asChild className="flex items-center gap-2">
-              <Link to="/">
-                <Home size={18} />
-                Accueil
-              </Link>
-            </Button>
-          </div>
+          <h1 className="text-3xl font-bold font-heading text-dadvisor-navy mb-8">Wallet</h1>
           
           <p className="text-dadvisor-darkgray text-center mb-10 max-w-2xl mx-auto">
             Un wallet décentralisé vous donne le contrôle total sur vos actifs numériques, vos clés sont cryptées et sécurisées par biométrie.

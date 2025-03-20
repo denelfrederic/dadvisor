@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Home } from "lucide-react";
 import { checkUserProfile } from "@/utils/profile-check";
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from "@/components/Navbar";
@@ -51,15 +50,7 @@ const AdminCheck = () => {
       <Navbar />
       <div className="min-h-screen bg-gradient-radial py-20 px-4 pt-28">
         <div className="container mx-auto max-w-4xl">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Vérification de profil</h1>
-            <Button variant="outline" asChild className="flex items-center gap-2">
-              <Link to="/">
-                <Home size={18} />
-                Accueil
-              </Link>
-            </Button>
-          </div>
+          <h1 className="text-3xl font-bold mb-8">Vérification de profil</h1>
 
           <Card className="mb-6">
             <CardHeader>
