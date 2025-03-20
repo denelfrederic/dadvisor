@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, AlertTriangle, RefreshCw, Loader2, Database, FileSync } from "lucide-react";
+import { Check, AlertTriangle, RefreshCw, Loader2, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePineconeSynchronizer } from "./hooks/usePineconeSynchronizer";
 
@@ -152,7 +151,7 @@ const DocumentEmbeddingTab = ({
             </>
           ) : (
             <>
-              <FileSync className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4 mr-2" />
               Synchroniser le statut Pinecone
             </>
           )}

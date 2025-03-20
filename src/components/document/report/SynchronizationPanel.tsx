@@ -1,18 +1,13 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { FileSync, Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { usePineconeSynchronizer } from "../detail/hooks/usePineconeSynchronizer";
 
 interface SynchronizationPanelProps {
   onComplete?: () => void;
 }
 
-/**
- * Panneau de synchronisation des documents avec Pinecone
- * Permet de marquer comme indexés tous les documents qui ont un embedding mais ne sont pas marqués dans Pinecone
- */
 const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete }) => {
   const { isSynchronizing, synchronizeAllDocuments } = usePineconeSynchronizer();
   const [lastResult, setLastResult] = useState<{ success: boolean; count: number } | null>(null);
@@ -29,7 +24,7 @@ const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete 
     <Card className="bg-amber-50 border-amber-200 dark:bg-amber-900/10">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center">
-          <FileSync className="h-4 w-4 mr-2" />
+          <RefreshCw className="h-4 w-4 mr-2" />
           Synchronisation des documents
         </CardTitle>
         <CardDescription>
@@ -66,7 +61,7 @@ const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete 
             </>
           ) : (
             <>
-              <FileSync className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4 mr-2" />
               Synchroniser les documents
             </>
           )}
