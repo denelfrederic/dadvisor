@@ -35,7 +35,7 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
         <h3 className="text-xl font-medium mt-6 mb-2 text-dadvisor-navy">Notre méthode</h3>
         
         <p>
-          Notre questionnaire utilise une méthodologie rigoureuse développée par des experts en finance comportementale. 
+          Notre questionnaire utilise une méthodologie reconnue. 
           Chaque question est pondérée et contribue à votre score final qui détermine votre profil d'investisseur.
         </p>
         
