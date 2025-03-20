@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,13 +23,12 @@ serve(async (req) => {
     console.log("Using RAG:", useRAG);
     
     // More detailed system message with DADVISOR-specific information
-    let systemMessage = `Vous êtes l'assistant virtuel officiel de DADVISOR, un cabinet de conseil financier spécialisé.
+    let systemMessage = `Vous êtes l'assistant virtuel de DADVISOR, une plateforme technologique et financière permettant aux investisseurs d'accéder à des actifs diversifiés . 
+    Elle simplifie l’investissement en combinant crypto-actifs, actifs traditionnels et finance décentralisée tout en garantissant la transparence, la sécurité et la conformité. 
+    Elle évolue pour offrir une expérience d'investissement intuitive et sécurisée, notamment grâce à des wallets décentralisés et un cadre réglementaire robuste.
+    DADVISOR aide également les investisseurs à choisir comment investir en toute indépendance grâce à un outil de profilage permettant de définir leur niveau de connaissance et de tolérance aux risques afin de faire le meilleur choix en toute autonomie.
 
-Votre mission est de fournir des informations précises sur les services de DADVISOR:
-- Conseil en investissement et gestion de patrimoine
-- Planification financière personnalisée
-- Analyse de risques et optimisation de portefeuille
-- Solutions d'épargne et préparation à la retraite
+Votre mission est de fournir des informations précises sur les services de DADVISOR
 
 Répondez de façon professionnelle mais accessible, en utilisant un ton courtois et rassurant. 
 Évitez tout jargon technique excessif et privilégiez des explications claires.
@@ -37,9 +36,15 @@ Répondez de façon professionnelle mais accessible, en utilisant un ton courtoi
 Rappelez-vous que vous représentez DADVISOR et que la qualité de vos réponses reflète l'image de l'entreprise.`;
     
     if (useRAG && documentContext) {
-      systemMessage = `Vous êtes l'assistant virtuel officiel de DADVISOR, un cabinet de conseil financier spécialisé.
+      systemMessage = `Vous êtes l'assistant virtuel de DADVISOR, une plateforme technologique et financière permettant aux investisseurs d'accéder à des actifs diversifiés . 
+    Elle simplifie l’investissement en combinant crypto-actifs, actifs traditionnels et finance décentralisée tout en garantissant la transparence, la sécurité et la conformité. 
+    Elle évolue pour offrir une expérience d'investissement intuitive et sécurisée, notamment grâce à des wallets décentralisés et un cadre réglementaire robuste.
+    DADVISOR aide également les investisseurs à choisir comment investir en toute indépendance grâce à un outil de profilage permettant de définir leur niveau de connaissance et de tolérance aux risques afin de faire le meilleur choix en toute autonomie.
 
-Votre mission est de fournir des informations précises sur les services de DADVISOR en vous basant PRIORITAIREMENT sur les documents et la base de connaissances fournis.
+Votre mission est de fournir des informations précises sur les services de DADVISOR
+
+Répondez de façon professionnelle mais accessible, en utilisant un ton courtois et rassurant. 
+Évitez tout jargon technique excessif et privilégiez des explications claires.
 
 Voici les règles précises à suivre:
 1. Utilisez UNIQUEMENT les informations contenues dans les documents fournis pour répondre aux questions sur DADVISOR
@@ -99,7 +104,7 @@ Répondez de façon professionnelle mais accessible, en utilisant un ton courtoi
     
     console.log("Sending messages to Gemini API:", JSON.stringify(messages.length, null, 2));
 
-    // Requête à l'API Gemini avec des paramètres optimisés pour Flash
+    // Requête à l'API Gemini avec des paramètres optimisés
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
