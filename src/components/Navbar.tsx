@@ -89,15 +89,13 @@ const Navbar = () => {
           {user ? (
             <Button 
               variant="outline" 
-              className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm" 
+              className="ml-2 hover:bg-dadvisor-lightblue text-xs lg:text-sm whitespace-nowrap" 
               onClick={handleAccountManagement}
             >
-              <span className="truncate max-w-[120px] lg:max-w-[200px]">
-                {user.email}
-              </span>
+              {user.email?.length > 20 ? user.email.substring(0, 17) + '...' : user.email}
             </Button>
           ) : (
-            <Button asChild className="ml-2">
+            <Button asChild className="ml-2 whitespace-nowrap">
               <Link to="/auth">Connexion</Link>
             </Button>
           )}

@@ -48,18 +48,16 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
             {user ? (
               <Button 
                 variant="outline" 
-                className="w-full hover:bg-dadvisor-lightblue" 
+                className="w-full hover:bg-dadvisor-lightblue whitespace-nowrap" 
                 onClick={() => {
                   onAccountClick();
                   onClose();
                 }}
               >
-                <span className="truncate">
-                  {user.email}
-                </span>
+                {user.email?.length > 20 ? user.email.substring(0, 17) + '...' : user.email}
               </Button>
             ) : (
-              <Button asChild className="w-full" onClick={onClose}>
+              <Button asChild className="w-full whitespace-nowrap" onClick={onClose}>
                 <Link to="/auth">Connexion</Link>
               </Button>
             )}
