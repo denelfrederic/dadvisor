@@ -36,7 +36,6 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
         
         <p>
           Notre questionnaire utilise une méthodologie reconnue. 
-          Chaque question est pondérée et contribue à votre score final qui détermine votre profil d'investisseur.
         </p>
         
         <p>
@@ -44,8 +43,7 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
         </p>
         
         <p className="italic mt-4">
-          Note : Vous pouvez à tout moment revenir en arrière pour modifier vos réponses. Le but est d'obtenir 
-          l'image la plus précise possible de votre profil d'investisseur.
+          Note : Vous pouvez à tout moment revenir en arrière mais n'en abusez pas avoir la plus précise possible de votre profil d'investisseur.
         </p>
         
         <div className="text-center mt-8">
