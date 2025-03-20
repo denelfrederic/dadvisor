@@ -10,7 +10,7 @@ import { testPineconeConnection } from "../services/pinecone/connection.ts";
 /**
  * Gestionnaire pour l'action de test de connexion
  */
-export async function handleConnectionTestAction() {
+export async function handleTestConnectionAction() {
   try {
     logMessage("Test de connexion à Pinecone...", 'info');
     
@@ -35,3 +35,6 @@ export async function handleConnectionTestAction() {
     }, 500);
   }
 }
+
+// Export également sous l'ancien nom pour la compatibilité
+export const handleConnectionTestAction = handleTestConnectionAction;

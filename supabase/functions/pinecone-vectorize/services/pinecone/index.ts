@@ -8,6 +8,7 @@
 export { testPineconeConnection } from "./connection.ts";
 export { getPineconeConfig } from "./config-service.ts";
 export { indexDocumentInPinecone } from "./indexation.ts";
+export { searchSimilarDocumentsInPinecone } from "./search.ts";
 
 // Remarque: Ce fichier sert de façade pour les services Pinecone
 // Il peut être utilisé pour exporter d'autres fonctionnalités à l'avenir
