@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { PieChart, RefreshCw, ArrowRight } from "lucide-react";
 import { useQuestionnaire } from "@/contexts/questionnaire";
-import { ChartContainer } from "@/components/ui/chart";
-import { PieChart as RechartsPieChart, Pie, Cell, Tooltip } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const ProfileAnalysisDisplay = () => {
   const { 
@@ -17,7 +16,7 @@ const ProfileAnalysisDisplay = () => {
     saving 
   } = useQuestionnaire();
 
-  // Colors for the pie chart
+  // Colors for the table indicators
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   if (!profileAnalysis) return null;
@@ -70,27 +69,31 @@ const ProfileAnalysisDisplay = () => {
               </div>
             </div>
             
-            <div className="w-full md:w-64 h-64">
-              <h4 className="font-medium mb-2 text-center">Allocation recommandée</h4>
-              <ChartContainer config={{}} className="h-56">
-                <RechartsPieChart>
-                  <Pie
-                    data={profileAnalysis.allocation}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {profileAnalysis.allocation.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RechartsPieChart>
-              </ChartContainer>
+            <div className="w-full md:w-auto">
+              <h4 className="font-medium mb-4 text-center">Allocation recommandée</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Classe d'actifs</TableHead>
+                    <TableHead className="text-right">Allocation</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profileAnalysis.allocation.map((item, index) => (
+                    <TableRow key={`row-${index}`}>
+                      <TableCell>
+                        <div 
+                          className="h-4 w-4 rounded-sm"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{item.name || item.label}</TableCell>
+                      <TableCell className="text-right">{item.value}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>
