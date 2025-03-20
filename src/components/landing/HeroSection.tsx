@@ -13,7 +13,7 @@ interface HeroSectionProps {
 
 /**
  * Composant HeroSection - Section principale de la page d'accueil
- * Affiche le message principal de l'application avec des animations et une image
+ * Affiche le message principal de l'application avec des animations
  */
 const HeroSection = ({
   parallaxOffset
@@ -27,13 +27,13 @@ const HeroSection = ({
     }}></div>
       
       <div className="container mx-auto px-4 pt-32 md:pt-24 lg:pt-0">
-        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-          {/* Conteneur principal avec animation d'entrée - Côté texte */}
+        <div className="flex flex-col items-center gap-8 lg:gap-12">
+          {/* Conteneur principal avec animation d'entrée - Centralisé */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.6, delay: 0.2 }} 
-            className="text-center lg:text-left mb-8 lg:mb-0 lg:w-1/2 z-10"
+            className="text-center mb-8 z-10 max-w-3xl mx-auto"
           >
             {/* Badge supérieur avec animation */}
             <motion.div 
@@ -45,7 +45,7 @@ const HeroSection = ({
               Investissez en toute autonomie et sécurité
             </motion.div>
             
-            {/* Titre principal avec animation - TEXTE MODIFIÉ ICI */}
+            {/* Titre principal avec animation */}
             <motion.h1 
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight" 
               initial={{ opacity: 0, y: 20 }} 
@@ -71,7 +71,7 @@ const HeroSection = ({
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.6, delay: 0.5 }} 
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Button size="lg" asChild>
                 <Link to="/questionnaire">Découvrir mon profil</Link>
@@ -80,23 +80,6 @@ const HeroSection = ({
                 <Link to="/portfolios">Explorer les portefeuilles</Link>
               </Button>
             </motion.div>
-          </motion.div>
-          
-          {/* Image illustrative avec animation */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            transition={{ duration: 0.8, delay: 0.6 }} 
-            className="lg:w-1/2 hidden md:block"
-          >
-            <div className="relative rounded-2xl overflow-hidden shadow-dadvisor">
-              <img 
-                src="/lovable-uploads/ff203da3-ea3b-4d92-865d-0899d2e0ebcd.png" 
-                alt="Conseiller financier professionnel expliquant un plan d'investissement à des clients" 
-                className="w-full h-auto rounded-2xl object-cover"
-              />
-              <div className="absolute inset-0 bg-dadvisor-blue/10 mix-blend-overlay"></div>
-            </div>
           </motion.div>
         </div>
       </div>
