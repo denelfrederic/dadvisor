@@ -1,13 +1,19 @@
 
-import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Database, Code } from "lucide-react";
+import { useDocumentDetail } from "./detail/useDocumentDetail";
 import DocumentInfoTab from "./detail/DocumentInfoTab";
 import DocumentContentTab from "./detail/DocumentContentTab";
 import DocumentEmbeddingTab from "./detail/DocumentEmbeddingTab";
-import { useDocumentDetail } from "./detail/useDocumentDetail";
 
 interface DocumentDetailDialogProps {
   documentId: string | null;
@@ -26,66 +32,88 @@ const DocumentDetailDialog = ({ documentId, isOpen, onClose }: DocumentDetailDia
     setActiveTab,
     updateEmbedding,
     fixEmbedding,
-    reloadDocument
+    reloadDocument,
+    syncPineconeStatus
   } = useDocumentDetail(documentId, isOpen);
 
-  const renderContent = () => {
-    if (loading) {
-      return <div className="py-8 text-center">Chargement du document...</div>;
-    }
-    
-    if (!document) {
-      return <div className="py-8 text-center">Document non trouvé</div>;
-    }
-    
+  if (loading) {
     return (
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full mb-6">
-          <TabsTrigger value="info">Informations</TabsTrigger>
-          <TabsTrigger value="content">Contenu</TabsTrigger>
-          <TabsTrigger value="embedding">Statut Embedding</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="info">
-          <DocumentInfoTab document={document} />
-        </TabsContent>
-        
-        <TabsContent value="content">
-          <DocumentContentTab content={document.content} />
-        </TabsContent>
-        
-        <TabsContent value="embedding">
-          <DocumentEmbeddingTab
-            document={document}
-            analysis={analysis}
-            updateResult={updateResult}
-            updatingEmbedding={updatingEmbedding}
-            onUpdateEmbedding={updateEmbedding}
-            onFixEmbedding={fixEmbedding}
-            onReloadDocument={reloadDocument}
-          />
-        </TabsContent>
-      </Tabs>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chargement du document...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     );
-  };
+  }
+
+  if (!document) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Document introuvable</DialogTitle>
+          </DialogHeader>
+          <p>Le document demandé n'existe pas ou a été supprimé.</p>
+          <DialogFooter>
+            <Button onClick={onClose}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Détails du document
-          </DialogTitle>
+          <DialogTitle>{document.title}</DialogTitle>
         </DialogHeader>
-        
-        {renderContent()}
-        
-        <div className="flex justify-end space-x-2 mt-4">
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="info">
+              <FileText className="h-4 w-4 mr-2" />
+              Informations
+            </TabsTrigger>
+            <TabsTrigger value="content">
+              <Code className="h-4 w-4 mr-2" />
+              Contenu
+            </TabsTrigger>
+            <TabsTrigger value="embedding">
+              <Database className="h-4 w-4 mr-2" />
+              Statut Embedding
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="info" className="space-y-4">
+            <DocumentInfoTab document={document} />
+          </TabsContent>
+
+          <TabsContent value="content" className="space-y-4">
+            <DocumentContentTab document={document} />
+          </TabsContent>
+
+          <TabsContent value="embedding" className="space-y-4">
+            <DocumentEmbeddingTab
+              document={document}
+              analysis={analysis}
+              updateResult={updateResult}
+              updatingEmbedding={updatingEmbedding}
+              onUpdateEmbedding={updateEmbedding}
+              onFixEmbedding={fixEmbedding}
+              onReloadDocument={reloadDocument}
+              onSyncStatus={syncPineconeStatus}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Fermer
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

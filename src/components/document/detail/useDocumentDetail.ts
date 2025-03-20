@@ -3,9 +3,12 @@ import { useState, useCallback } from "react";
 import { useDocumentLoader } from "./hooks/useDocumentLoader";
 import { useDocumentAnalyzer } from "./hooks/useDocumentAnalyzer";
 import { useEmbeddingUpdater } from "./hooks/useEmbeddingUpdater";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const useDocumentDetail = (documentId: string | null, isOpen: boolean) => {
   const [activeTab, setActiveTab] = useState("info");
+  const { toast } = useToast();
   
   const { document, loading, loadDocument } = useDocumentLoader(documentId, isOpen);
   const { analysis, analyzeDocument } = useDocumentAnalyzer(documentId, isOpen);
@@ -31,12 +34,47 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     }
   }, [document, updateDocumentEmbedding]);
 
-  // Wrapper pour fixEmbedding qui utilise le documentId actuel
+  // Wrapper pour fixEmbedding qui utilise le document actuel
   const fixEmbedding = useCallback(async () => {
-    if (documentId) {
-      await fixDocumentEmbedding(documentId);
+    if (document) {
+      await fixDocumentEmbedding(document);
     }
-  }, [documentId, fixDocumentEmbedding]);
+  }, [document, fixDocumentEmbedding]);
+
+  // Nouvelle fonction pour synchroniser le statut Pinecone
+  const syncPineconeStatus = useCallback(async () => {
+    if (!document || !documentId) return;
+    
+    try {
+      console.log(`Synchronisation du statut Pinecone pour le document ${documentId}`);
+      toast({
+        title: "Synchronisation...",
+        description: "Mise à jour du statut Pinecone en cours"
+      });
+      
+      const { error } = await supabase
+        .from('documents')
+        .update({ pinecone_indexed: true })
+        .eq('id', documentId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Synchronisation réussie",
+        description: "Le document est maintenant marqué comme indexé dans Pinecone"
+      });
+      
+      // Recharger les données
+      await reloadDocument();
+    } catch (error) {
+      console.error("Erreur lors de la synchronisation:", error);
+      toast({
+        title: "Erreur",
+        description: `Échec de la synchronisation: ${error instanceof Error ? error.message : String(error)}`,
+        variant: "destructive"
+      });
+    }
+  }, [documentId, document, toast, reloadDocument]);
 
   return {
     document,
@@ -48,6 +86,7 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     setActiveTab,
     updateEmbedding,
     fixEmbedding,
-    reloadDocument
+    reloadDocument,
+    syncPineconeStatus  // Nouvelle fonction exposée
   };
 };

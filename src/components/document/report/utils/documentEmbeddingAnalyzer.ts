@@ -30,26 +30,41 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
     
     console.log(`Document récupéré: ${document.title}, type: ${document.type}, taille: ${document.size || 'non spécifiée'}`);
     
-    // Analyser uniquement le statut Pinecone
+    // Analyser les statuts d'embedding et Pinecone
     let analysis = "";
     let pineconeStatus = {
       indexed: document.pinecone_indexed === true,
       attempted: false
     };
     
+    // Si le document est marqué comme indexé dans Pinecone dans la base de données
     if (document.pinecone_indexed === true) {
-      analysis = "Le document est correctement indexé dans Pinecone pour la recherche sémantique.";
+      analysis = "Le document est marqué comme indexé dans Pinecone pour la recherche sémantique.";
+      pineconeStatus.indexed = true;
     } else {
-      analysis = "Le document n'est PAS indexé dans Pinecone.";
-      
-      // Analyser pourquoi
-      if (!document.content || document.content.trim() === '') {
-        analysis += " Le document n'a pas de contenu textuel.";
-      } else if (document.content.length > 25000) {
-        analysis += ` Le document est très volumineux (${document.content.length} caractères) ce qui peut causer des problèmes d'indexation.`;
+      // Vérifier si le document a un embedding
+      if (!document.embedding) {
+        analysis = "Le document n'a pas d'embedding et n'est PAS indexé dans Pinecone.";
       } else {
-        analysis += " Une indexation avec Pinecone est recommandée.";
+        // Document avec embedding mais pas encore marqué comme indexé dans Pinecone
+        analysis = "Le document a un embedding mais n'est pas marqué comme indexé dans Pinecone.";
+        
+        // Option pour synchroniser: si un document a un embedding, proposer de le marquer comme indexé
+        if (document.content) {
+          if (document.content.length > 25000) {
+            analysis += ` Le document est volumineux (${document.content.length} caractères) mais une synchronisation avec Pinecone est possible.`;
+          } else {
+            analysis += " Une synchronisation avec Pinecone est recommandée.";
+          }
+        }
       }
+      
+      pineconeStatus.indexed = false;
+    }
+    
+    // Ajouter un message sur la possible désynchronisation avec Pinecone réel
+    if (!pineconeStatus.indexed && document.embedding) {
+      analysis += "\n\nRemarque: Ce document pourrait être déjà présent dans Pinecone mais marqué comme non-indexé dans la base locale. Une synchronisation est recommandée.";
     }
     
     console.log(`Analyse complète: ${analysis}`);
@@ -63,7 +78,9 @@ export const analyzeDocumentEmbeddingIssue = async (documentId: string) => {
         title: document.title,
         type: document.type,
         size: document.size,
-        contentLength: document.content?.length || 0
+        hasEmbedding: !!document.embedding,
+        contentLength: document.content?.length || 0,
+        needsSync: !document.pinecone_indexed && !!document.embedding
       }
     };
   } catch (error) {

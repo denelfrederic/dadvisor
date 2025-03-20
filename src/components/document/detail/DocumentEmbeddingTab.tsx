@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, AlertTriangle, RefreshCw, Loader2, Database } from "lucide-react";
+import { Check, AlertTriangle, RefreshCw, Loader2, Database, Sync } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentEmbeddingTabProps {
@@ -12,6 +12,7 @@ interface DocumentEmbeddingTabProps {
   onUpdateEmbedding: () => void;
   onFixEmbedding?: () => void;
   onReloadDocument: () => void;
+  onSyncStatus?: () => void;
 }
 
 const DocumentEmbeddingTab = ({
@@ -22,6 +23,7 @@ const DocumentEmbeddingTab = ({
   onUpdateEmbedding,
   onFixEmbedding,
   onReloadDocument,
+  onSyncStatus,
 }: DocumentEmbeddingTabProps) => {
   const { toast } = useToast();
   
@@ -46,6 +48,8 @@ const DocumentEmbeddingTab = ({
   if (!document) return null;
 
   const isPineconeIndexed = document.pinecone_indexed === true;
+  const hasEmbedding = !!document.embedding;
+  const needsSync = hasEmbedding && !isPineconeIndexed;
 
   if (isPineconeIndexed) {
     return (
@@ -72,13 +76,13 @@ const DocumentEmbeddingTab = ({
     <div className="space-y-4">
       <div className="flex items-center space-x-2 text-amber-600 bg-amber-50 p-3 rounded-md">
         <AlertTriangle className="h-5 w-5" />
-        <span>Ce document n'est pas indexé dans Pinecone et ne peut pas être utilisé pour la recherche sémantique.</span>
+        <span>Ce document n'est pas marqué comme indexé dans Pinecone et pourrait ne pas être utilisé pour la recherche sémantique.</span>
       </div>
       
       {analysis && (
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-muted-foreground">Analyse</h3>
-          <div className="p-3 bg-muted rounded-md">
+          <div className="p-3 bg-muted rounded-md whitespace-pre-line">
             <p>{analysis.analysis}</p>
           </div>
         </div>
@@ -100,6 +104,19 @@ const DocumentEmbeddingTab = ({
         </div>
       )}
       
+      {/* Bouton de synchronisation si le document a un embedding mais n'est pas marqué comme indexé */}
+      {needsSync && onSyncStatus && (
+        <Button 
+          onClick={onSyncStatus}
+          variant="outline" 
+          className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+        >
+          <Sync className="h-4 w-4 mr-2" />
+          Synchroniser le statut Pinecone
+        </Button>
+      )}
+      
+      {/* Bouton principal d'indexation */}
       <Button 
         onClick={onUpdateEmbedding} 
         disabled={updatingEmbedding || !document.content}
