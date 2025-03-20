@@ -40,9 +40,7 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
         </p>
         
         <p>
-          Le questionnaire comprend environ 10 questions et prend généralement 5 à 10 minutes à compléter. 
-          À la fin, vous recevrez une analyse détaillée de votre profil ainsi que des recommandations 
-          de portefeuilles adaptés à votre situation.
+          Le questionnaire ne prend que quelques minutes à compléter. À la fin, vous recevrez une analyse détaillée de votre profil.
         </p>
         
         <p className="italic mt-4">
