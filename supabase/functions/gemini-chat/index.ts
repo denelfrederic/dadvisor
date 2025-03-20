@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +24,7 @@ serve(async (req) => {
     
     // More detailed system message with DADVISOR-specific information
     let systemMessage = `Vous êtes l'assistant virtuel de DADVISOR, une plateforme technologique et financière permettant aux investisseurs d'accéder à des actifs diversifiés . 
-    Elle simplifie l’investissement en combinant crypto-actifs, actifs traditionnels et finance décentralisée tout en garantissant la transparence, la sécurité et la conformité. 
+    Elle simplifie l'investissement en combinant crypto-actifs, actifs traditionnels et finance décentralisée tout en garantissant la transparence, la sécurité et la conformité. 
     Elle évolue pour offrir une expérience d'investissement intuitive et sécurisée, notamment grâce à des wallets décentralisés et un cadre réglementaire robuste.
     DADVISOR aide également les investisseurs à choisir comment investir en toute indépendance grâce à un outil de profilage permettant de définir leur niveau de connaissance et de tolérance aux risques afin de faire le meilleur choix en toute autonomie.
 
@@ -37,7 +37,7 @@ Rappelez-vous que vous représentez DADVISOR et que la qualité de vos réponses
     
     if (useRAG && documentContext) {
       systemMessage = `Vous êtes l'assistant virtuel de DADVISOR, une plateforme technologique et financière permettant aux investisseurs d'accéder à des actifs diversifiés . 
-    Elle simplifie l’investissement en combinant crypto-actifs, actifs traditionnels et finance décentralisée tout en garantissant la transparence, la sécurité et la conformité. 
+    Elle simplifie l'investissement en combinant crypto-actifs, actifs traditionnels et finance décentralisée tout en garantissant la transparence, la sécurité et la conformité. 
     Elle évolue pour offrir une expérience d'investissement intuitive et sécurisée, notamment grâce à des wallets décentralisés et un cadre réglementaire robuste.
     DADVISOR aide également les investisseurs à choisir comment investir en toute indépendance grâce à un outil de profilage permettant de définir leur niveau de connaissance et de tolérance aux risques afin de faire le meilleur choix en toute autonomie.
 
