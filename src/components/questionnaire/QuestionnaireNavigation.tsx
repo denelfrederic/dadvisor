@@ -29,13 +29,13 @@ const QuestionnaireNavigation = () => {
           }
         }}
         disabled={currentQuestionIndex === 0 || isComplete}
-        className="text-xs sm:text-sm px-2 sm:px-4"
+        className="text-[11px] sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
       >
-        {isMobile ? "Précédent" : "Question précédente"}
+        {isMobile ? "Préc." : "Question précédente"}
       </Button>
       
       <div className="text-xs sm:text-sm text-muted-foreground">
-        Question {currentQuestionIndex + 1}/{questions.length}
+        {currentQuestionIndex + 1}/{questions.length}
       </div>
       
       <Button
@@ -47,9 +47,9 @@ const QuestionnaireNavigation = () => {
           }
         }}
         disabled={!answers[currentQuestion.id] || isComplete}
-        className="text-xs sm:text-sm px-2 sm:px-4"
+        className="text-[11px] sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
       >
-        {isMobile ? "Suivant" : currentQuestionIndex < questions.length - 1 ? "Question suivante" : "Terminer"}
+        {isMobile ? "Suiv." : currentQuestionIndex < questions.length - 1 ? "Question suivante" : "Terminer"}
       </Button>
     </div>
   );

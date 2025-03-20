@@ -6,6 +6,7 @@ import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
 import { AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useEffect } from "react";
 
 const QuestionnaireProgress = () => {
   const { 
@@ -14,11 +15,23 @@ const QuestionnaireProgress = () => {
     answers, 
     previousScore, 
     score, 
-    isComplete 
+    isComplete,
+    setShowAnalysis
   } = useQuestionnaire();
   
   const isMobile = useIsMobile();
   const currentQuestion = questions[currentQuestionIndex];
+
+  // Ajout d'un effet pour rediriger automatiquement après un délai
+  useEffect(() => {
+    if (isComplete) {
+      const timer = setTimeout(() => {
+        setShowAnalysis(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, setShowAnalysis]);
 
   if (isComplete) {
     return (

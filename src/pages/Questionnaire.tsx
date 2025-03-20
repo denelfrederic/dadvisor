@@ -8,6 +8,7 @@ import QuestionnaireProgress from "@/components/questionnaire/QuestionnaireProgr
 import QuestionnaireNavigation from "@/components/questionnaire/QuestionnaireNavigation";
 import ProfileAnalysisDisplay from "@/components/questionnaire/ProfileAnalysisDisplay";
 import QuestionnaireIntroduction from "@/components/questionnaire/QuestionnaireIntroduction";
+import Navbar from "@/components/Navbar";
 
 /**
  * Main content component for the questionnaire
@@ -39,26 +40,29 @@ const QuestionnaireContent = () => {
  */
 const Questionnaire = () => {
   return (
-    <div className="min-h-screen bg-gradient-radial py-10 sm:py-20 px-3 sm:px-4">
-      <div className="container mx-auto max-w-4xl">
-        <div className="flex justify-between items-center mb-4 sm:mb-8">
-          <h1 className="text-xl sm:text-3xl font-bold">Évaluation de votre profil</h1>
-          <Button variant="outline" asChild className="flex items-center justify-center w-10 h-10 p-0" aria-label="Retour à l'accueil">
-            <Link to="/">
-              <Home size={20} />
-            </Link>
-          </Button>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-radial py-10 sm:py-20 px-3 sm:px-4 pt-28">
+        <div className="container mx-auto max-w-4xl">
+          <div className="flex justify-between items-center mb-4 sm:mb-8">
+            <h1 className="text-xl sm:text-3xl font-bold">Évaluation de votre profil</h1>
+            <Button variant="outline" asChild className="flex items-center justify-center w-10 h-10 p-0" aria-label="Retour à l'accueil">
+              <Link to="/">
+                <Home size={20} />
+              </Link>
+            </Button>
+          </div>
+          
+          <p className="text-muted-foreground text-center text-xs sm:text-sm mb-5 sm:mb-10 hidden md:block">
+            Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
+          </p>
+          
+          <QuestionnaireProvider>
+            <QuestionnaireContent />
+          </QuestionnaireProvider>
         </div>
-        
-        <p className="text-muted-foreground text-center text-xs sm:text-sm mb-5 sm:mb-10 hidden md:block">
-          Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
-        </p>
-        
-        <QuestionnaireProvider>
-          <QuestionnaireContent />
-        </QuestionnaireProvider>
       </div>
-    </div>
+    </>
   );
 };
 
