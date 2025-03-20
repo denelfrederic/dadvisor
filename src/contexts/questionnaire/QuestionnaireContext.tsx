@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
 import { calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle, questions, InvestorProfileAnalysis } from "@/utils/questionnaire";
 import { useNavigate } from "react-router-dom";
@@ -159,6 +158,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       isComplete,
       setIsComplete,
       showAnalysis,
+      setShowAnalysis,
       showIntroduction,
       setShowIntroduction,
       saving,

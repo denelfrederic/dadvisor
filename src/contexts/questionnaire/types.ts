@@ -24,6 +24,7 @@ export interface QuestionnaireContextType {
   isComplete: boolean;
   setIsComplete: (isComplete: boolean) => void;
   showAnalysis: boolean;
+  setShowAnalysis: (show: boolean) => void; // Ajout de cette propriété
   showIntroduction: boolean;
   setShowIntroduction: (show: boolean) => void;
   saving: boolean;
