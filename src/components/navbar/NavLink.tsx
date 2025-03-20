@@ -1,17 +1,18 @@
 
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReactNode } from "react";
 
 /**
  * Interface pour les propriétés du composant NavLink
  * @param to - URL de destination du lien
- * @param label - Texte à afficher
+ * @param label - Texte à afficher ou élément React
  * @param currentPath - Chemin actuel pour détecter si le lien est actif
  * @param onClick - Fonction optionnelle à exécuter lors du clic
  */
 interface NavLinkProps {
   to: string;
-  label: string;
+  label: ReactNode;
   currentPath: string;
   onClick?: () => void;
 }
@@ -24,10 +25,10 @@ export const NavLink = ({ to, label, currentPath, onClick }: NavLinkProps) => {
   const isActive = currentPath === to;
   
   return (
-    <Link to={to} className="relative group w-full block" onClick={onClick}>
+    <Link to={to} className="relative group w-full flex items-center" onClick={onClick}>
       <span className={`text-base md:text-sm font-medium transition-colors ${
         isActive ? "text-primary" : "text-foreground/80 hover:text-foreground"
-      } truncate`}>
+      }`}>
         {label}
       </span>
       <AnimatePresence>
