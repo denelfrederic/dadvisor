@@ -25,7 +25,7 @@ export const useAuth = () => useContext(AuthContext);
 
 // Composant fournisseur d'authentification
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { user, isLoading } = useAuthStatus();
+  const { user, isLoading, setUser } = useAuthStatus();
   const [error, setError] = useState<string | null>(null);
 
   // Fonction de déconnexion
@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await supabase.auth.signOut();
       localStorage.removeItem('user');
+      setUser(null);
     } catch (e) {
       setError('Erreur lors de la déconnexion');
       console.error('Erreur lors de la déconnexion:', e);

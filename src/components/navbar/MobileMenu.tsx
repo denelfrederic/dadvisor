@@ -27,7 +27,17 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
           </div>
           
           <div className="flex flex-col space-y-6 px-6 py-4">
-            <NavLink to="/" label={<><Home className="h-5 w-5 mr-1" aria-hidden="true" /> <span className="sr-only">Accueil</span></>} currentPath={currentPath} onClick={onClose} />
+            <NavLink 
+              to="/" 
+              label={
+                <div className="flex items-center gap-2">
+                  <Home className="h-5 w-5" aria-hidden="true" /> 
+                  <span>Accueil</span>
+                </div>
+              } 
+              currentPath={currentPath} 
+              onClick={onClose} 
+            />
             <NavLink to="/questionnaire" label="Questionnaire" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/portfolios" label="Portefeuilles" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/wallet" label="Wallet" currentPath={currentPath} onClick={onClose} />

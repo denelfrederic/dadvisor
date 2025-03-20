@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { User, getLoggedInUser } from "@/utils/auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,80 +7,80 @@ export function useAuthStatus() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Fonction pour récupérer l'utilisateur depuis localStorage
-    const getUserFromLocalStorage = (): User | null => {
-      try {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          return JSON.parse(storedUser);
-        }
-      } catch (error) {
-        console.error("Erreur lors de la récupération de l'utilisateur depuis localStorage:", error);
+  // Fonction pour récupérer l'utilisateur depuis localStorage
+  const getUserFromLocalStorage = useCallback((): User | null => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        return JSON.parse(storedUser);
       }
-      return null;
-    };
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'utilisateur depuis localStorage:", error);
+    }
+    return null;
+  }, []);
 
-    // Fonction pour vérifier l'état d'authentification
-    const checkAuth = async () => {
-      try {
-        // Essayer d'abord de récupérer depuis localStorage pour éviter un écran blanc
-        const localUser = getUserFromLocalStorage();
-        if (localUser) {
-          setUser(localUser);
-          setIsLoading(false); // Important: mettre fin au chargement même si on vérifie la session plus tard
-        }
+  // Fonction pour vérifier l'état d'authentification
+  const checkAuth = useCallback(async () => {
+    try {
+      // Essayer d'abord de récupérer depuis localStorage pour éviter un écran blanc
+      const localUser = getUserFromLocalStorage();
+      if (localUser) {
+        setUser(localUser);
+        setIsLoading(false); // Important: mettre fin au chargement même si on vérifie la session plus tard
+      }
+      
+      // Vérifier la session avec Supabase
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (sessionData && sessionData.session) {
+        // Session valide trouvée
+        const sessionUser = sessionData.session.user;
         
-        // Vérifier la session avec Supabase
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (sessionData && sessionData.session) {
-          // Session valide trouvée
-          const sessionUser = sessionData.session.user;
+        try {
+          // Tenter de récupérer l'utilisateur complet
+          const currentUser = await getLoggedInUser();
           
-          try {
-            // Tenter de récupérer l'utilisateur complet
-            const currentUser = await getLoggedInUser();
-            
-            if (currentUser) {
-              setUser(currentUser);
-              localStorage.setItem('user', JSON.stringify(currentUser));
-            } else {
-              // Fallback vers les données de base de la session
-              const basicUser: User = {
-                id: sessionUser.id,
-                email: sessionUser.email || "",
-                name: sessionUser.email?.split('@')[0] || "",
-                authProvider: "email"
-              };
-              setUser(basicUser);
-              localStorage.setItem('user', JSON.stringify(basicUser));
-            }
-          } catch (error) {
-            console.error("Erreur lors de la récupération des données utilisateur:", error);
+          if (currentUser) {
+            setUser(currentUser);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+          } else {
+            // Fallback vers les données de base de la session
+            const basicUser: User = {
+              id: sessionUser.id,
+              email: sessionUser.email || "",
+              name: sessionUser.email?.split('@')[0] || "",
+              authProvider: "email"
+            };
+            setUser(basicUser);
+            localStorage.setItem('user', JSON.stringify(basicUser));
           }
-        } else if (localUser) {
-          // Si aucune session n'est trouvée mais qu'un utilisateur local existe,
-          // vérifier si cet utilisateur est toujours valide
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            // Session invalide, nettoyer l'utilisateur
-            setUser(null);
-            localStorage.removeItem('user');
-          }
-        } else {
-          // Aucune session et aucun utilisateur local
+        } catch (error) {
+          console.error("Erreur lors de la récupération des données utilisateur:", error);
+        }
+      } else if (localUser) {
+        // Si aucune session n'est trouvée mais qu'un utilisateur local existe,
+        // vérifier si cet utilisateur est toujours valide
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // Session invalide, nettoyer l'utilisateur
           setUser(null);
           localStorage.removeItem('user');
         }
-      } catch (error) {
-        console.error("Erreur lors de la vérification d'authentification:", error);
-      } finally {
-        setIsLoading(false);
+      } else {
+        // Aucune session et aucun utilisateur local
+        setUser(null);
+        localStorage.removeItem('user');
       }
-    };
+    } catch (error) {
+      console.error("Erreur lors de la vérification d'authentification:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getUserFromLocalStorage]);
 
-    // Effectuer la vérification initiale
+  // Effectuer la vérification initiale
+  useEffect(() => {
     checkAuth();
     
     // Configurer l'écouteur pour les changements d'état d'authentification
@@ -122,7 +122,7 @@ export function useAuthStatus() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkAuth]);
 
   return { user, isLoading, setUser };
 }

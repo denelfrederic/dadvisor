@@ -25,6 +25,10 @@ import { QuestionnaireProvider } from './contexts/questionnaire';
 // Import components
 import ScrollToTop from './components/ScrollToTop';
 
+/**
+ * Composant principal de l'application
+ * Définit toutes les routes et les contextes globaux
+ */
 function App() {
   console.log("App component rendering");
   

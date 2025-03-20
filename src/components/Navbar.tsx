@@ -8,7 +8,7 @@ import { User, getLoggedInUser } from "@/utils/auth";
 import { useNavbarScroll } from "@/hooks/use-navbar-scroll";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { NavLink } from "@/components/navbar/NavLink";
-import { Menu } from "lucide-react";
+import { Menu, Home } from "lucide-react";
 import MobileMenu from "@/components/navbar/MobileMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -31,8 +31,8 @@ const Navbar = () => {
       const currentUser = await getLoggedInUser();
       
       // Si le localStorage a un utilisateur mais pas Supabase, nettoyer le localStorage
-      if (!currentUser && localStorage.getItem("dadvisor_user")) {
-        localStorage.removeItem("dadvisor_user");
+      if (!currentUser && localStorage.getItem("user")) {
+        localStorage.removeItem("user");
         setUser(null);
       } else if (currentUser) {
         // Toujours utiliser les données les plus récentes de Supabase

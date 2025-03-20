@@ -25,7 +25,13 @@ export const NavLink = ({ to, label, currentPath, onClick }: NavLinkProps) => {
   const isActive = currentPath === to;
   
   return (
-    <Link to={to} className="relative group w-full flex items-center" onClick={onClick}>
+    <Link 
+      to={to} 
+      className={`relative group w-full flex items-center py-2 ${
+        isActive ? "font-medium" : "font-normal"
+      }`} 
+      onClick={onClick}
+    >
       <span className={`text-base md:text-sm font-medium transition-colors ${
         isActive ? "text-primary" : "text-foreground/80 hover:text-foreground"
       }`}>

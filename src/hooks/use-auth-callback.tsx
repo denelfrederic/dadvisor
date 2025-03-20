@@ -19,7 +19,7 @@ export function useAuthCallback() {
           console.error("Auth callback timeout - redirecting to login");
           setError("Timeout durant l'authentification. Veuillez réessayer.");
           navigate("/auth");
-        }, 10000); // 10 seconds timeout
+        }, 15000); // 15 seconds timeout
         
         // Check the current session to see if the OAuth flow succeeded
         const { data, error } = await supabase.auth.getSession();
