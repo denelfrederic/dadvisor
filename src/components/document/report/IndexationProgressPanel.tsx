@@ -2,10 +2,10 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ReportData } from "../hooks/useIndexationReport";
+import { IndexationReport } from "../hooks/useIndexationReport";
 
 interface IndexationProgressPanelProps {
-  report: ReportData;
+  report: IndexationReport;
 }
 
 /**
@@ -15,9 +15,12 @@ interface IndexationProgressPanelProps {
 const IndexationProgressPanel: React.FC<IndexationProgressPanelProps> = ({ report }) => {
   // Calcul du pourcentage d'indexation
   const totalDocuments = report.totalDocuments || 0;
-  const indexedDocuments = report.indexedDocuments || 0;
+  const documentsWithEmbeddings = report.documentsWithEmbeddings || 0;
+  const pineconeIndexedCount = report.pineconeIndexedCount || 0;
+  
+  // On utilise le nombre de documents indexés dans Pinecone pour l'affichage de la progression
   const progressPercentage = totalDocuments > 0 
-    ? Math.round((indexedDocuments / totalDocuments) * 100) 
+    ? Math.round((pineconeIndexedCount / totalDocuments) * 100) 
     : 0;
 
   return (
@@ -33,7 +36,7 @@ const IndexationProgressPanel: React.FC<IndexationProgressPanelProps> = ({ repor
             className="h-2" 
           />
           <div className="flex justify-between text-xs text-muted-foreground mt-1">
-            <span>{indexedDocuments} documents indexés</span>
+            <span>{pineconeIndexedCount} documents indexés dans Pinecone</span>
             <span>Total: {totalDocuments} documents</span>
           </div>
         </div>
