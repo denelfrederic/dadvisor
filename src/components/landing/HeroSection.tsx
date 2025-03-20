@@ -74,10 +74,10 @@ const HeroSection = ({
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
               <Button size="lg" asChild>
-                <Link to="/auth">Découvrir mon profil</Link>
+                <Link to="/questionnaire">Découvrir mon profil</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/questionnaire">Explorer les portefeuilles</Link>
+                <Link to="/portfolios">Explorer les portefeuilles</Link>
               </Button>
             </motion.div>
           </motion.div>

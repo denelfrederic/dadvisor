@@ -88,7 +88,7 @@ const ProfileAnalysisDisplay = () => {
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">{item.name || item.label}</TableCell>
+                      <TableCell className="font-medium">{item.label}</TableCell>
                       <TableCell className="text-right">{item.value}%</TableCell>
                     </TableRow>
                   ))}
