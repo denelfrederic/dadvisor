@@ -10,32 +10,48 @@ export function useAuthStatus() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        // Check using Supabase session first
+        // D'abord essayer de récupérer l'utilisateur du localStorage pour éviter un flash d'écran blanc
+        try {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+        } catch (err) {
+          console.error("Erreur lors de la récupération de l'utilisateur depuis localStorage:", err);
+        }
+        
+        // Vérifier ensuite la session Supabase pour confirmer l'authenticité
         const { data: sessionData } = await supabase.auth.getSession();
         
         if (sessionData && sessionData.session) {
-          console.log("Session found:", sessionData.session.user);
-          // Try to get the complete user data
+          console.log("Session trouvée:", sessionData.session.user);
+          // Essayer d'obtenir les données complètes de l'utilisateur
           const currentUser = await getLoggedInUser();
           
           if (currentUser) {
             setUser(currentUser);
+            // Mettre à jour le localStorage avec les données les plus récentes
+            localStorage.setItem('user', JSON.stringify(currentUser));
           } else {
-            // If getLoggedInUser fails but we have a session, create a basic user
+            // Si getLoggedInUser échoue mais qu'une session existe, créer un utilisateur de base
             const sessionUser = sessionData.session.user;
-            setUser({
+            const basicUser = {
               id: sessionUser.id,
               email: sessionUser.email || "",
               name: sessionUser.email?.split('@')[0] || "",
               authProvider: "email"
-            });
+            };
+            setUser(basicUser);
+            localStorage.setItem('user', JSON.stringify(basicUser));
           }
         } else {
-          console.log("No session found");
+          console.log("Aucune session trouvée");
+          // Si aucune session n'est trouvée, s'assurer que l'utilisateur est déconnecté
           setUser(null);
+          localStorage.removeItem('user');
         }
       } catch (error) {
-        console.error("Error checking user status:", error);
+        console.error("Erreur lors de la vérification du statut d'authentification:", error);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -44,25 +60,29 @@ export function useAuthStatus() {
 
     checkUser();
     
-    // Set up auth state listener
+    // Configurer l'écouteur d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event, session);
+        console.log("État d'authentification modifié:", event, session);
         if (event === 'SIGNED_IN' && session) {
-          // Update user on sign in
-          setUser({
+          // Mettre à jour l'utilisateur lors de la connexion
+          const userObj = {
             id: session.user.id,
             email: session.user.email || "",
             name: session.user.email?.split('@')[0] || "",
             authProvider: "email"
-          });
+          };
+          setUser(userObj);
+          localStorage.setItem('user', JSON.stringify(userObj));
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          localStorage.removeItem('user');
         }
+        setIsLoading(false);
       }
     );
     
-    // Cleanup subscription
+    // Nettoyer l'abonnement
     return () => {
       subscription.unsubscribe();
     };

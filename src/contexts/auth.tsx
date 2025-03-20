@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define user type
+// Définir le type d'utilisateur
 export type User = {
   id: string;
   email: string;
@@ -11,7 +11,7 @@ export type User = {
   authProvider: 'google' | 'linkedin' | 'email';
 };
 
-// Define auth context type
+// Définir le type de contexte d'authentification
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
@@ -19,7 +19,7 @@ type AuthContextType = {
   logout: () => Promise<void>;
 };
 
-// Create the context with default values
+// Créer le contexte avec des valeurs par défaut
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
@@ -27,52 +27,64 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
-// Custom hook to use auth context
+// Hook personnalisé pour utiliser le contexte d'authentification
 export const useAuth = () => useContext(AuthContext);
 
-// Auth provider component
+// Composant fournisseur d'authentification
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for stored user in localStorage
-    const checkUser = () => {
+    // Vérifier la session Supabase et l'utilisateur stocké
+    const checkUser = async () => {
       try {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        // D'abord vérifier le localStorage pour un chargement rapide
+        try {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+        } catch (e) {
+          console.error('Erreur lors de la récupération de l\'utilisateur depuis localStorage:', e);
+        }
+        
+        // Vérifier la session Supabase pour valider l'authentification
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          // Si pas de session valide, s'assurer que l'utilisateur est déconnecté
+          localStorage.removeItem('user');
+          setUser(null);
         }
       } catch (e) {
-        console.error('Error retrieving user from localStorage:', e);
+        console.error('Erreur lors de la vérification de l\'utilisateur:', e);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Set up auth state listener
+    // Configurer l'écouteur d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           setUser(null);
           localStorage.removeItem('user');
         }
-        
-        checkUser();
       }
     );
 
-    // Initial check
+    // Vérification initiale
     checkUser();
 
-    // Cleanup subscription
+    // Nettoyer l'abonnement
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
-  // Logout function
+  // Fonction de déconnexion
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -80,8 +92,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       localStorage.removeItem('user');
     } catch (e) {
-      setError('Error signing out');
-      console.error('Error signing out:', e);
+      setError('Erreur lors de la déconnexion');
+      console.error('Erreur lors de la déconnexion:', e);
     } finally {
       setIsLoading(false);
     }
