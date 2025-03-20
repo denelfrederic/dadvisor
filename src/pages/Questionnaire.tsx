@@ -51,7 +51,7 @@ const Questionnaire = () => {
           </Button>
         </div>
         
-        <p className="text-muted-foreground text-center mb-10">
+        <p className="text-muted-foreground text-center mb-10 hidden md:block">
           Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
         </p>
         
