@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
-import { Home, Send, Mail, X } from "lucide-react";
+import { Home, Send, Mail, X, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type IssueType = 'bug' | 'feature' | 'question' | 'other';
 
@@ -22,14 +23,25 @@ const Contact = () => {
   const [issueType, setIssueType] = useState<IssueType>('bug');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
     
     try {
       // Simuler l'envoi (à remplacer par un vrai envoi de formulaire)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simuler une erreur d'envoi pour l'email spécifique
+          if (email === "frederic.denel@dadvisor.ai") {
+            reject(new Error("Impossible d'envoyer l'email à cette adresse. Veuillez essayer avec une autre adresse ou contacter le support directement."));
+          } else {
+            resolve(true);
+          }
+        }, 1000);
+      });
       
       // Réinitialiser le formulaire
       setName('');
@@ -41,7 +53,9 @@ const Contact = () => {
         title: "Message envoyé !",
         description: "Nous vous répondrons dès que possible.",
       });
-    } catch (error) {
+    } catch (error: any) {
+      setSubmitError(error.message || "Une erreur est survenue lors de l'envoi du message. Veuillez réessayer plus tard.");
+      
       toast({
         variant: "destructive",
         title: "Erreur lors de l'envoi",
@@ -109,6 +123,16 @@ const Contact = () => {
               </CardHeader>
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
+                  {submitError && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Erreur d'envoi</AlertTitle>
+                      <AlertDescription>
+                        {submitError}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <div className="space-y-2">
                     <Label htmlFor="name">Nom</Label>
                     <Input 
@@ -129,7 +153,13 @@ const Contact = () => {
                       onChange={e => setEmail(e.target.value)} 
                       placeholder="votre@email.com"
                       required
+                      className={email === "frederic.denel@dadvisor.ai" ? "border-red-300 focus-visible:ring-red-400" : ""}
                     />
+                    {email === "frederic.denel@dadvisor.ai" && (
+                      <p className="text-xs text-red-500 mt-1">
+                        Attention: Problèmes connus avec cette adresse email. Veuillez utiliser une adresse alternative.
+                      </p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
