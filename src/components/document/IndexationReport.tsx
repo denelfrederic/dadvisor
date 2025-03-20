@@ -5,6 +5,7 @@ import { useEmbeddingsUpdate } from "../knowledge-base/search/hooks/useEmbedding
 import IndexationReportHeader from "./report/IndexationReportHeader";
 import IndexationReportTabs from "./report/IndexationReportTabs";
 import { exportLogsToFile } from "./report/utils/logUtils";
+import SynchronizationPanel from "./report/SynchronizationPanel";
 
 const IndexationReport = () => {
   const [activeTab, setActiveTab] = useState<string>("report");
@@ -27,7 +28,7 @@ const IndexationReport = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <IndexationReportHeader 
         onGenerateReport={generateReport}
         onUpdateEmbeddings={updateDocumentEmbeddings}
@@ -35,6 +36,9 @@ const IndexationReport = () => {
         isUpdatingEmbeddings={isUpdatingEmbeddings}
         reportExists={!!report}
       />
+
+      {/* Panneau de synchronisation pour résoudre les problèmes d'indexation */}
+      <SynchronizationPanel onComplete={generateReport} />
 
       <IndexationReportTabs
         activeTab={activeTab}

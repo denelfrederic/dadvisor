@@ -1,8 +1,9 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, AlertTriangle, RefreshCw, Loader2, Database } from "lucide-react";
+import { Check, AlertTriangle, RefreshCw, Loader2, Database, FileSync } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePineconeSynchronizer } from "./hooks/usePineconeSynchronizer";
 
 interface DocumentEmbeddingTabProps {
   document: any;
@@ -27,6 +28,7 @@ const DocumentEmbeddingTab = ({
 }: DocumentEmbeddingTabProps) => {
   const { toast } = useToast();
   const [localUpdating, setLocalUpdating] = useState(false);
+  const { isSynchronizing, synchronizePineconeStatus } = usePineconeSynchronizer();
   
   // Utiliser un état local pour contrôler l'affichage durant les opérations asynchrones
   useEffect(() => {
@@ -72,18 +74,13 @@ const DocumentEmbeddingTab = ({
     }
   };
 
-  // Gérer la synchronisation également avec un état local
+  // Gérer la synchronisation avec le hook personnalisé
   const handleSyncStatus = async () => {
-    if (!onSyncStatus) return;
-    
-    setLocalUpdating(true);
-    try {
-      await onSyncStatus();
-    } finally {
-      // Délai pour éviter le scintillement
-      setTimeout(() => {
-        setLocalUpdating(false);
-      }, 500);
+    if (onSyncStatus) {
+      onSyncStatus();
+    } else if (document && document.id) {
+      await synchronizePineconeStatus(document.id);
+      onReloadDocument();
     }
   };
 
@@ -141,21 +138,21 @@ const DocumentEmbeddingTab = ({
       )}
       
       {/* Bouton de synchronisation si le document a un embedding mais n'est pas marqué comme indexé */}
-      {needsSync && onSyncStatus && (
+      {needsSync && (
         <Button 
           onClick={handleSyncStatus}
           variant="outline" 
           className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
-          disabled={localUpdating}
+          disabled={localUpdating || isSynchronizing}
         >
-          {localUpdating ? (
+          {isSynchronizing || localUpdating ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Synchronisation en cours...
             </>
           ) : (
             <>
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <FileSync className="h-4 w-4 mr-2" />
               Synchroniser le statut Pinecone
             </>
           )}
@@ -165,13 +162,13 @@ const DocumentEmbeddingTab = ({
       {/* Bouton principal d'indexation */}
       <Button 
         onClick={handleUpdateEmbedding} 
-        disabled={localUpdating || !document.content}
+        disabled={localUpdating || isSynchronizing || !document.content}
         className="w-full"
       >
-        {localUpdating ? (
+        {localUpdating || isSynchronizing ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Indexation en cours...
+            {needsSync ? "Synchronisation en cours..." : "Indexation en cours..."}
           </>
         ) : (
           <>
@@ -188,7 +185,7 @@ const DocumentEmbeddingTab = ({
           variant="outline"
           size="sm"
           className="w-full mt-2"
-          disabled={localUpdating}
+          disabled={localUpdating || isSynchronizing}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Réessayer l'indexation
@@ -201,7 +198,7 @@ const DocumentEmbeddingTab = ({
           variant="outline"
           size="sm"
           className="w-full mt-2"
-          disabled={localUpdating}
+          disabled={localUpdating || isSynchronizing}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Rafraîchir les données du document
