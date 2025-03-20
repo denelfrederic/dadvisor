@@ -1,71 +1,16 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Home, Send, Mail, X, AlertCircle } from "lucide-react";
+import { Home, Mail, ExternalLink, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-type IssueType = 'bug' | 'feature' | 'question' | 'other';
-
 /**
- * Page Contact - Permet aux utilisateurs de signaler des problèmes ou de faire des retours
+ * Page Contact - Permet aux utilisateurs de contacter directement DADVISOR
  */
 const Contact = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [issueType, setIssueType] = useState<IssueType>('bug');
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitError(null);
-    
-    try {
-      // Simuler l'envoi (à remplacer par un vrai envoi de formulaire)
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simuler une erreur d'envoi pour l'email spécifique
-          if (email === "frederic.denel@dadvisor.ai") {
-            reject(new Error("Impossible d'envoyer l'email à cette adresse. Veuillez essayer avec une autre adresse ou contacter le support directement."));
-          } else {
-            resolve(true);
-          }
-        }, 1000);
-      });
-      
-      // Réinitialiser le formulaire
-      setName('');
-      setEmail('');
-      setIssueType('bug');
-      setMessage('');
-      
-      toast({
-        title: "Message envoyé !",
-        description: "Nous vous répondrons dès que possible.",
-      });
-    } catch (error: any) {
-      setSubmitError(error.message || "Une erreur est survenue lors de l'envoi du message. Veuillez réessayer plus tard.");
-      
-      toast({
-        variant: "destructive",
-        title: "Erreur lors de l'envoi",
-        description: "Veuillez réessayer plus tard ou nous contacter directement par email.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
   return (
     <>
       <Navbar />
@@ -82,137 +27,83 @@ const Contact = () => {
             </Button>
           </div>
           
-          <div className="grid gap-8 md:grid-cols-2">
-            {/* Coordonnées et informations de contact */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Nous contacter</CardTitle>
-                <CardDescription>Plusieurs façons de nous joindre</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-dadvisor-blue mt-0.5" />
-                  <div>
-                    <p className="font-medium">Email direct</p>
-                    <a 
-                      href="mailto:frederic.denel@dadvisor.ai" 
-                      className="text-dadvisor-blue hover:underline"
-                    >
-                      frederic.denel@dadvisor.ai
-                    </a>
-                  </div>
-                </div>
-                
-                <div className="p-3 bg-blue-50 rounded-md border border-blue-100 text-sm text-blue-800 mt-6">
-                  <p className="font-medium mb-1">Version Alpha</p>
-                  <p>
-                    DADVISOR est actuellement en version alpha. Votre retour est précieux 
-                    pour nous aider à améliorer notre plateforme.
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Nous contacter</CardTitle>
+              <CardDescription>
+                Pour toute question, suggestion ou signalement de problème
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-start gap-3">
+                <Mail className="h-6 w-6 text-dadvisor-blue mt-0.5" />
+                <div>
+                  <p className="font-medium text-lg mb-1">Email direct</p>
+                  <a 
+                    href="mailto:frederic.denel@dadvisor.ai" 
+                    className="text-dadvisor-blue hover:underline text-xl font-semibold flex items-center gap-2"
+                  >
+                    frederic.denel@dadvisor.ai
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <p className="text-muted-foreground mt-2">
+                    Pour un traitement plus rapide de votre demande, merci d'inclure des détails précis 
+                    sur votre requête ou le problème rencontré.
                   </p>
                 </div>
-              </CardContent>
-            </Card>
-            
-            {/* Formulaire de contact */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Signaler un problème</CardTitle>
-                <CardDescription>
-                  Décrivez votre problème ou suggestion
-                </CardDescription>
-              </CardHeader>
-              <form onSubmit={handleSubmit}>
-                <CardContent className="space-y-4">
-                  {submitError && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Erreur d'envoi</AlertTitle>
-                      <AlertDescription>
-                        {submitError}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nom</Label>
-                    <Input 
-                      id="name" 
-                      value={name} 
-                      onChange={e => setName(e.target.value)} 
-                      placeholder="Votre nom"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      value={email} 
-                      onChange={e => setEmail(e.target.value)} 
-                      placeholder="votre@email.com"
-                      required
-                      className={email === "frederic.denel@dadvisor.ai" ? "border-red-300 focus-visible:ring-red-400" : ""}
-                    />
-                    {email === "frederic.denel@dadvisor.ai" && (
-                      <p className="text-xs text-red-500 mt-1">
-                        Attention: Problèmes connus avec cette adresse email. Veuillez utiliser une adresse alternative.
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="issue-type">Type de problème</Label>
-                    <Select 
-                      value={issueType} 
-                      onValueChange={value => setIssueType(value as IssueType)}
-                    >
-                      <SelectTrigger id="issue-type">
-                        <SelectValue placeholder="Sélectionnez un type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bug">Bug / Erreur</SelectItem>
-                        <SelectItem value="feature">Suggestion de fonctionnalité</SelectItem>
-                        <SelectItem value="question">Question</SelectItem>
-                        <SelectItem value="other">Autre</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea 
-                      id="message" 
-                      value={message} 
-                      onChange={e => setMessage(e.target.value)} 
-                      placeholder="Décrivez votre problème ou suggestion en détail..."
-                      rows={5}
-                      required
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="mr-2 h-4 w-4" />
-                        Envoyer
-                      </>
-                    )}
-                  </Button>
-                </CardFooter>
-              </form>
-            </Card>
-          </div>
+              </div>
+              
+              <Alert className="mt-6 bg-blue-50 border-blue-200">
+                <AlertCircle className="h-5 w-5 text-blue-600" />
+                <AlertTitle className="text-blue-800">Délai de réponse</AlertTitle>
+                <AlertDescription className="text-blue-700">
+                  Nous nous efforçons de répondre à tous les messages dans un délai de 48 heures ouvrées.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="p-4 bg-dadvisor-lightblue/20 rounded-md border border-dadvisor-blue/30 text-sm text-blue-800 mt-2">
+                <p className="font-medium mb-1">Version Alpha</p>
+                <p>
+                  DADVISOR est actuellement en version alpha. Votre retour est précieux 
+                  pour nous aider à améliorer notre plateforme.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Questions fréquentes</CardTitle>
+              <CardDescription>
+                Consultez nos réponses aux questions les plus courantes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-b pb-3">
+                <h3 className="font-medium mb-1">Comment réinitialiser mon mot de passe ?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Utilisez l'option "Mot de passe oublié" sur la page de connexion pour recevoir 
+                  un lien de réinitialisation par email.
+                </p>
+              </div>
+              
+              <div className="border-b pb-3">
+                <h3 className="font-medium mb-1">Mon profil d'investisseur est-il sauvegardé ?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Oui, votre profil et vos réponses au questionnaire sont automatiquement sauvegardés 
+                  lorsque vous êtes connecté à votre compte.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-1">Comment mettre à jour mes informations ?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Vous pouvez modifier vos informations personnelles et vos préférences dans la 
+                  section "Compte" accessible depuis le menu de navigation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>
