@@ -10,6 +10,7 @@ import { useAuthStatus } from "@/hooks/use-auth-status";
 import { NavLink } from "@/components/navbar/NavLink";
 import { Menu } from "lucide-react";
 import MobileMenu from "@/components/navbar/MobileMenu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * Composant Navbar - Barre de navigation principale de l'application
@@ -21,6 +22,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Mise à jour quand la route change, pour s'assurer d'avoir les données à jour
   useEffect(() => {
@@ -43,6 +45,7 @@ const Navbar = () => {
 
   const handleAccountManagement = () => {
     navigate("/account");
+    setIsMobileMenuOpen(false);
   };
 
   const toggleMobileMenu = () => {
@@ -71,7 +74,7 @@ const Navbar = () => {
           <img 
             src="/lovable-uploads/8c04feb5-4e71-478f-9b9d-105fbaba9a69.png" 
             alt="DADVISOR" 
-            className="h-16 md:h-20"
+            className="h-12 md:h-16 lg:h-20"
           />
         </Link>
         
@@ -81,7 +84,6 @@ const Navbar = () => {
           <NavLink to="/questionnaire" label="Questionnaire" currentPath={location.pathname} />
           <NavLink to="/portfolios" label="Portefeuilles" currentPath={location.pathname} />
           <NavLink to="/wallet" label="Wallet" currentPath={location.pathname} />
-          {/* Suppression du lien Administration IA */}
           
           {user ? (
             <Button 
@@ -106,6 +108,7 @@ const Navbar = () => {
           size="icon" 
           className="md:hidden"
           onClick={toggleMobileMenu}
+          aria-label="Menu"
         >
           <Menu className="h-6 w-6" />
         </Button>

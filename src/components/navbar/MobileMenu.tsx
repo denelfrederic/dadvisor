@@ -18,20 +18,19 @@ interface MobileMenuProps {
 const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: MobileMenuProps) => {
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="px-0">
+      <SheetContent side="right" className="px-0 w-[85%] max-w-[300px] sm:max-w-sm">
         <div className="flex flex-col h-full">
           <div className="flex justify-end p-4">
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer le menu">
               <X className="h-6 w-6" />
             </Button>
           </div>
           
-          <div className="flex flex-col space-y-4 px-6 py-4">
+          <div className="flex flex-col space-y-6 px-6 py-4">
             <NavLink to="/" label="Accueil" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/questionnaire" label="Questionnaire" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/portfolios" label="Portefeuilles" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/wallet" label="Wallet" currentPath={currentPath} onClick={onClose} />
-            {/* Suppression du lien Administration IA */}
           </div>
           
           <div className="mt-auto px-6 pb-8 pt-4">
@@ -44,7 +43,9 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
                   onClose();
                 }}
               >
-                Connecté comme "{user.email}"
+                <span className="truncate">
+                  {user.email}
+                </span>
               </Button>
             ) : (
               <Button asChild className="w-full" onClick={onClose}>

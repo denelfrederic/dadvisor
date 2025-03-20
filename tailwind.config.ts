@@ -19,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			screens: {
+				'xs': '480px',
+			},
 			fontFamily: {
 				sans: ['Open Sans', 'system-ui', 'sans-serif'],
 				heading: ['Roboto', 'sans-serif'],

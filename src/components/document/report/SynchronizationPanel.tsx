@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Loader2, RefreshCw } from "lucide-react";
 import { usePineconeSynchronizer } from "../detail/hooks/usePineconeSynchronizer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SynchronizationPanelProps {
   onComplete?: () => void;
@@ -16,6 +17,7 @@ interface SynchronizationPanelProps {
 const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete }) => {
   const { isSynchronizing, synchronizeAllDocuments } = usePineconeSynchronizer();
   const [lastResult, setLastResult] = useState<{ success: boolean; count: number } | null>(null);
+  const isMobile = useIsMobile();
 
   const handleSynchronize = async () => {
     const result = await synchronizeAllDocuments();
@@ -32,12 +34,12 @@ const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete 
           <RefreshCw className="h-4 w-4 mr-2" />
           Synchronisation des documents
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs md:text-sm">
           Marquer comme indexés dans Pinecone les documents qui ont déjà un embedding
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="text-sm">
+      <CardContent className="text-xs md:text-sm">
         <p>
           Cette action mettra à jour les documents qui ont un embedding mais ne sont pas marqués comme indexés dans Pinecone. 
           Cela peut arriver suite à une perte de synchronisation entre la base de données et Pinecone.
@@ -52,22 +54,22 @@ const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete 
         )}
       </CardContent>
       
-      <CardFooter>
+      <CardFooter className="flex flex-col sm:flex-row gap-2">
         <Button 
           onClick={handleSynchronize} 
           disabled={isSynchronizing}
           variant="outline"
-          className="border-amber-300 bg-amber-100 hover:bg-amber-200"
+          className="border-amber-300 bg-amber-100 hover:bg-amber-200 w-full sm:w-auto"
         >
           {isSynchronizing ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Synchronisation en cours...
+              <span className="truncate">Synchronisation...</span>
             </>
           ) : (
             <>
               <RefreshCw className="h-4 w-4 mr-2" />
-              Synchroniser les documents
+              <span className="truncate">Synchroniser</span>
             </>
           )}
         </Button>
@@ -77,10 +79,10 @@ const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete 
             onClick={() => setLastResult(null)}
             variant="ghost"
             size="sm"
-            className="ml-2"
+            className="ml-0 sm:ml-2 w-full sm:w-auto"
           >
             <RefreshCw className="h-3 w-3 mr-1" />
-            Effacer
+            <span className="truncate">Effacer le résultat</span>
           </Button>
         )}
       </CardFooter>

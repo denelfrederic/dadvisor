@@ -27,7 +27,7 @@ const IndexationProgressPanel: React.FC<IndexationProgressPanelProps> = ({ repor
     <Card>
       <CardContent className="pt-6">
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap">
             <span className="text-sm font-medium">Progression de l'indexation</span>
             <span className="text-sm font-medium">{progressPercentage}%</span>
           </div>
@@ -35,8 +35,8 @@ const IndexationProgressPanel: React.FC<IndexationProgressPanelProps> = ({ repor
             value={progressPercentage} 
             className="h-2" 
           />
-          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-            <span>{pineconeIndexedCount} documents indexés dans Pinecone</span>
+          <div className="flex flex-col xs:flex-row justify-between text-xs text-muted-foreground mt-1 gap-1">
+            <span className="truncate">{pineconeIndexedCount} documents indexés dans Pinecone</span>
             <span>Total: {totalDocuments} documents</span>
           </div>
         </div>
