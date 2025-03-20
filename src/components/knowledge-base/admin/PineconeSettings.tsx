@@ -9,7 +9,7 @@ import PineconeConfigViewer from "@/components/document/report/debug/PineconeCon
 import PineconeUrlHelper from "@/components/document/report/debug/PineconeUrlHelper";
 import PineconeIndexSetting from "@/components/document/report/debug/PineconeIndexSetting";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
  * Page de configuration Pinecone pour l'admin
