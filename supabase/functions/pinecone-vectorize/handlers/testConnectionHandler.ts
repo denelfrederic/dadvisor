@@ -1,6 +1,6 @@
 
 /**
- * Gestionnaire pour le test de connexion à Pinecone
+ * Gestionnaire pour tester la connexion à Pinecone
  */
 
 import { corsedResponse } from "../utils/response.ts";
@@ -10,32 +10,28 @@ import { testPineconeConnection } from "../services/pinecone/connection.ts";
 /**
  * Gestionnaire pour l'action de test de connexion
  */
-export async function handleTestConnectionAction(requestData: any) {
+export async function handleConnectionTestAction() {
   try {
-    logMessage("Test de la connexion à Pinecone", 'info');
+    logMessage("Test de connexion à Pinecone...", 'info');
     
-    // Effectuer le test de connexion à Pinecone
+    // Utiliser le service de test de connexion
     const testResult = await testPineconeConnection();
     
-    // Ajouter des informations de traçage à la réponse
-    const enhancedResult = {
-      ...testResult,
-      timestamp: new Date().toISOString()
-    };
-    
-    // Journaliser le résultat
+    // Journaliser le résultat du test
     if (testResult.success) {
-      logMessage(`Test de connexion Pinecone réussi`, 'info');
+      logMessage(`Test de connexion réussi: ${testResult.message}`, 'info');
     } else {
-      logMessage(`Échec du test de connexion Pinecone: ${testResult.message || "Raison inconnue"}`, 'error');
+      logMessage(`Échec du test de connexion: ${testResult.message}`, 'warn');
     }
     
-    return corsedResponse(enhancedResult);
+    // Retourner le résultat avec les entêtes CORS
+    return corsedResponse(testResult);
   } catch (error) {
     const errorMsg = logError("Erreur lors du test de connexion à Pinecone", error);
-    return corsedResponse({
-      success: false,
-      error: errorMsg
+    return corsedResponse({ 
+      success: false, 
+      error: errorMsg,
+      message: "Une erreur interne s'est produite lors du test de connexion"
     }, 500);
   }
 }

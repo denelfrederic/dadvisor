@@ -1,123 +1,101 @@
 
 /**
- * Gestionnaire pour les requêtes de recherche dans la base de connaissances
+ * Gestionnaire pour la recherche dans la base de connaissances
  */
 
-import { corsedResponse } from "../utils/cors.ts";
-import { checkSupabaseConnection } from "../services/supabase.ts";
+import { corsedResponse } from "../utils/response.ts";
 import { logMessage, logError } from "../utils/logging.ts";
+import { getPineconeUrl, PINECONE_INDEX, PINECONE_NAMESPACE } from "../config.ts";
 import { generateEmbeddingWithOpenAI } from "../services/openai.ts";
-import { PINECONE_API_KEY, PINECONE_NAMESPACE } from "../config.ts";
-import { performPineconeQuery } from "../services/pinecone/query.ts";
-
-// Interface pour les entrées de la base de connaissances
-interface KnowledgeEntry {
-  id: string;
-  question: string;
-  answer: string;
-  source?: string;
-  similarity?: number;
-}
+import { searchSimilarDocumentsInPinecone } from "../services/pinecone/search.ts";
 
 /**
- * Recherche dans la base de connaissances via Pinecone
- * @param requestData Données de la requête
- * @returns Résultats de la recherche
+ * Gestionnaire pour l'action de recherche dans la base de connaissances
  */
-export async function handleSearchKnowledgeBaseAction(requestData: any) {
+export async function handleSearchKnowledgeBaseAction(body: any) {
   try {
-    // Validation des paramètres requis
-    const { query, threshold = 0.5, limit = 5, hybrid = false } = requestData;
+    const { query, limit = 5, threshold = 0.5, hybrid = false } = body;
     
     if (!query) {
+      logMessage("Requête de recherche manquante", 'error');
       return corsedResponse({ 
         success: false, 
-        error: "Requête manquante" 
+        error: "La requête de recherche est requise" 
       }, 400);
     }
     
-    // Vérifier la connexion à Supabase
-    const supabaseStatus = checkSupabaseConnection();
-    if (!supabaseStatus.success) {
-      return corsedResponse({ 
-        success: false, 
-        error: `Erreur Supabase: ${supabaseStatus.error}` 
-      }, 500);
-    }
+    logMessage(`Recherche dans la base de connaissances pour: "${query}"`, 'info');
     
     // Générer l'embedding pour la requête
-    logMessage(`Génération de l'embedding pour la requête: "${query.substring(0, 50)}..."`, 'info');
-    const embeddingResult = await generateEmbeddingWithOpenAI(query);
+    logMessage("Génération de l'embedding pour la requête...", 'info');
+    const embedding = await generateEmbeddingWithOpenAI(query);
     
-    if (!embeddingResult.success) {
+    if (!embedding) {
+      logMessage("Échec de la génération de l'embedding pour la requête", 'error');
       return corsedResponse({ 
         success: false, 
-        error: `Erreur lors de la génération de l'embedding: ${embeddingResult.error}` 
+        error: "Impossible de générer l'embedding pour la requête" 
       }, 500);
     }
     
-    // Vérifier si la clé API Pinecone est disponible
-    if (!PINECONE_API_KEY) {
-      return corsedResponse({ 
-        success: false, 
-        error: "Clé API Pinecone non configurée" 
-      }, 500);
-    }
-    
-    // Exécuter la requête sur Pinecone
-    logMessage(`Recherche Pinecone pour "${query.substring(0, 30)}..." avec seuil ${threshold}`, 'info');
-    
-    const pineconeQueryResult = await performPineconeQuery({
-      namespace: PINECONE_NAMESPACE,
-      vector: embeddingResult.embedding,
-      topK: limit,
-      includeMetadata: true,
-      filter: { type: "knowledge_entry" }
+    // Recherche dans Pinecone
+    logMessage(`Recherche de documents similaires dans Pinecone (seuil: ${threshold}, limite: ${limit})...`, 'info');
+    const searchResults = await searchSimilarDocumentsInPinecone(embedding, {
+      threshold,
+      limit,
+      hybrid,
+      includeMetadata: true
     });
     
-    if (!pineconeQueryResult.success) {
+    if (!searchResults.success) {
+      logMessage(`Échec de la recherche dans Pinecone: ${searchResults.error}`, 'error');
       return corsedResponse({ 
         success: false, 
-        error: `Erreur lors de la requête Pinecone: ${pineconeQueryResult.error}` 
+        error: searchResults.error,
+        message: "Erreur lors de la recherche de documents similaires",
+        details: searchResults.details || {},
+        config: {
+          pineconeUrl: getPineconeUrl(),
+          pineconeIndex: PINECONE_INDEX,
+          namespace: PINECONE_NAMESPACE
+        }
       }, 500);
     }
     
-    // Transformation des résultats
-    const matches = pineconeQueryResult.matches || [];
-    logMessage(`${matches.length} résultats obtenus de Pinecone`, 'info');
+    logMessage(`${searchResults.matches.length} résultats trouvés pour la requête`, 'info');
     
-    // Filtrer selon le seuil de similarité
-    const filteredMatches = matches.filter(match => match.score && match.score >= threshold);
-    logMessage(`${filteredMatches.length} résultats après filtrage par seuil ${threshold}`, 'info');
-    
-    // Convertir en objets KnowledgeEntry
-    const results: KnowledgeEntry[] = filteredMatches.map(match => {
-      // Les métadonnées contiennent les informations de l'entrée
+    // Transformation des résultats pour le client
+    const results = searchResults.matches.map((match: any) => {
       const metadata = match.metadata || {};
       
       return {
         id: match.id,
-        question: metadata.question || "Question inconnue",
-        answer: metadata.answer || "Réponse inconnue",
-        source: metadata.source || "",
-        similarity: match.score || 0
+        question: metadata.question || "",
+        answer: metadata.answer || metadata.text || "",
+        source: metadata.source || "Inconnu",
+        similarity: match.score
       };
     });
     
-    // Retourner les résultats
     return corsedResponse({
       success: true,
       query,
       results,
-      count: results.length,
-      timestamp: new Date().toISOString()
+      totalResults: results.length,
+      embedding: embedding.slice(0, 5) // Inclure un extrait de l'embedding pour vérification
     });
-    
   } catch (error) {
     const errorMsg = logError("Erreur lors de la recherche dans la base de connaissances", error);
+    
     return corsedResponse({ 
       success: false, 
-      error: errorMsg 
+      error: errorMsg,
+      query: body?.query || null,
+      config: {
+        pineconeUrl: getPineconeUrl(),
+        pineconeIndex: PINECONE_INDEX,
+        namespace: PINECONE_NAMESPACE
+      }
     }, 500);
   }
 }

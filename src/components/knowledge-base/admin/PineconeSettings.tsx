@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, RefreshCw, Server, Settings } from "lucide-react";
+import { Database, RefreshCw, Server, Settings, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PineconeConfigViewer from "@/components/document/report/debug/PineconeConfigViewer";
 import PineconeUrlHelper from "@/components/document/report/debug/PineconeUrlHelper";
 import PineconeIndexSetting from "@/components/document/report/debug/PineconeIndexSetting";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/card";
 
 /**
  * Page de configuration Pinecone pour l'admin
@@ -17,6 +18,7 @@ const PineconeSettings = () => {
   const [config, setConfig] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("config");
+  const [edgeFunctionError, setEdgeFunctionError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -25,21 +27,66 @@ const PineconeSettings = () => {
 
   const fetchConfig = async () => {
     setIsLoading(true);
+    setEdgeFunctionError(null);
+    
     try {
-      const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
-        body: { action: 'config' }
+      // Ajout d'un timestamp pour éviter les problèmes de cache
+      const timestamp = new Date().getTime();
+      console.log(`Tentative d'appel de la fonction edge avec timestamp ${timestamp}...`);
+      
+      // Utiliser un timeout pour détecter les problèmes de connectivité
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Timeout: La requête a expiré après 15 secondes")), 15000);
       });
       
+      // Faire la requête avec un race contre le timeout
+      const fetchPromise = supabase.functions.invoke('pinecone-vectorize', {
+        body: { 
+          action: 'config',
+          _timestamp: timestamp // Éviter la mise en cache
+        }
+      });
+      
+      // Race entre le fetch et le timeout
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      
       if (error) {
-        throw error;
+        console.error("Erreur lors de l'appel à la fonction edge:", error);
+        
+        // Diagnostic spécifique pour les erreurs
+        if (error.message && error.message.includes("Failed to send")) {
+          setEdgeFunctionError("Erreur de connexion à la fonction Edge: " + error.message);
+          toast({
+            title: "Erreur de connexion",
+            description: "Impossible de contacter la fonction Edge. Vérifiez que la fonction est correctement déployée.",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+        return;
       }
       
+      console.log("Réponse de la fonction edge reçue:", data);
       setConfig(data);
+      
     } catch (error) {
-      console.error("Erreur lors de la récupération de la configuration:", error);
+      console.error("Exception lors de la récupération de la configuration:", error);
+      
+      // Gestion détaillée des différents types d'erreurs
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      if (errorMsg.includes("Timeout")) {
+        setEdgeFunctionError("Timeout: La requête à la fonction Edge a expiré. Le serveur ne répond pas.");
+      } else if (errorMsg.includes("Failed to send") || errorMsg.includes("Failed to fetch")) {
+        setEdgeFunctionError("Erreur de connexion: Impossible de contacter la fonction Edge. Vérifiez que la fonction est bien déployée.");
+      } else {
+        setEdgeFunctionError(`Erreur: ${errorMsg}`);
+      }
+      
       toast({
         title: "Erreur",
-        description: `Impossible de récupérer la configuration: ${error instanceof Error ? error.message : String(error)}`,
+        description: `Impossible de récupérer la configuration: ${errorMsg}`,
         variant: "destructive"
       });
     } finally {
@@ -94,6 +141,32 @@ const PineconeSettings = () => {
           Configurer l'intégration avec Pinecone pour l'indexation vectorielle
         </CardDescription>
         
+        {edgeFunctionError && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Erreur de connexion à la fonction Edge</AlertTitle>
+            <AlertDescription>
+              <p>{edgeFunctionError}</p>
+              <p className="text-xs mt-2">Assurez-vous que :</p>
+              <ul className="text-xs list-disc pl-4 mt-1 space-y-1">
+                <li>La fonction Edge "pinecone-vectorize" est correctement déployée</li>
+                <li>Vous n'avez pas de problème de connectivité réseau</li>
+                <li>Vous n'êtes pas derrière un proxy ou pare-feu bloquant les requêtes</li>
+                <li>Le service Supabase Functions est disponible (pas en maintenance)</li>
+              </ul>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchConfig}
+                className="mt-2"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Réessayer
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList>
             <TabsTrigger value="config">
@@ -144,7 +217,7 @@ const PineconeSettings = () => {
               />
             )}
             
-            {!config && !isLoading && (
+            {!config && !isLoading && !edgeFunctionError && (
               <div className="text-center py-4">
                 <p className="text-muted-foreground">Impossible de charger la configuration</p>
                 <Button 
