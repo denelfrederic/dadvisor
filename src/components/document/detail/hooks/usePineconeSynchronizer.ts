@@ -50,6 +50,39 @@ export const usePineconeSynchronizer = () => {
         return false;
       }
       
+      // Utiliser l'edge function en mode synchronisation
+      const { data: syncData, error: syncError } = await supabase.functions.invoke('pinecone-vectorize', {
+        body: {
+          action: 'vectorize',
+          documentId: documentId,
+          documentContent: "content_placeholder", // Non utilisé en mode synchronisation
+          documentTitle: document.title,
+          skipIndexation: true,
+          embedding: document.embedding,
+          _timestamp: new Date().getTime() // Éviter le cache
+        }
+      });
+      
+      if (syncError) {
+        console.error("Erreur lors de la synchronisation avec Pinecone:", syncError);
+        toast({
+          title: "Erreur",
+          description: `Erreur lors de la synchronisation: ${syncError.message}`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      if (!syncData || !syncData.success) {
+        console.error("Échec de la synchronisation Pinecone:", syncData?.error || "Raison inconnue");
+        toast({
+          title: "Erreur",
+          description: syncData?.error || "Échec de la synchronisation",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       // Mettre à jour le statut Pinecone du document
       const { error: updateError } = await supabase
         .from('documents')
@@ -128,16 +161,12 @@ export const usePineconeSynchronizer = () => {
         try {
           console.log(`Synchronisation du document ${doc.id} (${doc.title})...`);
           
-          const { error: updateError } = await supabase
-            .from('documents')
-            .update({ pinecone_indexed: true })
-            .eq('id', doc.id);
-            
-          if (updateError) {
-            console.error(`Erreur lors de la mise à jour du document ${doc.id}:`, updateError);
-          } else {
+          const success = await synchronizePineconeStatus(doc.id);
+          if (success) {
             successCount++;
             console.log(`Document ${doc.id} (${doc.title}) synchronisé avec succès`);
+          } else {
+            console.error(`Échec de synchronisation du document ${doc.id} (${doc.title})`);
           }
         } catch (docError) {
           console.error(`Erreur lors de la synchronisation du document ${doc.id}:`, docError);

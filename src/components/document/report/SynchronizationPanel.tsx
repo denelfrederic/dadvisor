@@ -9,6 +9,10 @@ interface SynchronizationPanelProps {
   onComplete?: () => void;
 }
 
+/**
+ * Panneau pour synchroniser les documents déjà présents dans Pinecone
+ * mais non marqués comme tels dans la base de données
+ */
 const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete }) => {
   const { isSynchronizing, synchronizeAllDocuments } = usePineconeSynchronizer();
   const [lastResult, setLastResult] = useState<{ success: boolean; count: number } | null>(null);

@@ -41,6 +41,30 @@ export async function handleVectorizeAction(body: any) {
       }, 500);
     }
     
+    // Nouvelle option: skipIndexation pour marquer un document comme indexé sans le réindexer
+    const skipIndexation = body.skipIndexation === true && body.embedding !== undefined;
+    
+    if (skipIndexation) {
+      logMessage(`Mode synchronisation activé pour le document ${documentId}, l'indexation dans Pinecone sera ignorée`, 'info');
+      
+      // Vérifier que l'embedding est valide
+      if (!Array.isArray(body.embedding) || body.embedding.length === 0) {
+        logMessage("Embedding invalide fourni pour le mode synchronisation", 'error');
+        return corsedResponse({ 
+          success: false, 
+          error: "Embedding invalide pour le mode synchronisation" 
+        }, 400);
+      }
+      
+      // Retourner directement l'embedding fourni
+      return corsedResponse({ 
+        success: true, 
+        message: "Document marqué comme indexé (mode synchronisation)",
+        embedding: body.embedding
+      });
+    }
+    
+    // Mode normal: indexer le document dans Pinecone
     const indexResult = await indexDocumentInPinecone(
       documentId, 
       documentContent,
