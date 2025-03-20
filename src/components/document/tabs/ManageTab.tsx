@@ -66,7 +66,7 @@ const ManageTab = ({ stats, refreshStats }: ManageTabProps) => {
     };
     
     fetchDocuments();
-  }, [toast]);
+  }, [toast, refreshStats]);
 
   const handleClearDatabase = async () => {
     if (confirm("Voulez-vous vraiment supprimer tous les documents de la base locale ?")) {
@@ -143,6 +143,7 @@ const ManageTab = ({ stats, refreshStats }: ManageTabProps) => {
           <h3 className="text-sm font-medium mb-2">Liste des documents</h3>
           <DocumentTable 
             documents={documents} 
+            loading={loading}
             onViewDetails={handleViewDetails}
           />
         </div>
@@ -168,11 +169,13 @@ const ManageTab = ({ stats, refreshStats }: ManageTabProps) => {
       </div>
       
       {/* Boîte de dialogue des détails du document */}
-      <DocumentDetailDialog
-        documentId={selectedDocumentId}
-        isOpen={isDetailDialogOpen}
-        onClose={handleCloseDetailDialog}
-      />
+      {selectedDocumentId && (
+        <DocumentDetailDialog
+          documentId={selectedDocumentId}
+          isOpen={isDetailDialogOpen}
+          onClose={handleCloseDetailDialog}
+        />
+      )}
     </div>
   );
 };

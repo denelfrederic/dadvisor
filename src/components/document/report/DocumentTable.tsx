@@ -15,10 +15,11 @@ import { formatFileSize } from "../utils";
 
 interface DocumentTableProps {
   documents: DocumentIndexationStatus[];
+  loading?: boolean;
   onViewDetails?: (documentId: string) => void;
 }
 
-const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onViewDetails }) => {
+const DocumentTable: React.FC<DocumentTableProps> = ({ documents, loading = false, onViewDetails }) => {
   const getDocumentIcon = (type: string) => {
     if (type.includes("image")) return <FileImage className="h-4 w-4" />;
     if (type.includes("pdf")) return <FileArchive className="h-4 w-4" />;
@@ -33,6 +34,14 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, onViewDetails 
       year: "numeric",
     });
   };
+
+  if (loading) {
+    return (
+      <div className="border rounded-md p-4 text-center">
+        <p className="text-muted-foreground">Chargement des documents...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="border rounded-md">

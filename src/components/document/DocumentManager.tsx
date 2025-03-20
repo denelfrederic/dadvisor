@@ -39,17 +39,23 @@ const DocumentManager = ({ isOpen, onClose, initialTab = "upload" }: DocumentMan
   
   // Mettre à jour l'onglet actif si initialTab change
   useEffect(() => {
-    if (initialTab) {
+    if (initialTab && initialTab !== activeTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
 
   const handleUploadComplete = () => {
     refreshStats();
+    // Après un téléchargement réussi, passer à l'onglet "manage" pour voir le document
+    setActiveTab("manage");
+  };
+
+  const handleClose = () => {
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -88,7 +94,7 @@ const DocumentManager = ({ isOpen, onClose, initialTab = "upload" }: DocumentMan
         </Tabs>
 
         <DialogFooter>
-          <DocumentFooter stats={stats} onClose={onClose} />
+          <DocumentFooter stats={stats} onClose={handleClose} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
