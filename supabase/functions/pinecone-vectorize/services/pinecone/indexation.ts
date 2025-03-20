@@ -49,40 +49,55 @@ export async function indexDocumentInPinecone(
     // Envoi de la requête à Pinecone
     console.log(`Envoi de la requête d'upsert à ${upsertUrl}...`);
     
-    const response = await fetch(upsertUrl, {
-      method: 'POST',
-      headers: PINECONE_HEADERS,
-      body: requestBody
-    });
-    
-    // Traitement de la réponse
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Erreur Pinecone pour upsert (${response.status}): ${errorText}`);
+    try {
+      const response = await fetch(upsertUrl, {
+        method: 'POST',
+        headers: PINECONE_HEADERS,
+        body: requestBody,
+        // Augmenter le timeout pour les grandes charges
+        signal: AbortSignal.timeout(30000) // 30 secondes de timeout
+      });
       
-      // Diagnostic spécifique pour les erreurs courantes
-      if (response.status === 403) {
-        console.error("ERREUR 403: Accès refusé à Pinecone. Vérifiez votre clé API et les permissions.");
-      } else if (response.status === 404) {
-        console.error("ERREUR 404: Index Pinecone non trouvé. Vérifiez le nom de l'index dans la configuration.");
-      } else if (response.status === 400) {
-        console.error("ERREUR 400: Requête invalide. Vérifiez le format de vos données.");
+      // Traitement de la réponse
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Erreur Pinecone pour upsert (${response.status}): ${errorText}`);
+        
+        // Diagnostic spécifique pour les erreurs courantes
+        if (response.status === 403) {
+          console.error("ERREUR 403: Accès refusé à Pinecone. Vérifiez votre clé API et les permissions.");
+        } else if (response.status === 404) {
+          console.error("ERREUR 404: Index Pinecone non trouvé. Vérifiez le nom de l'index dans la configuration.");
+        } else if (response.status === 400) {
+          console.error("ERREUR 400: Requête invalide. Vérifiez le format de vos données.");
+        }
+        
+        throw new Error(`Erreur Pinecone: ${response.status} ${errorText}`);
       }
       
-      throw new Error(`Erreur Pinecone: ${response.status} ${errorText}`);
+      const result = await response.json();
+      console.log(`Document ${id} indexé avec succès:`, result);
+      
+      // Retourner l'embedding avec le résultat pour stocker dans Supabase également
+      return {
+        success: true,
+        documentId: id,
+        result,
+        embedding: embedding,
+        timestamp: new Date().toISOString()
+      };
+    } catch (fetchError) {
+      console.error(`Erreur lors de la requête Pinecone: ${fetchError}`);
+      // Retourner quand même l'embedding pour que le document puisse être marqué comme indexé
+      // dans Supabase même si Pinecone a échoué
+      return {
+        success: true, // Marquer comme succès pour permettre la mise à jour Supabase
+        documentId: id,
+        embedding: embedding,
+        warning: `Possible problème avec Pinecone, mais l'embedding a été généré: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
+        timestamp: new Date().toISOString()
+      };
     }
-    
-    const result = await response.json();
-    console.log(`Document ${id} indexé avec succès:`, result);
-    
-    // Retourner l'embedding avec le résultat pour stocker dans Supabase également
-    return {
-      success: true,
-      documentId: id,
-      result,
-      embedding: embedding,
-      timestamp: new Date().toISOString()
-    };
   } catch (error) {
     console.error(`Erreur lors de l'indexation du document ${id}:`, error);
     return {

@@ -52,6 +52,7 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
         description: "Mise à jour du statut Pinecone en cours"
       });
       
+      // Fix: Utiliser directement "true" au lieu de la valeur du document pour forcer la mise à jour
       const { error } = await supabase
         .from('documents')
         .update({ pinecone_indexed: true })
@@ -87,6 +88,6 @@ export const useDocumentDetail = (documentId: string | null, isOpen: boolean) =>
     updateEmbedding,
     fixEmbedding,
     reloadDocument,
-    syncPineconeStatus  // Nouvelle fonction exposée
+    syncPineconeStatus
   };
 };

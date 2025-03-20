@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, AlertTriangle, RefreshCw, Loader2, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,14 @@ const DocumentEmbeddingTab = ({
   onSyncStatus,
 }: DocumentEmbeddingTabProps) => {
   const { toast } = useToast();
+  const [localUpdating, setLocalUpdating] = useState(false);
+  
+  // Utiliser un état local pour contrôler l'affichage durant les opérations asynchrones
+  useEffect(() => {
+    if (updatingEmbedding !== localUpdating) {
+      setLocalUpdating(updatingEmbedding);
+    }
+  }, [updatingEmbedding]);
   
   useEffect(() => {
     if (updateResult?.success) {
@@ -50,6 +58,34 @@ const DocumentEmbeddingTab = ({
   const isPineconeIndexed = document.pinecone_indexed === true;
   const hasEmbedding = !!document.embedding;
   const needsSync = hasEmbedding && !isPineconeIndexed;
+
+  // Gérer l'indexation avec une fonction locale pour éviter le scintillement
+  const handleUpdateEmbedding = async () => {
+    setLocalUpdating(true);
+    try {
+      await onUpdateEmbedding();
+    } finally {
+      // Ne pas désactiver immédiatement l'état de chargement pour permettre au composant de rester stable
+      setTimeout(() => {
+        setLocalUpdating(false);
+      }, 500);
+    }
+  };
+
+  // Gérer la synchronisation également avec un état local
+  const handleSyncStatus = async () => {
+    if (!onSyncStatus) return;
+    
+    setLocalUpdating(true);
+    try {
+      await onSyncStatus();
+    } finally {
+      // Délai pour éviter le scintillement
+      setTimeout(() => {
+        setLocalUpdating(false);
+      }, 500);
+    }
+  };
 
   if (isPineconeIndexed) {
     return (
@@ -107,22 +143,32 @@ const DocumentEmbeddingTab = ({
       {/* Bouton de synchronisation si le document a un embedding mais n'est pas marqué comme indexé */}
       {needsSync && onSyncStatus && (
         <Button 
-          onClick={onSyncStatus}
+          onClick={handleSyncStatus}
           variant="outline" 
           className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+          disabled={localUpdating}
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Synchroniser le statut Pinecone
+          {localUpdating ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Synchronisation en cours...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Synchroniser le statut Pinecone
+            </>
+          )}
         </Button>
       )}
       
       {/* Bouton principal d'indexation */}
       <Button 
-        onClick={onUpdateEmbedding} 
-        disabled={updatingEmbedding || !document.content}
+        onClick={handleUpdateEmbedding} 
+        disabled={localUpdating || !document.content}
         className="w-full"
       >
-        {updatingEmbedding ? (
+        {localUpdating ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             Indexation en cours...
@@ -142,6 +188,7 @@ const DocumentEmbeddingTab = ({
           variant="outline"
           size="sm"
           className="w-full mt-2"
+          disabled={localUpdating}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Réessayer l'indexation
@@ -154,6 +201,7 @@ const DocumentEmbeddingTab = ({
           variant="outline"
           size="sm"
           className="w-full mt-2"
+          disabled={localUpdating}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Rafraîchir les données du document
