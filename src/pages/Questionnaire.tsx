@@ -43,10 +43,9 @@ const Questionnaire = () => {
       <div className="container mx-auto max-w-4xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Évaluation de votre profil d'investisseur</h1>
-          <Button variant="outline" asChild className="flex items-center gap-2">
+          <Button variant="outline" asChild className="flex items-center justify-center w-10 h-10 p-0" aria-label="Retour à l'accueil">
             <Link to="/">
-              <Home size={18} />
-              Accueil
+              <Home size={20} />
             </Link>
           </Button>
         </div>
