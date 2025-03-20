@@ -16,9 +16,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
  */
 const PineconeSettings = () => {
   const [config, setConfig] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Modification ici: démarrer en état de chargement
   const [activeTab, setActiveTab] = useState("config");
   const [edgeFunctionError, setEdgeFunctionError] = useState<string | null>(null);
+  const [fetchAttempted, setFetchAttempted] = useState(false); // Nouvel état pour suivre les tentatives
   const { toast } = useToast();
 
   useEffect(() => {
@@ -69,6 +70,7 @@ const PineconeSettings = () => {
       
       console.log("Réponse de la fonction edge reçue:", data);
       setConfig(data);
+      setFetchAttempted(true); // Marquer que la tentative a été effectuée
       
     } catch (error) {
       console.error("Exception lors de la récupération de la configuration:", error);
@@ -89,6 +91,8 @@ const PineconeSettings = () => {
         description: `Impossible de récupérer la configuration: ${errorMsg}`,
         variant: "destructive"
       });
+
+      setFetchAttempted(true); // Marquer que la tentative a été effectuée
     } finally {
       setIsLoading(false);
     }
@@ -129,6 +133,10 @@ const PineconeSettings = () => {
     // Rafraîchir la configuration complète après un court délai
     setTimeout(fetchConfig, 1000);
   };
+
+  // Gérer l'état initial de chargement avec un rendu spécifique
+  const showLoader = isLoading && !fetchAttempted;
+  const showError = !isLoading && (!config || edgeFunctionError) && fetchAttempted;
 
   return (
     <Card className="w-full">
@@ -186,12 +194,27 @@ const PineconeSettings = () => {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {isLoading && !config ? (
+        {showLoader ? (
           <div className="flex items-center justify-center py-8">
             <div className="flex flex-col items-center gap-2">
               <RefreshCw className="h-8 w-8 text-muted-foreground animate-spin" />
               <p className="text-sm text-muted-foreground">Chargement de la configuration...</p>
             </div>
+          </div>
+        ) : showError ? (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground mb-4">
+              {edgeFunctionError || "Impossible de charger la configuration. Cliquez sur 'Réessayer' pour une nouvelle tentative."}
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchConfig}
+              className="mt-2"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Réessayer
+            </Button>
           </div>
         ) : (
           <>
@@ -215,21 +238,6 @@ const PineconeSettings = () => {
                 defaultIndex={config?.config?.defaultIndex}
                 onIndexUpdate={handleIndexUpdate}
               />
-            )}
-            
-            {!config && !isLoading && !edgeFunctionError && (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">Impossible de charger la configuration</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={fetchConfig}
-                  className="mt-2"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Réessayer
-                </Button>
-              </div>
             )}
           </>
         )}

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Bug } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
@@ -26,6 +26,15 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
   const [activeTab, setActiveTab] = useState("config");
   const [detailedLogs, setDetailedLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
+
+  // Effectuer une récupération initiale au chargement
+  useEffect(() => {
+    // Seulement si ce n'est pas déjà fait
+    if (!initialLoadAttempted && pineconeStatus === 'idle') {
+      getPineconeConfig();
+    }
+  }, [initialLoadAttempted, pineconeStatus]);
 
   const addLog = (message: string) => {
     setDetailedLogs(prev => [...prev, `[${new Date().toISOString().substring(11, 19)}] ${message}`]);
@@ -41,28 +50,41 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
 
   const getPineconeConfig = async () => {
     setPineconeStatus('loading');
-    setDetailedLogs([]);
+    
+    // N'effacez pas les logs existants lors de la récupération initiale
+    if (initialLoadAttempted) {
+      setDetailedLogs([]);
+    }
+    
     addLog("Récupération de la configuration Pinecone...");
     setIsLoading(true);
     
     try {
-      toast({
-        title: "Récupération des informations",
-        description: "Vérification de la configuration Pinecone en cours..."
-      });
+      // Ne pas afficher de toast lors du chargement initial
+      if (initialLoadAttempted) {
+        toast({
+          title: "Récupération des informations",
+          description: "Vérification de la configuration Pinecone en cours..."
+        });
+      }
       
       addLog("Appel de l'edge function pinecone-vectorize avec action='config'");
       const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
-        body: { action: 'config' }
+        body: { 
+          action: 'config',
+          _timestamp: new Date().getTime() // Éviter la mise en cache
+        }
       });
       
       if (error) {
         addLog(`ERREUR: ${error.message}`);
-        toast({
-          title: "Erreur",
-          description: `Échec de la récupération des informations: ${error.message}`,
-          variant: "destructive"
-        });
+        if (initialLoadAttempted) {
+          toast({
+            title: "Erreur",
+            description: `Échec de la récupération des informations: ${error.message}`,
+            variant: "destructive"
+          });
+        }
         setDiagnosticInfo({ error: error.message });
         setPineconeStatus('error');
         return;
@@ -71,20 +93,27 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
       addLog(`Réponse reçue: ${JSON.stringify(data).substring(0, 200)}...`);
       setDiagnosticInfo(data);
       setPineconeStatus('success');
-      toast({
-        title: "Succès",
-        description: "Informations de diagnostic récupérées avec succès"
-      });
+      
+      if (initialLoadAttempted) {
+        toast({
+          title: "Succès",
+          description: "Informations de diagnostic récupérées avec succès"
+        });
+      }
     } catch (error) {
       addLog(`EXCEPTION: ${error instanceof Error ? error.message : String(error)}`);
       setPineconeStatus('error');
-      toast({
-        title: "Erreur",
-        description: `Exception: ${error instanceof Error ? error.message : String(error)}`,
-        variant: "destructive"
-      });
+      
+      if (initialLoadAttempted) {
+        toast({
+          title: "Erreur",
+          description: `Exception: ${error instanceof Error ? error.message : String(error)}`,
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
+      setInitialLoadAttempted(true);
     }
   };
 
@@ -100,7 +129,10 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ onGetInfo }) => {
       
       addLog("Appel de l'edge function pinecone-vectorize avec action='test-connection'");
       const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
-        body: { action: 'test-connection' }
+        body: { 
+          action: 'test-connection',
+          _timestamp: new Date().getTime() // Éviter la mise en cache
+        }
       });
       
       if (error) {

@@ -4,7 +4,7 @@
  */
 
 import { validateConfig } from "../../config.ts";
-import { corsedResponse } from "../../utils/cors.ts";
+import { corsedResponse } from "../../utils/response.ts";
 import { logMessage } from "../../utils/logging.ts";
 
 /**
