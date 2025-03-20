@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/utils/auth";
 import { InvestorProfileAnalysis, getInvestorProfileAnalysis, analyzeInvestmentStyle } from "@/utils/questionnaire";
-import { TEMP_ANSWERS_KEY, TEMP_SCORE_KEY, TEMP_COMPLETE_KEY } from "@/contexts/questionnaire";
+import { TEMP_ANSWERS_KEY, TEMP_SCORE_KEY, TEMP_COMPLETE_KEY } from "@/contexts/questionnaire/types";
 import { Json } from "@/integrations/supabase/types";
 
 export interface ProfileData {

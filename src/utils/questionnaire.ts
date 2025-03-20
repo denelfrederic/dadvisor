@@ -5,6 +5,12 @@
 
 import { Question } from "@/components/QuestionCard";
 
+// Interface pour les éléments d'insight du style d'investissement
+export interface InsightItem {
+  text: string;
+  iconName?: string;
+}
+
 // Questions du questionnaire de profilage
 export const questions: Question[] = [
   {

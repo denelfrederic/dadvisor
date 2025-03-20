@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/utils/auth";
 import { InvestorProfileAnalysis } from "@/utils/questionnaire";
