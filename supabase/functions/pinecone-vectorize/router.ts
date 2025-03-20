@@ -9,6 +9,7 @@ import { handleConfigAction } from "./handlers/configHandler.ts";
 import { handleConnectionTestAction } from "./handlers/connectionHandler.ts";
 import { handleVectorizeAction } from "./handlers/vectorizeHandler.ts";
 import { handleOpenAICheckAction, handleGenerateEmbeddingAction } from "./handlers/openaiHandler.ts";
+import { handleQueryAction } from "./handlers/queryHandler.ts";
 
 /**
  * Router principal pour distribuer les requêtes aux handlers appropriés
@@ -72,6 +73,9 @@ export async function routeRequest(req: Request) {
         
       case 'generate-embedding':
         return await handleGenerateEmbeddingAction(body);
+        
+      case 'query':
+        return await handleQueryAction(body);
         
       default:
         logMessage(`Action inconnue: ${action}`, 'error');
