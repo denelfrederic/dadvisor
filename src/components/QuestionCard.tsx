@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * Interface pour une option de réponse
@@ -61,6 +62,7 @@ const QuestionCard = ({
 }: QuestionCardProps) => {
   const [selected, setSelected] = useState<string | null>(selectedOptionId || null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const isMobile = useIsMobile();
 
   // Gère la sélection d'une option par l'utilisateur
   const handleOptionSelect = (optionId: string, value: number) => {
@@ -81,15 +83,15 @@ const QuestionCard = ({
 
   return (
     <motion.div 
-      className="glass-card p-6 rounded-2xl w-full max-w-2xl mx-auto"
+      className="glass-card p-4 sm:p-6 rounded-2xl w-full max-w-2xl mx-auto"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
     >
-      <h3 className="text-xl font-medium mb-6">{question.text}</h3>
+      <h3 className="text-lg sm:text-xl font-medium mb-4 sm:mb-6">{question.text}</h3>
       
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {question.options.map((option) => (
           <OptionButton
             key={option.id}
@@ -104,26 +106,26 @@ const QuestionCard = ({
       {/* Affichage de l'évolution du score */}
       {scoreDifference !== null && (
         <motion.div 
-          className="mt-4 p-3 bg-[#ea384c]/10 border border-[#ea384c] rounded-lg text-[#ea384c] font-medium"
+          className="mt-3 sm:mt-4 p-2 sm:p-3 bg-[#ea384c]/10 border border-[#ea384c] rounded-lg text-[#ea384c] font-medium"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             {scoreDifference > 0 ? (
               <>
-                <ArrowUp className="h-5 w-5" />
-                <span>Score augmenté de {scoreDifference.toFixed(1)} points</span>
+                <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{isMobile ? "+"+scoreDifference.toFixed(1) : "Score augmenté de "+scoreDifference.toFixed(1)+" points"}</span>
               </>
             ) : scoreDifference < 0 ? (
               <>
-                <ArrowDown className="h-5 w-5" />
-                <span>Score diminué de {Math.abs(scoreDifference).toFixed(1)} points</span>
+                <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{isMobile ? Math.abs(scoreDifference).toFixed(1) : "Score diminué de "+Math.abs(scoreDifference).toFixed(1)+" points"}</span>
               </>
             ) : (
               <span>Score inchangé</span>
             )}
-            <span className="ml-auto font-bold">Score actuel: {currentScore?.toFixed(1)}</span>
+            <span className="ml-auto font-bold">Score: {currentScore?.toFixed(1)}</span>
           </div>
         </motion.div>
       )}
@@ -158,22 +160,22 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
       <Button
         variant="outline"
         className={cn(
-          "w-full justify-start text-left p-4 h-auto transition-all duration-300",
+          "w-full justify-start text-left p-2 sm:p-4 h-auto text-xs sm:text-sm transition-all duration-300",
           isSelected && "border-primary bg-primary/5"
         )}
         onClick={() => onSelect(option.id, option.value)}
         disabled={isDisabled}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Indicateur de sélection (bouton radio) */}
           <div className={cn(
-            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+            "min-w-4 h-4 sm:min-w-5 sm:h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0",
             isSelected ? "border-primary" : "border-muted"
           )}>
             <AnimatePresence>
               {isSelected && (
                 <motion.div
-                  className="w-3 h-3 rounded-full bg-primary"
+                  className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-primary"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   exit={{ scale: 0 }}
@@ -182,7 +184,7 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
               )}
             </AnimatePresence>
           </div>
-          <span>{option.text}</span>
+          <span className="flex-1">{option.text}</span>
         </div>
       </Button>
     </motion.div>

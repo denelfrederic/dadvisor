@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
 import { AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const QuestionnaireProgress = () => {
   const { 
@@ -15,7 +16,8 @@ const QuestionnaireProgress = () => {
     score, 
     isComplete 
   } = useQuestionnaire();
-
+  
+  const isMobile = useIsMobile();
   const currentQuestion = questions[currentQuestionIndex];
 
   if (isComplete) {
@@ -23,11 +25,11 @@ const QuestionnaireProgress = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mt-10 bg-primary/10 p-6 rounded-lg text-center"
+        className="mt-6 sm:mt-10 bg-primary/10 p-4 sm:p-6 rounded-lg text-center"
       >
-        <h2 className="text-xl font-medium mb-2">Questionnaire terminé !</h2>
-        <p>Votre score de risque est de {score}</p>
-        <p className="text-muted-foreground mt-2">
+        <h2 className="text-lg sm:text-xl font-medium mb-2">Questionnaire terminé !</h2>
+        <p className="text-sm sm:text-base">Votre score de risque est de {score}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-2">
           Vous allez être redirigé vers l'analyse détaillée...
         </p>
       </motion.div>
@@ -39,10 +41,12 @@ const QuestionnaireProgress = () => {
       <ProgressBar 
         currentStep={currentQuestionIndex + 1} 
         totalSteps={questions.length}
-        labels={questions.map((_, index) => `Question ${index + 1}`)}
+        labels={isMobile ? 
+          questions.map((_, index) => `${index + 1}`) : 
+          questions.map((_, index) => `Question ${index + 1}`)}
       />
       
-      <div className="mb-10">
+      <div className="mb-6 sm:mb-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQuestionIndex}

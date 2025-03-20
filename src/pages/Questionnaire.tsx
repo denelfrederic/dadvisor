@@ -39,10 +39,10 @@ const QuestionnaireContent = () => {
  */
 const Questionnaire = () => {
   return (
-    <div className="min-h-screen bg-gradient-radial py-20 px-4">
+    <div className="min-h-screen bg-gradient-radial py-10 sm:py-20 px-3 sm:px-4">
       <div className="container mx-auto max-w-4xl">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Évaluation de votre profil d'investisseur</h1>
+        <div className="flex justify-between items-center mb-4 sm:mb-8">
+          <h1 className="text-xl sm:text-3xl font-bold">Évaluation de votre profil</h1>
           <Button variant="outline" asChild className="flex items-center justify-center w-10 h-10 p-0" aria-label="Retour à l'accueil">
             <Link to="/">
               <Home size={20} />
@@ -50,7 +50,7 @@ const Questionnaire = () => {
           </Button>
         </div>
         
-        <p className="text-muted-foreground text-center mb-10 hidden md:block">
+        <p className="text-muted-foreground text-center text-xs sm:text-sm mb-5 sm:mb-10 hidden md:block">
           Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
         </p>
         
