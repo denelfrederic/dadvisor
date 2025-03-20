@@ -138,7 +138,7 @@ export function validateConfig() {
  * @returns Un objet indiquant si la connexion a réussi
  */
 export async function testPineconeConnection(): Promise<any> {
-  // Note: Cette fonction est maintenant définie dans services/pinecone/index.ts
+  // Note: Cette fonction est maintenant définie dans services/pinecone/connection.ts
   // Cette redirection est maintenue pour compatibilité
   const { testPineconeConnection: tester } = await import("./services/pinecone/index.ts");
   return await tester();
