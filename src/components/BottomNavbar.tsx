@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Facebook, Twitter, Github, Discord, MessageCircle } from "lucide-react";
+import { Facebook, Twitter, Github, MessageCircle, Headphones } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 
@@ -54,7 +54,7 @@ const BottomNavbar = () => {
               className="text-muted-foreground hover:text-primary transition-colors"
               aria-label="Discord"
             >
-              <Discord size={20} />
+              <Headphones size={20} />
             </button>
             <button 
               onClick={() => handleSocialClick("Twitter")}
