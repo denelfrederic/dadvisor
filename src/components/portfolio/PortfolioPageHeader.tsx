@@ -16,7 +16,7 @@ const PortfolioPageHeader: React.FC<PortfolioPageHeaderProps> = ({ isWarEconomy 
       
       <p className="text-muted-foreground text-center mb-10">
         {isWarEconomy 
-          ? "Basé sur votre préférence pour les investissements en France et en Europe, nous vous recommandons le portefeuille Économie de Guerre."
+          ? "En fonction de vos réponses concernant la souveraineté économique, nous vous recommandons le portefeuille « Économie de Guerre »."
           : "Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté."}
         <br />Vous pouvez toutefois sélectionner celui qui vous convient le mieux.
       </p>
