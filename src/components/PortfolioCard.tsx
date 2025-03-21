@@ -12,6 +12,7 @@ import { Info } from "lucide-react";
  * @param description - Description détaillée du portefeuille
  * @param expectedReturn - Rendement attendu (format texte)
  * @param assets - Liste des actifs composant le portefeuille avec leur allocation
+ * @param assetDetails - Liste détaillée des classes d'actifs avec descriptions et exemples
  * @param suitableFor - Liste des profils d'investisseurs pour lesquels ce portefeuille est adapté
  * @param thesis - Thèse d'investissement (objectif principal du portefeuille)
  */
@@ -24,6 +25,11 @@ export interface Portfolio {
   assets: {
     name: string;
     percentage: number;
+  }[];
+  assetDetails?: {
+    category: string;
+    description: string;
+    examples: string[];
   }[];
   suitableFor: string[];
   thesis?: string;

@@ -21,6 +21,57 @@ export const portfolios: Portfolio[] = [
       { name: "Immobilier", percentage: 10 },
       { name: "Liquidités", percentage: 10 }
     ],
+    assetDetails: [
+      {
+        category: "Métaux Précieux (40%)",
+        description: "Protection contre l'inflation et valeur refuge en période d'incertitude économique",
+        examples: [
+          "Or physique (lingots, pièces)",
+          "Argent physique",
+          "ETF adossés à l'or (PHAU, GLD)",
+          "Actions de mines d'or sélectionnées"
+        ]
+      },
+      {
+        category: "Bitcoin (20%)",
+        description: "Exposition mesurée à la principale cryptomonnaie comme réserve de valeur numérique",
+        examples: [
+          "Bitcoin détenu sur des plateformes sécurisées",
+          "Solutions de garde institutionnelles",
+          "ETF Bitcoin (FBTC, BTCE)"
+        ]
+      },
+      {
+        category: "Actions (20%)",
+        description: "Sélection d'entreprises établies à faible volatilité et dividendes stables",
+        examples: [
+          "Actions de grande capitalisation à dividendes (secteurs défensifs)",
+          "ETF sur indices larges (S&P 500, MSCI World)",
+          "Entreprises du secteur des matières premières",
+          "Actions de valeur (value stocks)"
+        ]
+      },
+      {
+        category: "Immobilier (10%)",
+        description: "Exposition aux actifs réels générant des revenus locatifs",
+        examples: [
+          "SCPI (Sociétés Civiles de Placement Immobilier)",
+          "OPCI (Organismes de Placement Collectif Immobilier)",
+          "ETF immobiliers (foncières cotées)",
+          "Immobilier tokenisé sur blockchain"
+        ]
+      },
+      {
+        category: "Liquidités (10%)",
+        description: "Réserve de sécurité immédiatement disponible",
+        examples: [
+          "Comptes d'épargne à haut rendement",
+          "Stablecoins adossés à des monnaies fiduciaires",
+          "Bons du Trésor à court terme",
+          "Livrets et comptes à terme"
+        ]
+      }
+    ],
     suitableFor: [
       "Investisseurs avec un horizon à court terme",
       "Personnes proches de la retraite",
@@ -41,6 +92,48 @@ export const portfolios: Portfolio[] = [
       { name: "Immobilier", percentage: 15 },
       { name: "Or", percentage: 5 }
     ],
+    assetDetails: [
+      {
+        category: "Actions (50%)",
+        description: "Exposition diversifiée aux marchés d'actions mondiaux pour la croissance à long terme",
+        examples: [
+          "Actions de croissance (growth stocks)",
+          "ETF sectoriels (technologies, santé, énergie)",
+          "Actions de marchés émergents sélectionnés",
+          "Actions de moyenne capitalisation à fort potentiel"
+        ]
+      },
+      {
+        category: "Bitcoin (30%)",
+        description: "Allocation substantielle à la principale cryptomonnaie pour capturer sa croissance potentielle",
+        examples: [
+          "Bitcoin détenu en self-custody (cold storage)",
+          "Services de staking Bitcoin",
+          "ETF et ETP Bitcoin",
+          "Solutions d'épargne Bitcoin automatisées"
+        ]
+      },
+      {
+        category: "Immobilier (15%)",
+        description: "Diversification via des actifs immobiliers productifs de revenus",
+        examples: [
+          "SCPI à rendement (bureaux, commerces, logistique)",
+          "Foncières cotées internationales",
+          "Plateformes de crowdfunding immobilier",
+          "Immobilier tokenisé sur blockchain"
+        ]
+      },
+      {
+        category: "Or (5%)",
+        description: "Couverture contre l'inflation et élément stabilisateur du portefeuille",
+        examples: [
+          "ETF or physique",
+          "Or tokenisé sur blockchain",
+          "Certificats adossés à l'or",
+          "Actions de mines d'or"
+        ]
+      }
+    ],
     suitableFor: [
       "Investisseurs avec un horizon à moyen terme",
       "Personnes cherchant un équilibre risque-rendement",
@@ -59,6 +152,41 @@ export const portfolios: Portfolio[] = [
       { name: "Actions", percentage: 60 },
       { name: "Cryptomonnaies", percentage: 30 },
       { name: "DEFI", percentage: 10 }
+    ],
+    assetDetails: [
+      {
+        category: "Actions (60%)",
+        description: "Allocation importante aux marchés actions mondiaux avec focus sur la croissance",
+        examples: [
+          "Actions de croissance à haute conviction",
+          "Small caps innovantes",
+          "Secteurs disruptifs (IA, biotechnologie, énergie propre)",
+          "Actions de marchés émergents à fort potentiel",
+          "ETF thématiques (robotique, cybersécurité, métavers)"
+        ]
+      },
+      {
+        category: "Cryptomonnaies (30%)",
+        description: "Exposition diversifiée aux crypto-actifs établis et émergents",
+        examples: [
+          "Bitcoin (60% de l'allocation crypto)",
+          "Ethereum (20% de l'allocation crypto)",
+          "Layer 1 alternatives (Solana, Avalanche, etc.)",
+          "Cryptomonnaies à forte capitalisation (top 20)",
+          "Projets blockchain à usage réel validé"
+        ]
+      },
+      {
+        category: "DEFI (10%)",
+        description: "Participation aux innovations de la finance décentralisée pour générer des rendements",
+        examples: [
+          "Staking de cryptomonnaies",
+          "Yield farming sur plateformes DeFi établies",
+          "Lending (prêts) sur protocoles décentralisés",
+          "Liquidity mining",
+          "Produits structurés DeFi"
+        ]
+      }
     ],
     suitableFor: [
       "Investisseurs avec un horizon à long terme",

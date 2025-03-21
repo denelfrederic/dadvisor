@@ -3,6 +3,8 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Portfolio } from "@/components/PortfolioCard";
+import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 
 /**
  * Interface pour les propriétés du composant PortfolioDetailsDialog
@@ -39,7 +41,7 @@ const PortfolioDetailsDialog = ({ portfolio, isOpen, onClose }: PortfolioDetails
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{portfolio.name}</DialogTitle>
           <DialogDescription>
@@ -89,6 +91,29 @@ const PortfolioDetailsDialog = ({ portfolio, isOpen, onClose }: PortfolioDetails
               </TableBody>
             </Table>
           </div>
+          
+          {/* Détails des classes d'actifs */}
+          {portfolio.assetDetails && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Classes d'actifs détaillées</h3>
+              <div className="space-y-4">
+                {portfolio.assetDetails.map((assetDetail, index) => (
+                  <Card key={index} className="p-4">
+                    <h4 className="font-medium text-base mb-1">{assetDetail.category}</h4>
+                    <p className="text-muted-foreground text-sm mb-3">{assetDetail.description}</p>
+                    <div className="mt-2">
+                      <h5 className="text-sm font-medium mb-1">Exemples d'actifs:</h5>
+                      <ul className="list-disc pl-5 text-sm space-y-1">
+                        {assetDetail.examples.map((example, idx) => (
+                          <li key={idx} className="text-muted-foreground">{example}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* Profil d'investisseur correspondant */}
           <div>
