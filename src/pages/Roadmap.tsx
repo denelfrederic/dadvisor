@@ -1,7 +1,9 @@
+
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 /**
  * Page Roadmap - Présentation des étapes futures du projet
@@ -121,7 +123,11 @@ const Roadmap = () => {
           >
             <ul className="list-disc pl-5 space-y-2">
               <li>Plateforme d'éducation intégrée (vidéos, guides, simulateurs).</li>
-              <li>Diversification de l'offre pour les investisseurs institutionnels.</li>
+              <li className="font-medium text-dadvisor-blue hover:underline">
+                <Link to="/myadvisor">
+                  🧠 My Advisor AI-Pilot - Votre copilote intelligent personnel
+                </Link>
+              </li>
               <li>Intégration de nouveaux actifs numériques régulés.</li>
             </ul>
           </RoadmapItem>
