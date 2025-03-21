@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,10 +6,11 @@ import PortfolioCard, { Portfolio } from "@/components/PortfolioCard";
 import PortfolioDetailsDialog from "@/components/portfolio/PortfolioDetailsDialog";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
-import { getPortfolios, getRecommendedPortfolio } from "@/utils/portfolios";
+import { getPortfolios, getRecommendedPortfolio, isPortfolioMoreRisky } from "@/utils/portfolios";
 import { Home } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
+import { QuestionnaireResponses } from "@/utils/questionnaire";
 
 /**
  * Page Portfolios - Présente les différents portefeuilles d'investissement
@@ -30,8 +30,11 @@ const Portfolios = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Récupération du score de risque depuis l'état de navigation ou utilisation d'une valeur par défaut
+  // Récupération du score de risque et des réponses depuis l'état de navigation ou utilisation de valeurs par défaut
   const riskScore = location.state?.score || 50;
+  const questionnaireAnswers = location.state?.answers || 
+    (localStorage.getItem('dadvisor_temp_answers') ? 
+      JSON.parse(localStorage.getItem('dadvisor_temp_answers') || '{}') : {});
   
   // Chargement des portefeuilles et détermination du portefeuille recommandé
   useEffect(() => {
@@ -42,8 +45,10 @@ const Portfolios = () => {
         const portfolioData = getPortfolios();
         setPortfolios(portfolioData);
         
-        // Détermination du portefeuille recommandé en fonction du score de risque
-        const recommendedId = getRecommendedPortfolio(riskScore);
+        // Détermination du portefeuille recommandé en fonction du score de risque et des réponses au questionnaire
+        const recommendedId = getRecommendedPortfolio(riskScore, questionnaireAnswers);
+        console.log("Portefeuille recommandé:", recommendedId, "Score:", riskScore, "Réponses:", JSON.stringify(questionnaireAnswers));
+        
         setRecommendedPortfolioId(recommendedId);
         setSelectedPortfolioId(recommendedId);
       } catch (error) {
@@ -59,7 +64,7 @@ const Portfolios = () => {
     };
     
     fetchPortfolios();
-  }, [riskScore]);
+  }, [riskScore, questionnaireAnswers]);
   
   /**
    * Gère la sélection d'un portefeuille par l'utilisateur
@@ -103,13 +108,8 @@ const Portfolios = () => {
   const handleProceed = () => {
     if (selectedPortfolioId) {
       // Vérifie si l'utilisateur a sélectionné un portefeuille plus risqué que celui recommandé
-      const selectedPortfolio = portfolios.find(p => p.id === selectedPortfolioId);
-      const recommendedPortfolio = portfolios.find(p => p.id === recommendedPortfolioId);
-      
-      if (selectedPortfolio && recommendedPortfolio) {
-        const isRiskier = 
-          (recommendedPortfolio.riskLevel === "Faible" && ["Modéré", "Élevé"].includes(selectedPortfolio.riskLevel)) ||
-          (recommendedPortfolio.riskLevel === "Modéré" && selectedPortfolio.riskLevel === "Élevé");
+      if (recommendedPortfolioId) {
+        const isRiskier = isPortfolioMoreRisky(selectedPortfolioId, recommendedPortfolioId);
         
         if (isRiskier) {
           // Alerte l'utilisateur qu'il a sélectionné un portefeuille plus risqué que celui recommandé
@@ -130,6 +130,9 @@ const Portfolios = () => {
           // Poursuit vers la création du wallet
           navigate("/wallet", { state: { portfolioId: selectedPortfolioId } });
         }
+      } else {
+        // Poursuit vers la création du wallet si aucun portefeuille recommandé
+        navigate("/wallet", { state: { portfolioId: selectedPortfolioId } });
       }
     }
   };

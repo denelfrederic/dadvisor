@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
 import { calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle, questions, InvestorProfileAnalysis } from "@/utils/questionnaire";
 import { useNavigate } from "react-router-dom";
@@ -144,8 +145,9 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   };
 
   const handleContinueToPortfolios = useCallback(() => {
-    navigate("/portfolios", { state: { score } });
-  }, [navigate, score]);
+    // Transmettre à la fois le score et les réponses au questionnaire
+    navigate("/portfolios", { state: { score, answers } });
+  }, [navigate, score, answers]);
 
   return (
     <QuestionnaireContext.Provider value={{

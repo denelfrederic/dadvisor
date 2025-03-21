@@ -17,5 +17,11 @@ export const isPortfolioMoreRisky = (selectedId: string, recommendedId: string):
     "growth": 3
   };
   
+  // Vérification de sécurité: si l'un des IDs n'est pas dans la liste, retourner false
+  if (!riskLevels[selectedId] || !riskLevels[recommendedId]) {
+    console.warn("Comparaison de risque impossible: portfolio ID inconnu", selectedId, recommendedId);
+    return false;
+  }
+  
   return riskLevels[selectedId] > riskLevels[recommendedId];
 };
