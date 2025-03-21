@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Portfolio } from "@/components/PortfolioCard";
 import { getPortfolios, getRecommendedPortfolio, isPortfolioMoreRisky } from "@/utils/portfolios";
 import { QuestionnaireResponses } from "@/utils/questionnaire";
+import { Button } from "@/components/ui/button";
 
 /**
  * Interface pour le retour du hook usePortfolioSelection
