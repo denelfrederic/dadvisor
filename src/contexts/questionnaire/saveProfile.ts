@@ -39,10 +39,17 @@ export const saveInvestmentProfileToSupabase = async (
   setSaving(true);
   
   try {
+    console.log("Début de la sauvegarde du profil pour l'utilisateur:", user.id);
+    
     // Determine profile type
     let profileType = "balanced";
     if (score < 40) profileType = "conservative";
     else if (score >= 70) profileType = "growth";
+
+    // Verification que les données sont bien définies
+    if (!answers || Object.keys(answers).length === 0) {
+      throw new Error("Les réponses au questionnaire sont vides ou non définies");
+    }
 
     // Prepare data for Supabase (with correct typing)
     const profileDataForDb: Json = {
@@ -59,6 +66,13 @@ export const saveInvestmentProfileToSupabase = async (
       profile_data: profileDataForDb
     };
 
+    console.log("Données à sauvegarder:", {
+      userId: user.id,
+      score: Math.round(score),
+      profileType,
+      dataSize: JSON.stringify(profileDataForDb).length
+    });
+
     // Check if user already has a profile
     const { data: existingProfile } = await supabase
       .from('investment_profiles')
@@ -69,12 +83,14 @@ export const saveInvestmentProfileToSupabase = async (
     let result;
     
     if (existingProfile) {
+      console.log("Mise à jour d'un profil existant pour l'utilisateur:", user.id);
       // Update existing profile
       result = await supabase
         .from('investment_profiles')
         .update(profileData)
         .eq('user_id', user.id);
     } else {
+      console.log("Création d'un nouveau profil pour l'utilisateur:", user.id);
       // Create new profile
       result = await supabase
         .from('investment_profiles')
@@ -92,9 +108,11 @@ export const saveInvestmentProfileToSupabase = async (
 
     // Clear localStorage after successful save
     clearQuestionnaireStorage();
+    console.log("Données temporaires effacées après sauvegarde réussie");
 
     // Redirect to profile-analysis page instead of profile
-    navigate("/profile-analysis");
+    // Utiliser window.location pour forcer un rafraîchissement complet et éviter les problèmes de contexte
+    window.location.href = "/profile-analysis";
     
   } catch (error: any) {
     console.error("Error saving investment profile:", error);

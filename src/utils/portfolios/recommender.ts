@@ -14,16 +14,34 @@ import { QuestionnaireResponses } from "@/utils/questionnaire/types";
  * @returns L'ID du portefeuille recommandé
  */
 export const getRecommendedPortfolio = (riskScore: number, answers?: QuestionnaireResponses): string => {
-  // Récupère soit les réponses passées en paramètre, soit celles stockées dans le localStorage
-  const storedAnswers = localStorage.getItem('dadvisor_temp_answers') ? 
-    JSON.parse(localStorage.getItem('dadvisor_temp_answers') || '{}') : {};
+  // Vérifions si answers est défini. Si non, essayons de le récupérer du localStorage
+  let questionnaireAnswers: QuestionnaireResponses | null = answers || null;
   
-  const questionnaireAnswers = answers || storedAnswers;
+  if (!questionnaireAnswers) {
+    try {
+      const storedAnswers = localStorage.getItem('dadvisor_temp_answers');
+      if (storedAnswers) {
+        questionnaireAnswers = JSON.parse(storedAnswers);
+        console.log("Réponses chargées du localStorage pour recommandation:", 
+          Object.keys(questionnaireAnswers || {}).length);
+      } else {
+        console.log("Aucune réponse trouvée dans le localStorage pour recommandation");
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des réponses du localStorage:", error);
+    }
+  }
+  
+  // Si toujours pas de réponses, utiliser uniquement le score
+  if (!questionnaireAnswers) {
+    console.log("Utilisation uniquement du score pour recommandation:", riskScore);
+    return getRecommendationByScore(riskScore);
+  }
   
   console.log("Analyse complète des réponses:", JSON.stringify(questionnaireAnswers, null, 2));
   
   // PRIORITÉ ABSOLUE: Vérification de la préférence pour la souveraineté économique
-  if (questionnaireAnswers && questionnaireAnswers.sovereignty) {
+  if (questionnaireAnswers.sovereignty) {
     const sovereigntyAnswer = questionnaireAnswers.sovereignty;
     console.log("Réponse détaillée sur la souveraineté:", JSON.stringify(sovereigntyAnswer, null, 2));
     
@@ -39,7 +57,11 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
     // Vérification secondaire pour l'option 2 (préférence modérée)
     if (sovereigntyAnswer.optionId === "sovereignty-2" || sovereigntyAnswer.value === 2) {
       console.log("⭐ MATCH sur préférence modérée pour souveraineté - Choix 2 sélectionné");
-      return "wareconomy";
+      
+      // Si score élevé et préférence modérée, on privilégie war economy
+      if (riskScore >= 50) {
+        return "wareconomy";
+      }
     }
     
     // Vérification supplémentaire basée sur le texte de la réponse
@@ -58,31 +80,41 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
   }
   
   // Recherche de mots-clés liés à la souveraineté dans TOUTES les réponses
-  if (questionnaireAnswers) {
-    for (const questionId in questionnaireAnswers) {
-      const answer = questionnaireAnswers[questionId];
+  for (const questionId in questionnaireAnswers) {
+    if (!questionnaireAnswers[questionId]) continue;
+    
+    const answer = questionnaireAnswers[questionId];
+    
+    if (answer && answer.text) {
+      const lowercaseText = answer.text.toLowerCase();
       
-      if (answer && answer.text) {
-        const lowercaseText = answer.text.toLowerCase();
+      // Recherche plus large de mots-clés pertinents
+      if (lowercaseText.includes("france") || 
+          lowercaseText.includes("europe") || 
+          lowercaseText.includes("français") || 
+          lowercaseText.includes("européen") || 
+          lowercaseText.includes("souveraineté") ||
+          lowercaseText.includes("national") ||
+          lowercaseText.includes("local") ||
+          lowercaseText.includes("patriot")) {
         
-        // Recherche plus large de mots-clés pertinents
-        if (lowercaseText.includes("france") || 
-            lowercaseText.includes("europe") || 
-            lowercaseText.includes("français") || 
-            lowercaseText.includes("européen") || 
-            lowercaseText.includes("souveraineté") ||
-            lowercaseText.includes("national") ||
-            lowercaseText.includes("local")) {
-          
-          console.log("⭐ MATCH sur le texte d'une autre question:", questionId, lowercaseText);
-          return "wareconomy";
-        }
+        console.log("⭐ MATCH sur le texte d'une autre question:", questionId, lowercaseText);
+        return "wareconomy";
       }
     }
   }
   
   // Si aucune préférence de souveraineté n'est détectée, utiliser la logique basée sur le score
   console.log("Aucune préférence de souveraineté détectée, utilisation du score:", riskScore);
+  return getRecommendationByScore(riskScore);
+};
+
+/**
+ * Obtient une recommandation basée uniquement sur le score
+ * @param riskScore Le score de risque calculé
+ * @returns L'ID du portefeuille recommandé
+ */
+function getRecommendationByScore(riskScore: number): string {
   if (riskScore < 40) {
     return "conservative";
   } else if (riskScore < 70) {
@@ -90,7 +122,7 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
   } else {
     return "growth";
   }
-};
+}
 
 /**
  * Analyse les réponses du questionnaire pour extraire les préférences thématiques
@@ -108,9 +140,12 @@ export const analyzeInvestmentPreferences = (answers: QuestionnaireResponses): R
   // Détecte l'intérêt pour la souveraineté économique
   if (answers.sovereignty) {
     if (answers.sovereignty.value >= 3 || 
-        answers.sovereignty.optionId === "sovereignty-2" || 
         answers.sovereignty.optionId === "sovereignty-3" || 
         answers.sovereignty.optionId === "sovereignty-4") {
+      preferences.sovereigntyFocus = true;
+    } else if (answers.sovereignty.value >= 2 || 
+               answers.sovereignty.optionId === "sovereignty-2") {
+      // Préférence modérée pour la souveraineté
       preferences.sovereigntyFocus = true;
     }
     
@@ -129,6 +164,8 @@ export const analyzeInvestmentPreferences = (answers: QuestionnaireResponses): R
   
   // Vérification dans toutes les réponses
   for (const questionId in answers) {
+    if (!answers[questionId]) continue;
+    
     const answer = answers[questionId];
     if (answer && answer.text) {
       const lowercaseText = answer.text.toLowerCase();
@@ -138,7 +175,8 @@ export const analyzeInvestmentPreferences = (answers: QuestionnaireResponses): R
           lowercaseText.includes("européen") || 
           lowercaseText.includes("souveraineté") ||
           lowercaseText.includes("national") ||
-          lowercaseText.includes("local")) {
+          lowercaseText.includes("local") ||
+          lowercaseText.includes("patriot")) {
         preferences.sovereigntyFocus = true;
       }
     }

@@ -25,7 +25,8 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   const { 
     loadStoredData, 
     saveAnswersToLocalStorage, 
-    saveScoreAndCompletionStatus 
+    saveScoreAndCompletionStatus,
+    clearStorage 
   } = useQuestionnaireStorage();
   
   const {
@@ -62,23 +63,33 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
 
   // Charger les données lors du montage initial
   useEffect(() => {
-    const { savedAnswers, savedScore, savedComplete } = loadStoredData();
-    
-    if (savedAnswers) {
-      setAnswers(savedAnswers);
-      setShowIntroduction(Object.keys(savedAnswers).length === 0);
-    }
-    
-    if (savedScore !== null) {
-      setScore(savedScore);
-    }
-    
-    if (savedComplete !== null) {
-      setIsComplete(savedComplete);
-      if (savedComplete) {
-        setShowAnalysis(true);
-        setShowIntroduction(false);
+    try {
+      const { savedAnswers, savedScore, savedComplete } = loadStoredData();
+      
+      if (savedAnswers && Object.keys(savedAnswers).length > 0) {
+        console.log("Chargement des réponses sauvegardées:", savedAnswers);
+        setAnswers(savedAnswers);
+        // Ne pas masquer l'introduction si aucune réponse n'a été donnée
+        setShowIntroduction(Object.keys(savedAnswers).length === 0);
       }
+      
+      if (savedScore !== null) {
+        console.log("Chargement du score sauvegardé:", savedScore);
+        setScore(savedScore);
+      }
+      
+      if (savedComplete !== null) {
+        console.log("Chargement de l'état de complétion:", savedComplete);
+        setIsComplete(savedComplete);
+        if (savedComplete) {
+          setShowAnalysis(true);
+          setShowIntroduction(false);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des données:", error);
+      // En cas d'erreur, réinitialiser pour éviter un état incohérent
+      clearStorage();
     }
   }, []);
 

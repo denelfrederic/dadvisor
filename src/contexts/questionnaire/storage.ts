@@ -7,8 +7,14 @@ import { QuestionnaireResponses, TEMP_ANSWERS_KEY, TEMP_SCORE_KEY, TEMP_COMPLETE
  */
 export const saveAnswersToStorage = (answers: QuestionnaireResponses): void => {
   try {
-    localStorage.setItem(TEMP_ANSWERS_KEY, JSON.stringify(answers));
-    console.log("Réponses sauvegardées dans le localStorage:", answers);
+    if (!answers || Object.keys(answers).length === 0) {
+      console.warn("Tentative de sauvegarde de réponses vides ignorée");
+      return;
+    }
+    
+    const serializedAnswers = JSON.stringify(answers);
+    localStorage.setItem(TEMP_ANSWERS_KEY, serializedAnswers);
+    console.log("Réponses sauvegardées dans le localStorage:", Object.keys(answers).length);
   } catch (error) {
     console.error("Erreur lors de la sauvegarde des réponses:", error);
   }
@@ -21,6 +27,7 @@ export const saveAnswersToStorage = (answers: QuestionnaireResponses): void => {
 export const saveScoreToStorage = (score: number): void => {
   try {
     localStorage.setItem(TEMP_SCORE_KEY, score.toString());
+    console.log("Score sauvegardé:", score);
   } catch (error) {
     console.error("Erreur lors de la sauvegarde du score:", error);
   }
@@ -33,6 +40,7 @@ export const saveScoreToStorage = (score: number): void => {
 export const saveCompleteStatusToStorage = (isComplete: boolean): void => {
   try {
     localStorage.setItem(TEMP_COMPLETE_KEY, isComplete.toString());
+    console.log("État de complétion sauvegardé:", isComplete);
   } catch (error) {
     console.error("Erreur lors de la sauvegarde de l'état de complétion:", error);
   }
@@ -46,7 +54,9 @@ export const loadAnswersFromStorage = (): QuestionnaireResponses | null => {
   try {
     const savedAnswers = localStorage.getItem(TEMP_ANSWERS_KEY);
     if (savedAnswers) {
-      return JSON.parse(savedAnswers);
+      const parsedAnswers = JSON.parse(savedAnswers);
+      console.log("Réponses chargées du localStorage:", Object.keys(parsedAnswers).length);
+      return parsedAnswers;
     }
   } catch (error) {
     console.error("Erreur lors du chargement des réponses:", error);
@@ -62,7 +72,9 @@ export const loadScoreFromStorage = (): number | null => {
   try {
     const savedScore = localStorage.getItem(TEMP_SCORE_KEY);
     if (savedScore) {
-      return Number(savedScore);
+      const parsedScore = Number(savedScore);
+      console.log("Score chargé:", parsedScore);
+      return parsedScore;
     }
   } catch (error) {
     console.error("Erreur lors du chargement du score:", error);
@@ -77,8 +89,10 @@ export const loadScoreFromStorage = (): number | null => {
 export const loadCompleteStatusFromStorage = (): boolean | null => {
   try {
     const savedComplete = localStorage.getItem(TEMP_COMPLETE_KEY);
-    if (savedComplete) {
-      return savedComplete === 'true';
+    if (savedComplete !== null) {
+      const parsedComplete = savedComplete === 'true';
+      console.log("État de complétion chargé:", parsedComplete);
+      return parsedComplete;
     }
   } catch (error) {
     console.error("Erreur lors du chargement de l'état de complétion:", error);

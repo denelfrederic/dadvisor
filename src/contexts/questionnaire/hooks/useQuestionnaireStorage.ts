@@ -18,15 +18,30 @@ export const useQuestionnaireStorage = () => {
    * Charge les données stockées localement
    */
   const loadStoredData = () => {
-    const savedAnswers = loadAnswersFromStorage();
-    const savedScore = loadScoreFromStorage();
-    const savedComplete = loadCompleteStatusFromStorage();
-    
-    return {
-      savedAnswers,
-      savedScore,
-      savedComplete
-    };
+    try {
+      const savedAnswers = loadAnswersFromStorage();
+      const savedScore = loadScoreFromStorage();
+      const savedComplete = loadCompleteStatusFromStorage();
+      
+      console.log("Données chargées du localStorage:", { 
+        answersExist: !!savedAnswers, 
+        scoreExists: savedScore !== null,
+        completeExists: savedComplete !== null
+      });
+      
+      return {
+        savedAnswers,
+        savedScore,
+        savedComplete
+      };
+    } catch (error) {
+      console.error("Erreur lors du chargement des données stockées:", error);
+      return {
+        savedAnswers: null,
+        savedScore: null,
+        savedComplete: null
+      };
+    }
   };
   
   /**
@@ -34,7 +49,16 @@ export const useQuestionnaireStorage = () => {
    * @param answers Réponses au questionnaire
    */
   const saveAnswersToLocalStorage = (answers: QuestionnaireResponses) => {
-    saveAnswersToStorage(answers);
+    try {
+      if (!answers || Object.keys(answers).length === 0) {
+        console.warn("Tentative de sauvegarde de réponses vides");
+        return;
+      }
+      saveAnswersToStorage(answers);
+      console.log("Réponses sauvegardées dans le localStorage:", Object.keys(answers).length);
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde des réponses:", error);
+    }
   };
   
   /**
@@ -43,8 +67,13 @@ export const useQuestionnaireStorage = () => {
    * @param isComplete État de complétion
    */
   const saveScoreAndCompletionStatus = (score: number, isComplete: boolean) => {
-    saveScoreToStorage(score);
-    saveCompleteStatusToStorage(isComplete);
+    try {
+      saveScoreToStorage(score);
+      saveCompleteStatusToStorage(isComplete);
+      console.log("Score et complétion sauvegardés:", { score, isComplete });
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde du score et de la complétion:", error);
+    }
   };
   
   /**
