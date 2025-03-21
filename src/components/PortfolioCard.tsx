@@ -6,6 +6,15 @@ import { Info } from "lucide-react";
 
 /**
  * Interface pour un portefeuille d'investissement
+ * @param id - Identifiant unique du portefeuille
+ * @param name - Nom du portefeuille
+ * @param riskLevel - Niveau de risque (Faible, Modéré, Élevé)
+ * @param description - Description détaillée du portefeuille
+ * @param expectedReturn - Rendement attendu (format texte)
+ * @param assets - Liste des actifs composant le portefeuille avec leur allocation
+ * @param assetDetails - Liste détaillée des classes d'actifs avec descriptions et exemples
+ * @param suitableFor - Liste des profils d'investisseurs pour lesquels ce portefeuille est adapté
+ * @param thesis - Thèse d'investissement (objectif principal du portefeuille)
  */
 export interface Portfolio {
   id: string;
@@ -28,6 +37,11 @@ export interface Portfolio {
 
 /**
  * Interface pour les propriétés du composant PortfolioCard
+ * @param portfolio - Objet contenant les données du portefeuille
+ * @param isRecommended - Indique si ce portefeuille est recommandé pour le profil de l'utilisateur
+ * @param onSelect - Fonction de rappel appelée lorsque l'utilisateur sélectionne ce portefeuille
+ * @param isSelected - Indique si ce portefeuille est actuellement sélectionné
+ * @param onViewDetails - Fonction de rappel appelée lorsque l'utilisateur souhaite voir les détails
  */
 interface PortfolioCardProps {
   portfolio: Portfolio;
@@ -39,7 +53,7 @@ interface PortfolioCardProps {
 
 /**
  * Composant PortfolioCard - Carte présentant un portefeuille d'investissement
- * Version compacte pour afficher plus de portefeuilles
+ * Affiche les détails du portefeuille, sa composition et permet sa sélection
  */
 const PortfolioCard = ({ 
   portfolio, 
@@ -48,7 +62,7 @@ const PortfolioCard = ({
   isSelected = false,
   onViewDetails
 }: PortfolioCardProps) => {
-  const { id, name, riskLevel, description, expectedReturn, assets } = portfolio;
+  const { id, name, riskLevel, description, expectedReturn, assets, suitableFor } = portfolio;
   
   // Définition des couleurs en fonction du niveau de risque
   const riskColors = {
@@ -59,46 +73,45 @@ const PortfolioCard = ({
   
   return (
     <motion.div 
-      className={`glass-card rounded-lg overflow-hidden transition-all duration-300 ${
+      className={`glass-card rounded-2xl overflow-hidden transition-all duration-300 ${
         isSelected ? "border-primary border-2" : "border border-border"
       }`}
-      whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)" }}
+      whileHover={{ y: -5, boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.4 }}
     >
-      {/* Bandeau "Recommandé" si applicable - version plus compacte */}
+      {/* Bandeau "Recommandé" si applicable */}
       {isRecommended && (
-        <div className="bg-primary text-primary-foreground text-center py-1 text-xs font-medium">
-          Recommandé
+        <div className="bg-primary text-primary-foreground text-center py-1.5 text-sm font-medium">
+          Recommandé pour votre profil
         </div>
       )}
       
-      <div className="p-3 sm:p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-sm font-medium">{name}</h3>
-          <Badge variant="outline" className={`text-xs ${riskColors[riskLevel]}`}>
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-medium">{name}</h3>
+          <Badge variant="outline" className={riskColors[riskLevel]}>
             {riskLevel}
           </Badge>
         </div>
         
-        {/* Description courte avec ellipsis */}
-        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{description}</p>
+        <p className="text-muted-foreground mb-6">{description}</p>
         
-        {/* Section rendement attendu - format plus compact */}
-        <div className="mb-3">
-          <h4 className="text-xs font-medium mb-1">Rendement</h4>
-          <p className="text-sm font-semibold">{expectedReturn}</p>
+        {/* Section rendement attendu */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-2">Rendement attendu</h4>
+          <p className="text-xl font-semibold">{expectedReturn}</p>
         </div>
         
         {/* Section allocation d'actifs avec visualisation graphique */}
-        <div className="mb-3">
-          <h4 className="text-xs font-medium mb-1">Allocation</h4>
-          <div className="flex mb-1 h-1.5">
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-2">Allocation d'actifs</h4>
+          <div className="flex mb-2">
             {assets.map((asset, index) => (
               <div 
                 key={index}
-                className="h-full first:rounded-l-full last:rounded-r-full"
+                className="h-2 first:rounded-l-full last:rounded-r-full"
                 style={{ 
                   width: `${asset.percentage}%`,
                   backgroundColor: getAssetColor(index)
@@ -106,40 +119,52 @@ const PortfolioCard = ({
               />
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-1 mt-2">
-            {assets.slice(0, 4).map((asset, index) => (
-              <div key={index} className="flex items-center gap-1 text-xs">
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {assets.map((asset, index) => (
+              <div key={index} className="flex items-center gap-2 text-sm">
                 <span 
-                  className="w-2 h-2 rounded-full" 
+                  className="w-3 h-3 rounded-full" 
                   style={{ backgroundColor: getAssetColor(index) }}
                 />
-                <span className="text-muted-foreground truncate">
+                <span className="text-muted-foreground">
                   {asset.name} ({asset.percentage}%)
                 </span>
               </div>
             ))}
-            {assets.length > 4 && (
-              <div className="text-xs text-muted-foreground">+{assets.length - 4} autres</div>
-            )}
           </div>
         </div>
         
-        {/* Section boutons - version plus compacte */}
-        <div className="flex gap-2 mt-2">
+        {/* Section profils adaptés */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-2">Adapté pour</h4>
+          <ul className="text-sm text-muted-foreground">
+            {suitableFor.map((item, index) => (
+              <li key={index} className="flex items-center gap-2 mb-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        {/* Section boutons */}
+        <div className="space-y-3">
+          {/* Bouton "Voir les détails" */}
           <Button 
-            className="text-xs h-8 px-2 flex-1"
+            className="w-full"
             variant="outline"
-            size="sm"
             onClick={() => onViewDetails && onViewDetails(id)}
           >
-            <Info size={14} className="mr-1" />
-            Détails
+            <Info size={16} className="mr-2" />
+            Voir les détails
           </Button>
           
+          {/* Bouton de sélection */}
           <Button 
-            className="text-xs h-8 px-2 flex-1"
+            className="w-full"
             variant={isSelected ? "default" : "outline"}
-            size="sm"
             onClick={() => onSelect(id)}
           >
             {isSelected ? "Sélectionné" : "Sélectionner"}
@@ -152,6 +177,8 @@ const PortfolioCard = ({
 
 /**
  * Fonction utilitaire pour obtenir une couleur pour la visualisation de l'allocation d'actifs
+ * @param index - Index de l'actif dans le tableau
+ * @returns Une couleur au format hexadécimal
  */
 const getAssetColor = (index: number): string => {
   const colors = [

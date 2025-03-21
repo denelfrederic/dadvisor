@@ -12,9 +12,9 @@ interface PortfolioPageHeaderProps {
 const PortfolioPageHeader: React.FC<PortfolioPageHeaderProps> = ({ isWarEconomy }) => {
   return (
     <>
-      <h1 className="text-2xl font-bold mb-4">Choisissez votre portefeuille</h1>
+      <h1 className="text-3xl font-bold mb-8">Choisissez votre portefeuille</h1>
       
-      <p className="text-sm text-muted-foreground text-center mb-6">
+      <p className="text-muted-foreground text-center mb-10">
         {isWarEconomy 
           ? "En fonction de vos réponses concernant la souveraineté économique, nous vous recommandons le portefeuille « Économie de Guerre »."
           : "Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté."}
