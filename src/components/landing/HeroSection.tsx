@@ -18,13 +18,17 @@ interface HeroSectionProps {
 const HeroSection = ({
   parallaxOffset
 }: HeroSectionProps) => {
-  return <section className="relative min-h-screen flex items-center overflow-hidden">
+  return (
+    <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Arrière-plan avec effet de parallaxe */}
-      <div className="absolute inset-0 -z-10" style={{
-      transform: `translateY(${parallaxOffset * 0.5}px)`,
-      backgroundImage: "radial-gradient(circle at 50% 50%, rgba(238, 240, 255, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%)",
-      opacity: 0.7
-    }}></div>
+      <div 
+        className="absolute inset-0 -z-10" 
+        style={{
+          transform: `translateY(${parallaxOffset * 0.5}px)`,
+          backgroundImage: "radial-gradient(circle at 50% 50%, rgba(238, 240, 255, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%)",
+          opacity: 0.7
+        }}
+      ></div>
       
       <div className="container mx-auto px-4 pt-32 md:pt-24 lg:pt-0">
         <div className="flex flex-col items-center gap-8 lg:gap-12">
@@ -83,7 +87,8 @@ const HeroSection = ({
           </motion.div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
 
 export default HeroSection;
