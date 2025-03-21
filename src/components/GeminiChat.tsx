@@ -13,8 +13,6 @@ const GeminiChat = () => {
   const {
     messages,
     isLoading,
-    useKnowledgeBase,
-    setUseKnowledgeBase,
     messagesEndRef,
     clearConversation,
     handleSendMessage
@@ -41,8 +39,6 @@ const GeminiChat = () => {
 
       {isSettingsOpen && (
         <ChatSettings 
-          useKnowledgeBase={useKnowledgeBase}
-          setUseKnowledgeBase={setUseKnowledgeBase}
           clearConversation={clearConversation}
         />
       )}

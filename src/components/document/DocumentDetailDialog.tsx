@@ -102,9 +102,7 @@ const DocumentDetailDialog = ({ documentId, isOpen, onClose }: DocumentDetailDia
               updateResult={updateResult}
               updatingEmbedding={updatingEmbedding}
               onUpdateEmbedding={updateEmbedding}
-              onFixEmbedding={fixEmbedding}
               onReloadDocument={reloadDocument}
-              onSyncStatus={syncPineconeStatus}
             />
           </TabsContent>
         </Tabs>

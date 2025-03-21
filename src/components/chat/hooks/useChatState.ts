@@ -4,20 +4,11 @@ import { toast } from "@/components/ui/use-toast";
 import { Message } from "../types";
 import { sendMessageToGemini } from "../services";
 import { retrieveContext } from "../services/contextRetrievalService";
-import { useKnowledgeBaseService } from "../../knowledge-base/services";
 
 export const useChatState = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [useKnowledgeBase, setUseKnowledgeBase] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const kb = useKnowledgeBaseService();
-
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   const clearConversation = () => {
     setMessages([]);
@@ -38,21 +29,19 @@ export const useChatState = () => {
     setIsLoading(true);
     
     try {
-      // Rechercher dans la base de connaissances et les documents si l'option est activée
+      // Rechercher dans les documents
       let additionalContext = "";
       let debugInfo = [];
       
-      if (useKnowledgeBase) {
-        // Utiliser le service dédié pour récupérer le contexte
-        const contextResult = await retrieveContext(input, kb);
-        additionalContext = contextResult.context;
-        debugInfo = contextResult.debugInfo;
-      }
+      // Utiliser le service dédié pour récupérer le contexte
+      const contextResult = await retrieveContext(input);
+      additionalContext = contextResult.context;
+      debugInfo = contextResult.debugInfo;
       
       console.log("Contexte additionnel:", additionalContext ? "Présent" : "Absent");
       console.log("Debug info:", debugInfo);
       
-      const response = await sendMessageToGemini(input, messages, useKnowledgeBase, additionalContext);
+      const response = await sendMessageToGemini(input, messages, true, additionalContext);
       
       const assistantMessage: Message = {
         role: "assistant",
@@ -77,8 +66,6 @@ export const useChatState = () => {
   return {
     messages,
     isLoading,
-    useKnowledgeBase,
-    setUseKnowledgeBase,
     messagesEndRef,
     clearConversation,
     handleSendMessage
