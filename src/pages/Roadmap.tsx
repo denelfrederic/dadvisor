@@ -1,4 +1,3 @@
-
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import { Separator } from "@/components/ui/separator";
@@ -122,8 +121,8 @@ const Roadmap = () => {
           >
             <ul className="list-disc pl-5 space-y-2">
               <li>Plateforme d'éducation intégrée (vidéos, guides, simulateurs).</li>
-              <li>Déploiement de portfolios en marque blanche pour CGP et partenaires.</li>
-              <li>Expansion vers d'autres catégories d'ARTs : immobilier, obligations, climat.</li>
+              <li>Diversification de l'offre pour les investisseurs institutionnels.</li>
+              <li>Intégration de nouveaux actifs numériques régulés.</li>
             </ul>
           </RoadmapItem>
         </div>
