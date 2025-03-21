@@ -1,4 +1,3 @@
-
 import React from "react";
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -104,7 +103,7 @@ const MyAdvisor = () => {
           <div className="text-center my-12">
             <Button asChild size="lg" className="px-8 py-6 text-lg">
               <Link to="/questionnaire">
-                Commencer l'expérience My Advisor
+                RDV en 2026
               </Link>
             </Button>
           </div>
