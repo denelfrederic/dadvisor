@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { checkUserProfile } from "@/utils/profile-check";
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 
 const AdminCheck = () => {
   const [email, setEmail] = useState("frederic.denel@dadvisor.ai");
@@ -46,9 +47,9 @@ const AdminCheck = () => {
   };
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="min-h-screen bg-gradient-radial py-20 px-4 pt-28">
+      <div className="flex-1 bg-gradient-radial py-20 px-4 pt-28">
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-3xl font-bold mb-8">Vérification de profil</h1>
 
@@ -99,7 +100,8 @@ const AdminCheck = () => {
           )}
         </div>
       </div>
-    </>
+      <BottomNavbar />
+    </div>
   );
 };
 

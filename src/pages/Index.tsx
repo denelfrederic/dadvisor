@@ -1,10 +1,10 @@
 
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import CTASection from "@/components/landing/CTASection";
-import Footer from "@/components/landing/Footer";
 import { useParallax } from "@/hooks/use-parallax";
 
 /**
@@ -16,13 +16,15 @@ const Index = () => {
   const parallaxOffset = useParallax();
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <HeroSection parallaxOffset={parallaxOffset} />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <CTASection />
-      <Footer />
+      <div className="flex-1">
+        <HeroSection parallaxOffset={parallaxOffset} />
+        <FeaturesSection />
+        <HowItWorksSection />
+        <CTASection />
+      </div>
+      <BottomNavbar />
     </div>
   );
 };

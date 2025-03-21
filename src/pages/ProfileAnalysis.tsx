@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/utils/auth";
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 
 const ProfileAnalysis = () => {
   const { user: authUser } = useAuthStatus();
@@ -43,9 +44,9 @@ const ProfileAnalysis = () => {
   } = useProfileData(user);
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="min-h-screen bg-gradient-radial py-20 px-4 pt-28">
+      <div className="flex-1 bg-gradient-radial py-20 px-4 pt-28">
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-3xl font-bold mb-8">Votre profil d'investisseur</h1>
 
@@ -65,7 +66,8 @@ const ProfileAnalysis = () => {
           )}
         </div>
       </div>
-    </>
+      <BottomNavbar />
+    </div>
   );
 };
 

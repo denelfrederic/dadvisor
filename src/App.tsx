@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 
 // Import pages
 import Index from './pages/Index';
@@ -17,6 +17,10 @@ import NotFound from './pages/NotFound';
 import AdminCheck from './pages/AdminCheck';
 import Assistant_Admin from './pages/Assistant_Admin';
 import Contact from './pages/Contact';
+import About from './pages/About';
+import Vision from './pages/Vision';
+import Roadmap from './pages/Roadmap';
+import Dao from './pages/Dao';
 
 // Import contexts
 import { AuthProvider } from './contexts/auth';
@@ -51,6 +55,10 @@ function App() {
               <Route path="/portfolios" element={<Portfolios />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/vision" element={<Vision />} />
+              <Route path="/roadmap" element={<Roadmap />} />
+              <Route path="/dao" element={<Dao />} />
               <Route path="/admin-check" element={<AdminCheck />} />
               <Route path="/adminllm" element={<Assistant_Admin />} />
               {/* Redirection de /assistant vers /adminllm */}

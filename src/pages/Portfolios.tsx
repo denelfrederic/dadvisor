@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { getPortfolios, getRecommendedPortfolio } from "@/utils/portfolios";
 import { Home } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page Portfolios - Présente les différents portefeuilles d'investissement
@@ -110,9 +111,9 @@ const Portfolios = () => {
   };
   
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="min-h-screen bg-gradient-radial py-20 px-4 pt-28">
+      <div className="flex-1 bg-gradient-radial py-20 px-4 pt-28">
         <div className="container mx-auto max-w-7xl">
           <h1 className="text-3xl font-bold mb-8">Choisissez votre portefeuille</h1>
           
@@ -160,7 +161,8 @@ const Portfolios = () => {
           )}
         </div>
       </div>
-    </>
+      <BottomNavbar />
+    </div>
   );
 };
 
