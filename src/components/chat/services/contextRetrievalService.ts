@@ -1,8 +1,6 @@
 
-import { searchKnowledgeBaseSemantically } from "../../knowledge-base/search/utils/searchUtils";
 import { searchLocalDocuments } from "./document/searchService";
 import { formatDocumentContext } from "../../knowledge-base/search/utils/searchUtils";
-import { KnowledgeBaseOperations } from "../../knowledge-base/types";
 
 interface ContextResult {
   context: string;
@@ -10,38 +8,28 @@ interface ContextResult {
 }
 
 /**
- * Service for retrieving context from knowledge base and documents
+ * Service pour récupérer le contexte des documents seulement
+ * Version simplifiée sans base de connaissances
  */
 export const retrieveContext = async (
-  input: string, 
-  kb: KnowledgeBaseOperations
+  input: string
 ): Promise<ContextResult> => {
   let additionalContext = "";
   let debugInfo: string[] = [];
   
   try {
-    debugInfo.push("Recherche dans la base de connaissances et les documents...");
+    debugInfo.push("Recherche dans les documents...");
     
-    // Recherche parallèle pour une meilleure performance
-    const [kbResults, docResults] = await Promise.all([
-      searchKnowledgeBaseSemantically(kb, input),
-      searchLocalDocuments(input)
-    ]);
-    
-    // Formater les résultats de KB pour obtenir le contexte
-    const kbContext = kbResults.context || "";
-    const kbSources = kbResults.sources || [];
+    // Recherche uniquement dans les documents (pas de base de connaissances)
+    const docResults = await searchLocalDocuments(input);
     
     // Formater les résultats des documents pour obtenir le contexte
     const formattedDocResults = formatDocumentContext(docResults);
     const docContext = formattedDocResults.context || "";
     const docSources = formattedDocResults.sources || [];
     
-    if (kbContext || docContext) {
-      additionalContext = (kbContext ? kbContext + "\n\n" : "") + 
-                          (docContext ? docContext : "");
-      
-      debugInfo.push(`Trouvé ${kbSources.length} entrées dans la base de connaissances`);
+    if (docContext) {
+      additionalContext = docContext;
       debugInfo.push(`Trouvé ${docSources.length} extraits de documents`);
     } else {
       debugInfo.push("Aucune information pertinente trouvée dans la base locale");

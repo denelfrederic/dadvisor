@@ -3,27 +3,59 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Loader2, RefreshCw } from "lucide-react";
-import { usePineconeSynchronizer } from "../detail/hooks/usePineconeSynchronizer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SynchronizationPanelProps {
   onComplete?: () => void;
 }
 
 /**
- * Panneau pour synchroniser les documents déjà présents dans Pinecone
- * mais non marqués comme tels dans la base de données
+ * Panneau pour synchroniser les documents (sans Pinecone)
+ * Version simplifiée
  */
 const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete }) => {
-  const { isSynchronizing, synchronizeAllDocuments } = usePineconeSynchronizer();
+  const [isSynchronizing, setIsSynchronizing] = useState(false);
   const [lastResult, setLastResult] = useState<{ success: boolean; count: number } | null>(null);
   const isMobile = useIsMobile();
 
   const handleSynchronize = async () => {
-    const result = await synchronizeAllDocuments();
-    setLastResult(result);
-    if (onComplete) {
-      onComplete();
+    setIsSynchronizing(true);
+    try {
+      // Récupérer les documents avec embedding mais non marqués comme indexés
+      const { data: documents, error } = await supabase
+        .from('documents')
+        .select('id')
+        .not('embedding', 'is', null)
+        .eq('pinecone_indexed', false);
+      
+      if (error) throw error;
+      
+      if (!documents || documents.length === 0) {
+        setLastResult({ success: true, count: 0 });
+        setIsSynchronizing(false);
+        if (onComplete) onComplete();
+        return;
+      }
+      
+      // Mettre à jour tous les documents trouvés
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({ pinecone_indexed: true })
+        .in('id', documents.map(doc => doc.id));
+      
+      if (updateError) throw updateError;
+      
+      setLastResult({ success: true, count: documents.length });
+      
+      if (onComplete) {
+        onComplete();
+      }
+    } catch (error) {
+      console.error("Erreur lors de la synchronisation:", error);
+      setLastResult({ success: false, count: 0 });
+    } finally {
+      setIsSynchronizing(false);
     }
   };
 
@@ -35,14 +67,13 @@ const SynchronizationPanel: React.FC<SynchronizationPanelProps> = ({ onComplete 
           Synchronisation des documents
         </CardTitle>
         <CardDescription className="text-xs md:text-sm">
-          Marquer comme indexés dans Pinecone les documents qui ont déjà un embedding
+          Marquer comme indexés les documents qui ont déjà un embedding
         </CardDescription>
       </CardHeader>
       
       <CardContent className="text-xs md:text-sm">
         <p>
-          Cette action mettra à jour les documents qui ont un embedding mais ne sont pas marqués comme indexés dans Pinecone. 
-          Cela peut arriver suite à une perte de synchronisation entre la base de données et Pinecone.
+          Cette action mettra à jour les documents qui ont un embedding mais ne sont pas marqués comme indexés.
         </p>
         
         {lastResult && (

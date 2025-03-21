@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Database, AlertTriangle } from "lucide-react";
+import { Loader2, Database } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface IndexingButtonProps {
@@ -9,23 +9,18 @@ interface IndexingButtonProps {
   isDisabled: boolean;
   needsSync: boolean;
   onUpdate: () => void;
-  documentSize?: number; // Taille du document en caractères
 }
 
 /**
- * Bouton principal d'indexation d'un document dans Pinecone
- * Avec gestion améliorée pour les documents volumineux
+ * Bouton principal d'indexation d'un document
+ * Version simplifiée sans Pinecone
  */
 const IndexingButton: React.FC<IndexingButtonProps> = ({
   isLoading,
   isDisabled,
   needsSync,
-  onUpdate,
-  documentSize = 0
+  onUpdate
 }) => {
-  // Déterminer si le document est volumineux (plus de 10000 caractères)
-  const isLargeDocument = documentSize > 10000;
-  
   return (
     <TooltipProvider>
       <Tooltip>
@@ -33,7 +28,7 @@ const IndexingButton: React.FC<IndexingButtonProps> = ({
           <Button 
             onClick={onUpdate} 
             disabled={isLoading || isDisabled}
-            className={`w-full ${isLargeDocument ? 'bg-orange-600 hover:bg-orange-700' : ''}`}
+            className="w-full"
           >
             {isLoading ? (
               <>
@@ -42,20 +37,14 @@ const IndexingButton: React.FC<IndexingButtonProps> = ({
               </>
             ) : (
               <>
-                {isLargeDocument ? (
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                ) : (
-                  <Database className="h-4 w-4 mr-2" />
-                )}
-                {isLargeDocument ? "Indexer (document volumineux)" : "Indexer dans Pinecone"}
+                <Database className="h-4 w-4 mr-2" />
+                Indexer le document
               </>
             )}
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          {isLargeDocument 
-            ? "Ce document est volumineux. Seule une partie sera vectorisée pour l'indexation dans Pinecone." 
-            : "Indexer ce document dans Pinecone pour la recherche sémantique"}
+          Indexer ce document pour la recherche
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
