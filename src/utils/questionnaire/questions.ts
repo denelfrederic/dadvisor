@@ -1,4 +1,3 @@
-
 import { Question } from "./types";
 
 /**
@@ -235,6 +234,32 @@ export const questions: Question[] = [
       {
         id: "management-4",
         text: "Je veux tout gérer moi-même et prendre toutes les décisions",
+        value: 4
+      }
+    ]
+  },
+  {
+    id: "sovereignty",
+    text: "Votre priorité est-elle d'investir exclusivement en France et en Europe pour soutenir la souveraineté économique ?",
+    options: [
+      {
+        id: "sovereignty-1",
+        text: "Non, je préfère une allocation mondiale diversifiée",
+        value: 1
+      },
+      {
+        id: "sovereignty-2",
+        text: "Je privilégie l'Europe mais sans exclusivité",
+        value: 2
+      },
+      {
+        id: "sovereignty-3",
+        text: "Oui, je veux favoriser les entreprises françaises et européennes",
+        value: 3
+      },
+      {
+        id: "sovereignty-4",
+        text: "Je souhaite investir exclusivement dans des entreprises contribuant à la souveraineté européenne",
         value: 4
       }
     ]

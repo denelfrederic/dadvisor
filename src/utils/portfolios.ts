@@ -1,4 +1,3 @@
-
 /**
  * Données et utilitaires pour les portefeuilles d'investissement
  */
@@ -194,6 +193,96 @@ export const portfolios: Portfolio[] = [
       "Investisseurs avec une forte tolérance au risque",
       "Croissance maximale du capital comme objectif"
     ]
+  },
+  {
+    id: "wareconomy",
+    name: "Économie de Guerre",
+    riskLevel: "Modéré",
+    description: "Un portefeuille axé sur la souveraineté française et européenne, soutenant les entreprises stratégiques dans un contexte de réarmement économique.",
+    expectedReturn: "5% - 9% par an",
+    thesis: "Ce portefeuille vise à soutenir le développement et le renforcement d'un cadre de défense et de sécurité européen en investissant exclusivement dans des entreprises françaises et européennes qui contribuent à la résilience nationale et continentale. Il s'agit d'une alternative aux initiatives gouvernementales, proposant une approche basée sur le marché pour soutenir les acteurs privés pertinents.",
+    assets: [
+      { name: "Défense & Aérospatial", percentage: 30 },
+      { name: "Cybersécurité", percentage: 20 },
+      { name: "Industrie Stratégique", percentage: 20 },
+      { name: "Énergie", percentage: 15 },
+      { name: "Transports & Logistique", percentage: 10 },
+      { name: "Infrastructure Critique", percentage: 5 }
+    ],
+    assetDetails: [
+      {
+        category: "Défense & Aérospatial (30%)",
+        description: "Entreprises impliquées dans la production d'équipements militaires, aéronautiques et spatiaux",
+        examples: [
+          "Thales (France)",
+          "Airbus Defence and Space (UE)",
+          "Dassault Aviation (France)",
+          "Safran (France)",
+          "Naval Group (France)"
+        ]
+      },
+      {
+        category: "Cybersécurité (20%)",
+        description: "Solutions et services de protection des systèmes d'information et infrastructures numériques",
+        examples: [
+          "Sophos (France)",
+          "Atos (France)",
+          "Capgemini Cybersécurité (France)",
+          "Orange Cyberdefense (France)",
+          "Darktrace (Royaume-Uni/UE)"
+        ]
+      },
+      {
+        category: "Industrie Stratégique (20%)",
+        description: "Production de biens manufacturés essentiels et technologies critiques",
+        examples: [
+          "STMicroelectronics (France/Italie)",
+          "Schneider Electric (France)",
+          "ASML (Pays-Bas)",
+          "Sanofi (France - médicaments stratégiques)",
+          "Arkema (France - chimie de spécialité)"
+        ]
+      },
+      {
+        category: "Énergie (15%)",
+        description: "Production et gestion de l'énergie avec focus sur l'autonomie énergétique",
+        examples: [
+          "EDF (France - nucléaire)",
+          "TotalEnergies (France)",
+          "Engie (France)",
+          "Neoen (France - renouvelables)",
+          "Siemens Energy (Allemagne)"
+        ]
+      },
+      {
+        category: "Transports & Logistique (10%)",
+        description: "Infrastructures et services de transport essentiels à la résilience économique",
+        examples: [
+          "SNCF (obligations, France)",
+          "Alstom (France)",
+          "CMA CGM (France)",
+          "Bolloré Logistics (France)",
+          "Deutsche Post DHL Group (Allemagne)"
+        ]
+      },
+      {
+        category: "Infrastructure Critique (5%)",
+        description: "Services publics et infrastructures essentielles à la sécurité nationale",
+        examples: [
+          "Veolia (France - eau, déchets)",
+          "Suez (France - eau)",
+          "Eiffage (France - construction)",
+          "Bouygues (France - BTP)",
+          "Vinci (France - concessions, construction)"
+        ]
+      }
+    ],
+    suitableFor: [
+      "Investisseurs souhaitant soutenir la souveraineté économique européenne",
+      "Personnes cherchant une alternative aux initiatives de prêt gouvernemental",
+      "Investisseurs avec une perspective défense et sécurité",
+      "Profils patriotiques voulant allier rendement et impact national"
+    ]
   }
 ];
 
@@ -220,6 +309,17 @@ export const getPortfolioById = (portfolioId: string): Portfolio | undefined => 
  * @returns L'ID du portefeuille recommandé
  */
 export const getRecommendedPortfolio = (riskScore: number): string => {
+  // Vérifie d'abord la préférence pour "Économie de Guerre" basée sur la question sovereignty
+  // Cette vérification serait normalement faite à partir des réponses au questionnaire
+  // Nous implémentons une version simplifiée ici
+  const hasSovereigntyPreference = localStorage.getItem('dadvisor_temp_answers') ? 
+    JSON.parse(localStorage.getItem('dadvisor_temp_answers') || '{}')['sovereignty']?.value >= 3 : false;
+  
+  if (hasSovereigntyPreference) {
+    return "wareconomy";
+  }
+  
+  // Sinon, utiliser la logique habituelle basée sur le score de risque
   if (riskScore < 40) {
     return "conservative";
   } else if (riskScore < 70) {
@@ -239,6 +339,7 @@ export const isPortfolioMoreRisky = (selectedId: string, recommendedId: string):
   const riskLevels: Record<string, number> = {
     "conservative": 1,
     "balanced": 2,
+    "wareconomy": 2, // Même niveau de risque que "balanced"
     "growth": 3
   };
   
