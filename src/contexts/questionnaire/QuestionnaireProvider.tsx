@@ -6,6 +6,7 @@ import { useQuestionnaireStorage } from "./hooks/useQuestionnaireStorage";
 import { useQuestionnaireAnalysis } from "./hooks/useQuestionnaireAnalysis";
 import { useQuestionnaireNavigation } from "./hooks/useQuestionnaireNavigation";
 import { useQuestionnaireSaving } from "./hooks/useQuestionnaireSaving";
+import { toast } from "@/components/ui/use-toast";
 
 const QuestionnaireContext = createContext<QuestionnaireContextType | undefined>(undefined);
 
@@ -107,18 +108,28 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       const calculatedScore = calculateRiskScore(answers);
       setScore(calculatedScore);
       
-      // Afficher un toast de confirmation
-      const toast = window.document.querySelector('[data-toast]');
-      if (toast && typeof toast.showToast === 'function') {
-        toast.showToast({
-          title: "Questionnaire terminé !",
-          description: `Votre score de risque est de ${calculatedScore}`,
-        });
-      }
+      // Afficher un toast de confirmation via l'API toast
+      toast({
+        title: "Questionnaire terminé !",
+        description: `Votre score de risque est de ${calculatedScore}`,
+      });
       
       setShowAnalysis(true);
     }
   }, [isComplete, answers]);
+
+  // Fonction pour envelopper saveInvestmentProfile avec les arguments corrects
+  const wrappedSaveInvestmentProfile = () => {
+    if (profileAnalysis && investmentStyleInsights.length > 0) {
+      return saveInvestmentProfile(
+        profileAnalysis,
+        investmentStyleInsights,
+        answers,
+        score
+      );
+    }
+    return Promise.resolve();
+  };
 
   return (
     <QuestionnaireContext.Provider value={{
@@ -139,7 +150,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       investmentStyleInsights,
       handleAnswer,
       handleRetakeQuestionnaire,
-      saveInvestmentProfile,
+      saveInvestmentProfile: wrappedSaveInvestmentProfile,
       handleContinueToPortfolios
     }}>
       {children}
