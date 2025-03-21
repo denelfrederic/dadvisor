@@ -21,6 +21,7 @@ const QuestionnaireProgress = () => {
   
   const isMobile = useIsMobile();
   const currentQuestion = questions[currentQuestionIndex];
+  const totalQuestions = questions.length; // Récupérer le nombre exact de questions
 
   // Ajout d'un effet pour rediriger automatiquement après un délai
   useEffect(() => {
@@ -53,10 +54,10 @@ const QuestionnaireProgress = () => {
     <>
       <ProgressBar 
         currentStep={currentQuestionIndex + 1} 
-        totalSteps={questions.length}
+        totalSteps={totalQuestions}
         labels={isMobile ? 
-          questions.map((_, index) => `${index + 1}`) : 
-          questions.map((_, index) => `Question ${index + 1}`)}
+          Array.from({ length: totalQuestions }, (_, index) => `${index + 1}`) : 
+          Array.from({ length: totalQuestions }, (_, index) => `Question ${index + 1}`)}
       />
       
       <div className="mb-6 sm:mb-10">

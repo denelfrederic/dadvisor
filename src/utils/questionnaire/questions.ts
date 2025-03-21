@@ -134,5 +134,109 @@ export const questions: Question[] = [
         value: 4
       }
     ]
+  },
+  {
+    id: "emergency",
+    text: "Disposez-vous d'une épargne de précaution (fonds d'urgence) ?",
+    options: [
+      {
+        id: "emergency-1",
+        text: "Non, je n'ai pas d'épargne de précaution",
+        value: 1
+      },
+      {
+        id: "emergency-2",
+        text: "J'ai moins d'un mois de dépenses en épargne de précaution",
+        value: 2
+      },
+      {
+        id: "emergency-3",
+        text: "J'ai entre 1 et 3 mois de dépenses en épargne de précaution",
+        value: 3
+      },
+      {
+        id: "emergency-4",
+        text: "J'ai plus de 3 mois de dépenses en épargne de précaution",
+        value: 4
+      }
+    ]
+  },
+  {
+    id: "crypto",
+    text: "Quelle est votre expérience avec les cryptomonnaies ?",
+    options: [
+      {
+        id: "crypto-1",
+        text: "Je n'ai jamais investi en cryptomonnaies et je suis réticent",
+        value: 1
+      },
+      {
+        id: "crypto-2",
+        text: "Je suis curieux mais n'ai jamais investi en cryptomonnaies",
+        value: 2
+      },
+      {
+        id: "crypto-3",
+        text: "J'ai déjà investi en Bitcoin/Ethereum",
+        value: 3
+      },
+      {
+        id: "crypto-4",
+        text: "J'investis régulièrement dans plusieurs cryptomonnaies",
+        value: 4
+      }
+    ]
+  },
+  {
+    id: "diversification",
+    text: "Quelle importance accordez-vous à la diversification de vos investissements ?",
+    options: [
+      {
+        id: "diversification-1",
+        text: "Je préfère me concentrer sur un seul type d'investissement que je comprends bien",
+        value: 1
+      },
+      {
+        id: "diversification-2",
+        text: "Je diversifie un peu, mais reste dans des classes d'actifs similaires",
+        value: 2
+      },
+      {
+        id: "diversification-3",
+        text: "Je diversifie entre différentes classes d'actifs (actions, obligations, etc.)",
+        value: 3
+      },
+      {
+        id: "diversification-4",
+        text: "Je recherche une diversification maximale, y compris avec des actifs alternatifs",
+        value: 4
+      }
+    ]
+  },
+  {
+    id: "management",
+    text: "Comment préférez-vous gérer vos investissements ?",
+    options: [
+      {
+        id: "management-1",
+        text: "Je préfère déléguer entièrement la gestion à des professionnels",
+        value: 1
+      },
+      {
+        id: "management-2",
+        text: "Je suis les conseils des professionnels mais garde un droit de regard",
+        value: 2
+      },
+      {
+        id: "management-3",
+        text: "Je gère moi-même avec quelques conseils occasionnels",
+        value: 3
+      },
+      {
+        id: "management-4",
+        text: "Je veux tout gérer moi-même et prendre toutes les décisions",
+        value: 4
+      }
+    ]
   }
 ];
