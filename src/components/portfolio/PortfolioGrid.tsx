@@ -16,6 +16,7 @@ interface PortfolioGridProps {
 
 /**
  * Composant affichant la grille des portefeuilles disponibles
+ * Affiche 1 colonne sur mobile, 3 colonnes sur tablette et 4 colonnes sur desktop
  */
 const PortfolioGrid: React.FC<PortfolioGridProps> = ({
   portfolios,
@@ -25,7 +26,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
   onViewDetails
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
       {portfolios.map((portfolio) => (
         <PortfolioCard
           key={portfolio.id}
