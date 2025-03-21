@@ -29,7 +29,7 @@ const MobileMenu = ({ isOpen, onClose, currentPath, user, onAccountClick }: Mobi
             <NavLink to="/" label="Accueil" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/questionnaire" label="Questionnaire" currentPath={currentPath} onClick={onClose} />
             <NavLink to="/portfolios" label="Portefeuilles" currentPath={currentPath} onClick={onClose} />
-            <NavLink to="/wallet" label="Mon coffre" currentPath={currentPath} onClick={onClose} />
+            <NavLink to="/wallet" label={<span className="whitespace-nowrap">Mon coffre</span>} currentPath={currentPath} onClick={onClose} />
             <NavLink to="/contact" label="Contact" currentPath={currentPath} onClick={onClose} />
           </div>
           
