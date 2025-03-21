@@ -36,6 +36,14 @@ const Portfolios = () => {
     (localStorage.getItem('dadvisor_temp_answers') ? 
       JSON.parse(localStorage.getItem('dadvisor_temp_answers') || '{}') : {});
   
+  // Afficher les données reçues pour le débogage
+  useEffect(() => {
+    console.log("Portfolios: Données reçues du questionnaire:", {
+      riskScore,
+      answers: questionnaireAnswers
+    });
+  }, [riskScore, questionnaireAnswers]);
+  
   // Chargement des portefeuilles et détermination du portefeuille recommandé
   useEffect(() => {
     const fetchPortfolios = async () => {
@@ -47,10 +55,19 @@ const Portfolios = () => {
         
         // Détermination du portefeuille recommandé en fonction du score de risque et des réponses au questionnaire
         const recommendedId = getRecommendedPortfolio(riskScore, questionnaireAnswers);
-        console.log("Portefeuille recommandé:", recommendedId, "Score:", riskScore, "Réponses:", JSON.stringify(questionnaireAnswers));
+        console.log("Portefeuille recommandé:", recommendedId, "Score:", riskScore);
         
         setRecommendedPortfolioId(recommendedId);
         setSelectedPortfolioId(recommendedId);
+        
+        // Afficher une notification pour le portefeuille recommandé
+        const recommendedPortfolio = portfolioData.find(p => p.id === recommendedId);
+        if (recommendedPortfolio) {
+          toast({
+            title: "Recommandation",
+            description: `Basé sur votre profil, nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
+          });
+        }
       } catch (error) {
         console.error("Error fetching portfolios:", error);
         toast({
