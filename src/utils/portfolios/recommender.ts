@@ -44,44 +44,40 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
   
   // PRIORITÉ ABSOLUE: Vérification de la préférence pour la souveraineté économique
   if (questionnaireAnswers.sovereignty) {
-    const sovereigntyAnswer = questionnaireAnswers.sovereignty;
-    console.log("Réponse détaillée sur la souveraineté:", JSON.stringify(sovereigntyAnswer, null, 2));
+    console.log("Réponse détaillée sur la souveraineté:", JSON.stringify(questionnaireAnswers.sovereignty, null, 2));
     
-    // Vérification des ID d'options et valeurs numériques
-    if (sovereigntyAnswer.optionId === "sovereignty-3" || 
-        sovereigntyAnswer.optionId === "sovereignty-4" || 
-        sovereigntyAnswer.value >= 3) {
+    // Vérification des ID d'options et valeurs numériques (plus stricte)
+    if (questionnaireAnswers.sovereignty.optionId === "sovereignty-3" || 
+        questionnaireAnswers.sovereignty.optionId === "sovereignty-4") {
       
-      console.log("⭐ MATCH sur préférence forte pour souveraineté - Choix 3 ou 4 sélectionné");
+      console.log("⭐ MATCH sur préférence forte pour souveraineté - Option 3 ou 4 sélectionnée");
       return "wareconomy"; // ID de "Économie de guerre"
     }
     
-    // Vérification secondaire pour l'option 2 (préférence modérée)
-    if (sovereigntyAnswer.optionId === "sovereignty-2" || sovereigntyAnswer.value === 2) {
-      console.log("⭐ MATCH sur préférence modérée pour souveraineté - Choix 2 sélectionné");
-      
-      // Si score élevé et préférence modérée, on privilégie "Économie de guerre"
-      if (riskScore >= 50) {
-        return "wareconomy"; // ID de "Économie de guerre"
-      }
+    // Si valeur est >= 3, c'est aussi une préférence forte
+    if (questionnaireAnswers.sovereignty.value >= 3) {
+      console.log("⭐ MATCH sur préférence forte pour souveraineté - Valeur >= 3");
+      return "wareconomy";
     }
     
-    // Vérification du texte des réponses
-    if (sovereigntyAnswer.text) {
-      const lowercaseText = sovereigntyAnswer.text.toLowerCase();
+    // Vérification du texte des réponses pour la souveraineté
+    if (questionnaireAnswers.sovereignty.text) {
+      const lowercaseText = questionnaireAnswers.sovereignty.text.toLowerCase();
       if (lowercaseText.includes("france") || 
           lowercaseText.includes("europe") || 
           lowercaseText.includes("français") || 
           lowercaseText.includes("européen") || 
-          lowercaseText.includes("souveraineté")) {
+          lowercaseText.includes("souveraineté") ||
+          lowercaseText.includes("national") ||
+          lowercaseText.includes("patriot")) {
         
-        console.log("⭐ MATCH sur le texte pour souveraineté:", lowercaseText);
+        console.log("⭐ MATCH sur le texte de souveraineté:", lowercaseText);
         return "wareconomy"; // ID de "Économie de guerre"
       }
     }
   }
   
-  // Recherche de mots-clés liés à la souveraineté dans TOUTES les réponses
+  // Recherche de mots-clés liés à la souveraineté dans TOUTES les réponses - ANALYSE APPROFONDIE
   for (const questionId in questionnaireAnswers) {
     if (!questionnaireAnswers[questionId]) continue;
     
@@ -90,7 +86,7 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
     if (answer && answer.text) {
       const lowercaseText = answer.text.toLowerCase();
       
-      // Recherche de mots-clés pertinents
+      // Recherche de mots-clés pertinents avec plus de précision
       if (lowercaseText.includes("france") || 
           lowercaseText.includes("europe") || 
           lowercaseText.includes("français") || 
@@ -98,9 +94,10 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
           lowercaseText.includes("souveraineté") ||
           lowercaseText.includes("national") ||
           lowercaseText.includes("local") ||
-          lowercaseText.includes("patriot")) {
+          lowercaseText.includes("patriot") ||
+          lowercaseText.includes("indépend")) {
         
-        console.log("⭐ MATCH sur le texte d'une autre question:", questionId, lowercaseText);
+        console.log("⭐ MATCH sur le texte dans la question", questionId, ":", lowercaseText);
         return "wareconomy"; // ID de "Économie de guerre"
       }
     }
@@ -117,6 +114,8 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
  * @returns L'ID du portefeuille recommandé
  */
 function getRecommendationByScore(riskScore: number): string {
+  console.log("Recommandation basée uniquement sur le score:", riskScore);
+  
   if (riskScore < 40) {
     return "conservative";
   } else if (riskScore < 70) {

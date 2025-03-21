@@ -41,7 +41,8 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     setPreviousScore,
     setScore,
     setIsComplete,
-    setShowIntroduction
+    setShowIntroduction,
+    setShowAnalysis
   });
   
   const {
@@ -64,6 +65,10 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   // Charger les données lors du montage initial
   useEffect(() => {
     try {
+      // Vérifier si on est sur la page du questionnaire (pathname contient "questionnaire")
+      const isQuestionnairePage = window.location.pathname.includes("questionnaire");
+      console.log("Chargement des données - Page questionnaire:", isQuestionnairePage);
+      
       const { savedAnswers, savedScore, savedComplete } = loadStoredData();
       
       if (savedAnswers && Object.keys(savedAnswers).length > 0) {
@@ -84,9 +89,15 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       if (savedComplete !== null) {
         console.log("Chargement de l'état de complétion:", savedComplete);
         setIsComplete(savedComplete);
-        if (savedComplete) {
+        
+        // Si c'est la page du questionnaire, afficher l'introduction plutôt que l'analyse
+        if (savedComplete && !isQuestionnairePage) {
           setShowAnalysis(true);
           setShowIntroduction(false);
+        } else if (isQuestionnairePage) {
+          // Sur la page questionnaire, on priorise l'affichage du questionnaire
+          setShowAnalysis(false);
+          setShowIntroduction(Object.keys(savedAnswers || {}).length === 0);
         }
       }
     } catch (error) {
@@ -130,7 +141,10 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       
       // Ne pas automatiquement montrer l'analyse si on est sur la page questionnaire
       // L'utilisateur doit cliquer sur un bouton pour la voir
-      setShowAnalysis(true);
+      const isQuestionnairePage = window.location.pathname.includes("questionnaire");
+      if (!isQuestionnairePage) {
+        setShowAnalysis(true);
+      }
     }
   }, [isComplete, answers]);
 

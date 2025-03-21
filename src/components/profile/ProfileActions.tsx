@@ -18,12 +18,23 @@ const ProfileActions = ({
   handleSaveProfile,
   isLoggedIn
 }: ProfileActionsProps) => {
+  // Fonction de redémarrage avec navigation explicite
+  const handleRestartQuestionnaire = () => {
+    // D'abord exécute la logique de remise à zéro
+    handleRetakeQuestionnaire();
+    
+    // Ensuite, navigation explicite avec timeout pour permettre le nettoyage
+    setTimeout(() => {
+      window.location.href = "/questionnaire";
+    }, 100);
+  };
+  
   return (
     <div className="flex justify-center mt-8">
       <div className="flex flex-col md:flex-row gap-4">
         <Button 
           variant="outline" 
-          onClick={handleRetakeQuestionnaire}
+          onClick={handleRestartQuestionnaire}
           className="flex items-center gap-2"
         >
           <RefreshCw size={16} />

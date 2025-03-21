@@ -16,6 +16,7 @@ interface UseQuestionnaireAnalysisProps {
   setScore: React.Dispatch<React.SetStateAction<number>>;
   setIsComplete: React.Dispatch<React.SetStateAction<boolean>>;
   setShowIntroduction: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /**
@@ -29,7 +30,8 @@ export const useQuestionnaireAnalysis = ({
   setPreviousScore,
   setScore,
   setIsComplete,
-  setShowIntroduction
+  setShowIntroduction,
+  setShowAnalysis
 }: UseQuestionnaireAnalysisProps) => {
   
   /**
@@ -104,15 +106,19 @@ export const useQuestionnaireAnalysis = ({
    * Réinitialise le questionnaire pour le refaire
    */
   const handleRetakeQuestionnaire = () => {
+    // Réinitialiser complètement l'état du questionnaire
     setIsComplete(false);
     setCurrentQuestionIndex(0);
     setAnswers({});
     setScore(0);
     setPreviousScore(0);
     setShowIntroduction(true);
+    setShowAnalysis(false); // S'assurer que l'analyse n'est pas affichée
     
     // Effacer localStorage
     clearQuestionnaireStorage();
+    
+    console.log("Questionnaire réinitialisé complètement");
   };
   
   return {
