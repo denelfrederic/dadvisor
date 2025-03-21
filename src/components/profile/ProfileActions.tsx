@@ -44,7 +44,7 @@ const ProfileActions = ({
           className="flex items-center gap-2"
         >
           <Wallet size={16} />
-          Gérer vos wallets
+          Gérer vos coffres numériques
         </Button>
       </div>
     </div>

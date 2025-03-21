@@ -7,7 +7,7 @@ const WalletInfo = () => {
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
         <p className="mb-4">
-          Un wallet décentralisé vous donne un contrôle total sur vos actifs numériques.
+          Un coffre numérique décentralisé vous donne un contrôle total sur vos actifs numériques.
           Aucune autorité centrale ne peut bloquer votre accès ou saisir vos fonds.
         </p>
         <p className="mb-4">

@@ -9,11 +9,11 @@ import { getPortfolioById } from "@/utils/portfolios";
 import Navbar from "@/components/Navbar";
 
 /**
- * Page Wallet - Permet la création d'un wallet décentralisé
- * Affiche les informations du portefeuille sélectionné et permet de générer un wallet
+ * Page Coffre numérique - Permet la création d'un coffre numérique décentralisé
+ * Affiche les informations du portefeuille sélectionné et permet de générer un coffre numérique
  */
 const Wallet = () => {
-  // États pour suivre l'adresse du wallet et son statut de création
+  // États pour suivre l'adresse du coffre numérique et son statut de création
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isCreated, setIsCreated] = useState(false);
   
@@ -29,8 +29,8 @@ const Wallet = () => {
     : null;
   
   /**
-   * Gère la création réussie du wallet
-   * @param address - Adresse du wallet créé
+   * Gère la création réussie du coffre numérique
+   * @param address - Adresse du coffre numérique créé
    */
   const handleWalletCreated = (address: string) => {
     setWalletAddress(address);
@@ -38,8 +38,8 @@ const Wallet = () => {
     
     // Affiche une notification de succès
     toast({
-      title: "Wallet créé avec succès",
-      description: `Votre wallet a été créé à l'adresse ${address.substring(0, 8)}...${address.substring(address.length - 6)}`,
+      title: "Coffre numérique créé avec succès",
+      description: `Votre coffre numérique a été créé à l'adresse ${address.substring(0, 8)}...${address.substring(address.length - 6)}`,
     });
   };
   
@@ -62,10 +62,10 @@ const Wallet = () => {
       <Navbar />
       <div className="min-h-screen bg-dadvisor-gray py-20 px-4 pt-28">
         <div className="dadvisor-container">
-          <h1 className="text-3xl font-bold font-heading text-dadvisor-navy mb-8">Wallet</h1>
+          <h1 className="text-3xl font-bold font-heading text-dadvisor-navy mb-8">Coffre numérique</h1>
           
           <p className="text-dadvisor-darkgray text-center mb-10 max-w-2xl mx-auto">
-            Un wallet décentralisé vous donne le contrôle total sur vos actifs numériques, vos clés sont cryptées et sécurisées par biométrie.
+            Un coffre numérique décentralisé vous donne le contrôle total sur vos actifs numériques, vos clés sont cryptées et sécurisées par biométrie.
           </p>
           
           <div className="mb-8">
@@ -92,7 +92,7 @@ const Wallet = () => {
               </motion.div>
             )}
             
-            {/* Composant de création de wallet */}
+            {/* Composant de création de coffre numérique */}
             {!isCreated ? (
               <WalletCreation onWalletCreated={handleWalletCreated} />
             ) : (
@@ -102,7 +102,7 @@ const Wallet = () => {
                 transition={{ duration: 0.5 }}
                 className="bg-white shadow-dadvisor p-6 rounded-xl mb-8"
               >
-                <h2 className="text-xl font-medium mb-4 font-heading">Wallet créé avec succès</h2>
+                <h2 className="text-xl font-medium mb-4 font-heading">Coffre numérique créé avec succès</h2>
                 <p className="mb-4">Votre adresse : <span className="font-mono bg-gray-100 px-2 py-1 rounded">{walletAddress}</span></p>
                 <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
                   <div className="flex items-start">
@@ -111,7 +111,7 @@ const Wallet = () => {
                     </svg>
                     <div className="text-amber-800">
                       <p className="font-medium mb-1">Important</p>
-                      <p className="text-xs">Votre wallet est désormais créé et vous seul en avez le contrôle. DADVISOR n'a aucun accès à vos fonds ni à vos clés privées, qui sont cryptées et sécurisées par biométrie.</p>
+                      <p className="text-xs">Votre coffre numérique est désormais créé et vous seul en avez le contrôle. DADVISOR n'a aucun accès à vos fonds ni à vos clés privées, qui sont cryptées et sécurisées par biométrie.</p>
                     </div>
                   </div>
                 </div>
@@ -119,7 +119,7 @@ const Wallet = () => {
             )}
           </div>
           
-          {/* Bouton pour continuer vers l'investissement une fois le wallet créé */}
+          {/* Bouton pour continuer vers l'investissement une fois le coffre numérique créé */}
           {isCreated && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}

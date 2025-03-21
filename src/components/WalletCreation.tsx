@@ -51,9 +51,9 @@ const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
     >
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle>Wallet</CardTitle>
+          <CardTitle>Coffre numérique</CardTitle>
           <CardDescription>
-            Créez un wallet décentralisé pour gérer vos investissements en toute sécurité.
+            Créez un coffre numérique décentralisé pour gérer vos investissements en toute sécurité.
           </CardDescription>
         </CardHeader>
         <CardContent>

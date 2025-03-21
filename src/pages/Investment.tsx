@@ -21,7 +21,7 @@ const Investment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Récupération de l'ID du portefeuille et de l'adresse du wallet depuis l'état de navigation
+  // Récupération de l'ID du portefeuille et de l'adresse du coffre numérique depuis l'état de navigation
   const portfolioId = location.state?.portfolioId;
   const walletAddress = location.state?.walletAddress;
   
@@ -117,7 +117,7 @@ const Investment = () => {
                     </div>
                     
                     <div>
-                      <h3 className="text-sm font-medium mb-1">Wallet</h3>
+                      <h3 className="text-sm font-medium mb-1">Coffre numérique</h3>
                       <p className="text-sm font-mono">
                         {walletAddress ? `${walletAddress.substring(0, 8)}...${walletAddress.substring(walletAddress.length - 6)}` : "Non défini"}
                       </p>

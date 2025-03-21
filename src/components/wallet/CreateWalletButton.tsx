@@ -20,7 +20,7 @@ const CreateWalletButton = ({ isCreating, onClick }: CreateWalletButtonProps) =>
         Création en cours...
       </>
     ) : (
-      "Créer un wallet"
+      "Créer un coffre numérique"
     )}
   </Button>
 );
