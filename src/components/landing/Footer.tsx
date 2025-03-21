@@ -24,7 +24,7 @@ const Footer = () => {
               Portefeuilles
             </Link>
             <Link to="/wallet" className="text-sm hover:text-primary transition-colors">
-              Wallet
+              Mon coffre
             </Link>
           </div>
         </div>
