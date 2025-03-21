@@ -153,14 +153,15 @@ export const usePortfolioSelection = (
         
         if (isRiskier) {
           // Alerte l'utilisateur qu'il a sélectionné un portefeuille plus risqué que celui recommandé
+          const handleContinueAnyway = () => {
+            navigate("/wallet", { state: { portfolioId: selectedPortfolioId } });
+          };
+          
           toast({
             variant: "destructive",
             title: "Attention",
             description: "Vous avez sélectionné un portefeuille plus risqué que celui recommandé pour votre profil.",
-            action: {
-              label: "Continuer quand même",
-              onClick: () => navigate("/wallet", { state: { portfolioId: selectedPortfolioId } })
-            }
+            action: <Button variant="outline" onClick={handleContinueAnyway}>Continuer quand même</Button>
           });
         } else {
           // Poursuit vers la création du wallet
