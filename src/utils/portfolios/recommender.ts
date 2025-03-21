@@ -14,8 +14,12 @@ import { QuestionnaireResponses } from "@/utils/questionnaire/types";
  * @returns L'ID du portefeuille recommandé
  */
 export const getRecommendedPortfolio = (riskScore: number, answers?: QuestionnaireResponses): string => {
-  // Vérifions si answers est défini. Si non, essayons de le récupérer du localStorage
+  // Vérification si answers est défini
   let questionnaireAnswers: QuestionnaireResponses | null = answers || null;
+  
+  // Pour le débogage
+  console.log("Recommandation de portefeuille pour score:", riskScore, "avec réponses:", 
+    questionnaireAnswers ? Object.keys(questionnaireAnswers).length : "aucune");
   
   if (!questionnaireAnswers) {
     try {
@@ -33,38 +37,36 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
   }
   
   // Si toujours pas de réponses, utiliser uniquement le score
-  if (!questionnaireAnswers) {
+  if (!questionnaireAnswers || Object.keys(questionnaireAnswers).length === 0) {
     console.log("Utilisation uniquement du score pour recommandation:", riskScore);
     return getRecommendationByScore(riskScore);
   }
-  
-  console.log("Analyse complète des réponses:", JSON.stringify(questionnaireAnswers, null, 2));
   
   // PRIORITÉ ABSOLUE: Vérification de la préférence pour la souveraineté économique
   if (questionnaireAnswers.sovereignty) {
     const sovereigntyAnswer = questionnaireAnswers.sovereignty;
     console.log("Réponse détaillée sur la souveraineté:", JSON.stringify(sovereigntyAnswer, null, 2));
     
-    // Vérification explicite des ID d'options et valeurs numériques
+    // Vérification des ID d'options et valeurs numériques
     if (sovereigntyAnswer.optionId === "sovereignty-3" || 
         sovereigntyAnswer.optionId === "sovereignty-4" || 
         sovereigntyAnswer.value >= 3) {
       
       console.log("⭐ MATCH sur préférence forte pour souveraineté - Choix 3 ou 4 sélectionné");
-      return "wareconomy";
+      return "wareconomy"; // ID de "Économie de guerre"
     }
     
     // Vérification secondaire pour l'option 2 (préférence modérée)
     if (sovereigntyAnswer.optionId === "sovereignty-2" || sovereigntyAnswer.value === 2) {
       console.log("⭐ MATCH sur préférence modérée pour souveraineté - Choix 2 sélectionné");
       
-      // Si score élevé et préférence modérée, on privilégie war economy
+      // Si score élevé et préférence modérée, on privilégie "Économie de guerre"
       if (riskScore >= 50) {
-        return "wareconomy";
+        return "wareconomy"; // ID de "Économie de guerre"
       }
     }
     
-    // Vérification supplémentaire basée sur le texte de la réponse
+    // Vérification du texte des réponses
     if (sovereigntyAnswer.text) {
       const lowercaseText = sovereigntyAnswer.text.toLowerCase();
       if (lowercaseText.includes("france") || 
@@ -74,7 +76,7 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
           lowercaseText.includes("souveraineté")) {
         
         console.log("⭐ MATCH sur le texte pour souveraineté:", lowercaseText);
-        return "wareconomy";
+        return "wareconomy"; // ID de "Économie de guerre"
       }
     }
   }
@@ -88,7 +90,7 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
     if (answer && answer.text) {
       const lowercaseText = answer.text.toLowerCase();
       
-      // Recherche plus large de mots-clés pertinents
+      // Recherche de mots-clés pertinents
       if (lowercaseText.includes("france") || 
           lowercaseText.includes("europe") || 
           lowercaseText.includes("français") || 
@@ -99,7 +101,7 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
           lowercaseText.includes("patriot")) {
         
         console.log("⭐ MATCH sur le texte d'une autre question:", questionId, lowercaseText);
-        return "wareconomy";
+        return "wareconomy"; // ID de "Économie de guerre"
       }
     }
   }
@@ -135,7 +137,7 @@ export const analyzeInvestmentPreferences = (answers: QuestionnaireResponses): R
     cryptoInterest: false
   };
   
-  if (!answers) return preferences;
+  if (!answers || Object.keys(answers).length === 0) return preferences;
   
   // Détecte l'intérêt pour la souveraineté économique
   if (answers.sovereignty) {
@@ -149,7 +151,7 @@ export const analyzeInvestmentPreferences = (answers: QuestionnaireResponses): R
       preferences.sovereigntyFocus = true;
     }
     
-    // Vérification supplémentaire basée sur le texte
+    // Vérification basée sur le texte
     if (answers.sovereignty.text) {
       const lowercaseText = answers.sovereignty.text.toLowerCase();
       if (lowercaseText.includes("france") || 

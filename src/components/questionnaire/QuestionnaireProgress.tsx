@@ -20,14 +20,16 @@ const QuestionnaireProgress = () => {
   } = useQuestionnaire();
   
   const isMobile = useIsMobile();
+  
   // Vérification que currentQuestionIndex est valide
-  const safeIndex = Math.min(Math.max(0, currentQuestionIndex), questions.length - 1);
+  const safeIndex = Math.min(Math.max(0, currentQuestionIndex || 0), questions.length - 1);
   const currentQuestion = questions[safeIndex];
   const totalQuestions = questions.length;
 
-  // Ajout d'un effet pour rediriger automatiquement après un délai
+  // Effet pour rediriger automatiquement après un délai
   useEffect(() => {
     if (isComplete) {
+      console.log("Questionnaire complet, redirection vers l'analyse dans 2 secondes");
       const timer = setTimeout(() => {
         setShowAnalysis(true);
       }, 2000);
@@ -36,6 +38,7 @@ const QuestionnaireProgress = () => {
     }
   }, [isComplete, setShowAnalysis]);
 
+  // Si le questionnaire est complet, afficher un message
   if (isComplete) {
     return (
       <motion.div
@@ -54,6 +57,7 @@ const QuestionnaireProgress = () => {
 
   // Vérification si currentQuestion existe
   if (!currentQuestion) {
+    console.error("Erreur: Question actuelle non trouvée. Index:", currentQuestionIndex, "Safe index:", safeIndex);
     return (
       <div className="text-center p-6 bg-red-100 rounded-lg">
         <p className="text-red-600">Erreur: Impossible de charger la question actuelle.</p>
@@ -85,7 +89,7 @@ const QuestionnaireProgress = () => {
               question={currentQuestion}
               onAnswer={handleAnswer}
               isAnswered={false}
-              selectedOptionId={answers[currentQuestion.id]?.optionId}
+              selectedOptionId={answers && answers[currentQuestion.id]?.optionId}
               previousScore={previousScore}
               currentScore={score}
             />

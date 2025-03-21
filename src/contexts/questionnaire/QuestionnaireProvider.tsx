@@ -67,10 +67,13 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       const { savedAnswers, savedScore, savedComplete } = loadStoredData();
       
       if (savedAnswers && Object.keys(savedAnswers).length > 0) {
-        console.log("Chargement des réponses sauvegardées:", savedAnswers);
+        console.log("Chargement des réponses sauvegardées:", Object.keys(savedAnswers).length, "réponses");
         setAnswers(savedAnswers);
-        // Ne pas masquer l'introduction si aucune réponse n'a été donnée
-        setShowIntroduction(Object.keys(savedAnswers).length === 0);
+        
+        // Détermine si on doit montrer l'introduction (seulement si aucune réponse)
+        if (Object.keys(savedAnswers).length > 0) {
+          setShowIntroduction(false);
+        }
       }
       
       if (savedScore !== null) {
@@ -119,12 +122,14 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       const calculatedScore = calculateRiskScore(answers);
       setScore(calculatedScore);
       
-      // Afficher un toast de confirmation via l'API toast
+      // Afficher un toast de confirmation
       toast({
         title: "Questionnaire terminé !",
         description: `Votre score de risque est de ${calculatedScore}`,
       });
       
+      // Ne pas automatiquement montrer l'analyse si on est sur la page questionnaire
+      // L'utilisateur doit cliquer sur un bouton pour la voir
       setShowAnalysis(true);
     }
   }, [isComplete, answers]);

@@ -24,9 +24,11 @@ export const useQuestionnaireStorage = () => {
       const savedComplete = loadCompleteStatusFromStorage();
       
       console.log("Données chargées du localStorage:", { 
-        answersExist: !!savedAnswers, 
+        answersCount: savedAnswers ? Object.keys(savedAnswers).length : 0, 
         scoreExists: savedScore !== null,
-        completeExists: savedComplete !== null
+        completeExists: savedComplete !== null,
+        score: savedScore,
+        complete: savedComplete
       });
       
       return {
@@ -80,7 +82,12 @@ export const useQuestionnaireStorage = () => {
    * Efface toutes les données du questionnaire du stockage local
    */
   const clearStorage = () => {
-    clearQuestionnaireStorage();
+    try {
+      clearQuestionnaireStorage();
+      console.log("Données du questionnaire effacées avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'effacement des données:", error);
+    }
   };
   
   return {

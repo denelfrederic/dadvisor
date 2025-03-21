@@ -110,9 +110,8 @@ export const saveInvestmentProfileToSupabase = async (
     clearQuestionnaireStorage();
     console.log("Données temporaires effacées après sauvegarde réussie");
 
-    // Redirect to profile-analysis page instead of profile
-    // Utiliser window.location pour forcer un rafraîchissement complet et éviter les problèmes de contexte
-    window.location.href = "/profile-analysis";
+    // Utiliser navigate au lieu de window.location pour éviter un rafraîchissement complet
+    navigate("/profile-analysis");
     
   } catch (error: any) {
     console.error("Error saving investment profile:", error);
