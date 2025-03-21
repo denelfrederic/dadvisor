@@ -20,8 +20,10 @@ const QuestionnaireProgress = () => {
   } = useQuestionnaire();
   
   const isMobile = useIsMobile();
-  const currentQuestion = questions[currentQuestionIndex];
-  const totalQuestions = questions.length; // Récupérer le nombre exact de questions
+  // Vérification que currentQuestionIndex est valide
+  const safeIndex = Math.min(Math.max(0, currentQuestionIndex), questions.length - 1);
+  const currentQuestion = questions[safeIndex];
+  const totalQuestions = questions.length;
 
   // Ajout d'un effet pour rediriger automatiquement après un délai
   useEffect(() => {
@@ -50,10 +52,20 @@ const QuestionnaireProgress = () => {
     );
   }
 
+  // Vérification si currentQuestion existe
+  if (!currentQuestion) {
+    return (
+      <div className="text-center p-6 bg-red-100 rounded-lg">
+        <p className="text-red-600">Erreur: Impossible de charger la question actuelle.</p>
+        <p className="text-sm text-gray-600 mt-2">Veuillez rafraîchir la page ou contacter le support.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <ProgressBar 
-        currentStep={currentQuestionIndex + 1} 
+        currentStep={safeIndex + 1} 
         totalSteps={totalQuestions}
         labels={isMobile ? 
           Array.from({ length: totalQuestions }, (_, index) => `${index + 1}`) : 
@@ -63,7 +75,7 @@ const QuestionnaireProgress = () => {
       <div className="mb-6 sm:mb-10">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentQuestionIndex}
+            key={safeIndex}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -72,7 +84,7 @@ const QuestionnaireProgress = () => {
             <QuestionCard
               question={currentQuestion}
               onAnswer={handleAnswer}
-              isAnswered={false} // Toujours permettre de modifier les réponses
+              isAnswered={false}
               selectedOptionId={answers[currentQuestion.id]?.optionId}
               previousScore={previousScore}
               currentScore={score}

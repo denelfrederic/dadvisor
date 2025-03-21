@@ -37,12 +37,15 @@ export const useQuestionnaireAnalysis = ({
    * @param answersToEnrich Réponses à enrichir
    */
   const enrichResponsesWithText = (answersToEnrich: QuestionnaireResponses) => {
+    // Vérifier si answersToEnrich est défini
+    if (!answersToEnrich) return;
+    
     // Ajouter la valeur textuelle à chaque réponse pour permettre l'analyse textuelle
     const answersWithText = { ...answersToEnrich };
     Object.keys(answersWithText).forEach(questionId => {
       const question = questions.find(q => q.id === questionId);
       if (question) {
-        const option = question.options.find(opt => opt.id === answersWithText[questionId].optionId);
+        const option = question.options.find(opt => opt.id === answersWithText[questionId]?.optionId);
         if (option) {
           answersWithText[questionId] = {
             ...answersWithText[questionId],
