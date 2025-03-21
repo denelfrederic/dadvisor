@@ -31,18 +31,25 @@ export const useQuestionnaireNavigation = ({
     
     // Enrichir les réponses avec le texte des options sélectionnées
     const enrichedAnswers = { ...answers };
-    Object.keys(enrichedAnswers).forEach(questionId => {
-      const question = questions.find(q => q.id === questionId);
-      if (question) {
-        const option = question.options.find(opt => opt.id === enrichedAnswers[questionId].optionId);
-        if (option) {
-          enrichedAnswers[questionId] = {
-            ...enrichedAnswers[questionId],
-            text: option.text
-          };
+    
+    // S'assurer que answers est bien défini
+    if (enrichedAnswers) {
+      Object.keys(enrichedAnswers).forEach(questionId => {
+        const question = questions.find(q => q.id === questionId);
+        if (question) {
+          const option = question.options.find(opt => opt.id === enrichedAnswers[questionId]?.optionId);
+          if (option) {
+            enrichedAnswers[questionId] = {
+              ...enrichedAnswers[questionId],
+              text: option.text
+            };
+          }
         }
-      }
-    });
+      });
+    }
+    
+    // Enregistrer les réponses enrichies dans le localStorage pour une utilisation ultérieure
+    localStorage.setItem('dadvisor_temp_answers', JSON.stringify(enrichedAnswers));
     
     // Transmettre à la fois le score et les réponses au questionnaire
     navigate("/portfolios", { state: { score, answers: enrichedAnswers } });

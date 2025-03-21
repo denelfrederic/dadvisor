@@ -23,7 +23,7 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
   console.log("Analyse complète des réponses:", JSON.stringify(questionnaireAnswers, null, 2));
   
   // PRIORITÉ ABSOLUE: Vérification de la préférence pour la souveraineté économique
-  if (questionnaireAnswers.sovereignty) {
+  if (questionnaireAnswers && questionnaireAnswers.sovereignty) {
     const sovereigntyAnswer = questionnaireAnswers.sovereignty;
     console.log("Réponse détaillée sur la souveraineté:", JSON.stringify(sovereigntyAnswer, null, 2));
     
@@ -58,23 +58,25 @@ export const getRecommendedPortfolio = (riskScore: number, answers?: Questionnai
   }
   
   // Recherche de mots-clés liés à la souveraineté dans TOUTES les réponses
-  for (const questionId in questionnaireAnswers) {
-    const answer = questionnaireAnswers[questionId];
-    
-    if (answer && answer.text) {
-      const lowercaseText = answer.text.toLowerCase();
+  if (questionnaireAnswers) {
+    for (const questionId in questionnaireAnswers) {
+      const answer = questionnaireAnswers[questionId];
       
-      // Recherche plus large de mots-clés pertinents
-      if (lowercaseText.includes("france") || 
-          lowercaseText.includes("europe") || 
-          lowercaseText.includes("français") || 
-          lowercaseText.includes("européen") || 
-          lowercaseText.includes("souveraineté") ||
-          lowercaseText.includes("national") ||
-          lowercaseText.includes("local")) {
+      if (answer && answer.text) {
+        const lowercaseText = answer.text.toLowerCase();
         
-        console.log("⭐ MATCH sur le texte d'une autre question:", questionId, lowercaseText);
-        return "wareconomy";
+        // Recherche plus large de mots-clés pertinents
+        if (lowercaseText.includes("france") || 
+            lowercaseText.includes("europe") || 
+            lowercaseText.includes("français") || 
+            lowercaseText.includes("européen") || 
+            lowercaseText.includes("souveraineté") ||
+            lowercaseText.includes("national") ||
+            lowercaseText.includes("local")) {
+          
+          console.log("⭐ MATCH sur le texte d'une autre question:", questionId, lowercaseText);
+          return "wareconomy";
+        }
       }
     }
   }
@@ -100,6 +102,8 @@ export const analyzeInvestmentPreferences = (answers: QuestionnaireResponses): R
     sovereigntyFocus: false,
     cryptoInterest: false
   };
+  
+  if (!answers) return preferences;
   
   // Détecte l'intérêt pour la souveraineté économique
   if (answers.sovereignty) {
