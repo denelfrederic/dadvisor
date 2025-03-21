@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,19 @@ const Portfolios = () => {
       riskScore,
       answers: questionnaireAnswers
     });
+    
+    // Vérifier spécifiquement la réponse à la question sur la souveraineté
+    if (questionnaireAnswers.sovereignty) {
+      console.log("Réponse à la question souveraineté:", questionnaireAnswers.sovereignty);
+      
+      // Vérifier si des mots-clés sont présents dans le texte
+      if (questionnaireAnswers.sovereignty.text) {
+        const text = questionnaireAnswers.sovereignty.text.toLowerCase();
+        console.log("Texte de la réponse sur souveraineté:", text);
+        console.log("Contient 'france':", text.includes("france"));
+        console.log("Contient 'europe':", text.includes("europe"));
+      }
+    }
   }, [riskScore, questionnaireAnswers]);
   
   // Chargement des portefeuilles et détermination du portefeuille recommandé
@@ -63,9 +77,13 @@ const Portfolios = () => {
         // Afficher une notification pour le portefeuille recommandé
         const recommendedPortfolio = portfolioData.find(p => p.id === recommendedId);
         if (recommendedPortfolio) {
+          const isWarEconomy = recommendedId === "wareconomy";
+          
           toast({
             title: "Recommandation",
-            description: `Basé sur votre profil, nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
+            description: isWarEconomy 
+              ? `Basé sur votre préférence pour les investissements en France/Europe, nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
+              : `Basé sur votre profil de risque (${riskScore}), nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
           });
         }
       } catch (error) {
@@ -162,8 +180,10 @@ const Portfolios = () => {
           <h1 className="text-3xl font-bold mb-8">Choisissez votre portefeuille</h1>
           
           <p className="text-muted-foreground text-center mb-10">
-            Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté.
-            Vous pouvez toutefois sélectionner celui qui vous convient le mieux.
+            {recommendedPortfolioId === "wareconomy" 
+              ? "Basé sur votre préférence pour les investissements en France et en Europe, nous vous recommandons le portefeuille Économie de Guerre."
+              : "Basé sur votre profil de risque, nous vous recommandons un portefeuille adapté."}
+            <br />Vous pouvez toutefois sélectionner celui qui vous convient le mieux.
           </p>
           
           {loading ? (

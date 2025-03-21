@@ -11,8 +11,8 @@ import {
  * Questions du questionnaire de profilage
  */
 export const questions: Question[] = [
+  ...specializedInvestmentsQuestions,
   ...investmentBasicsQuestions,
   ...riskProfileQuestions,
-  ...personalFinanceQuestions,
-  ...specializedInvestmentsQuestions
+  ...personalFinanceQuestions
 ];

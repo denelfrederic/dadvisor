@@ -6,32 +6,6 @@ import { Question } from "../types";
  */
 export const specializedInvestmentsQuestions: Question[] = [
   {
-    id: "crypto",
-    text: "Quelle est votre expérience avec les cryptomonnaies ?",
-    options: [
-      {
-        id: "crypto-1",
-        text: "Je n'ai jamais investi en cryptomonnaies et je suis réticent",
-        value: 1
-      },
-      {
-        id: "crypto-2",
-        text: "Je suis curieux mais n'ai jamais investi en cryptomonnaies",
-        value: 2
-      },
-      {
-        id: "crypto-3",
-        text: "J'ai déjà investi en Bitcoin/Ethereum",
-        value: 3
-      },
-      {
-        id: "crypto-4",
-        text: "J'investis régulièrement dans plusieurs cryptomonnaies",
-        value: 4
-      }
-    ]
-  },
-  {
     id: "sovereignty",
     text: "Votre priorité est-elle d'investir exclusivement en France et en Europe pour soutenir la souveraineté économique ?",
     options: [
@@ -53,6 +27,32 @@ export const specializedInvestmentsQuestions: Question[] = [
       {
         id: "sovereignty-4",
         text: "Je souhaite investir exclusivement dans des entreprises contribuant à la souveraineté européenne",
+        value: 4
+      }
+    ]
+  },
+  {
+    id: "crypto",
+    text: "Quelle est votre expérience avec les cryptomonnaies ?",
+    options: [
+      {
+        id: "crypto-1",
+        text: "Je n'ai jamais investi en cryptomonnaies et je suis réticent",
+        value: 1
+      },
+      {
+        id: "crypto-2",
+        text: "Je suis curieux mais n'ai jamais investi en cryptomonnaies",
+        value: 2
+      },
+      {
+        id: "crypto-3",
+        text: "J'ai déjà investi en Bitcoin/Ethereum",
+        value: 3
+      },
+      {
+        id: "crypto-4",
+        text: "J'investis régulièrement dans plusieurs cryptomonnaies",
         value: 4
       }
     ]

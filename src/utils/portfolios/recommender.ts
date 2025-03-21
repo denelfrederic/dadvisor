@@ -14,62 +14,69 @@ import { QuestionnaireResponses } from "@/utils/questionnaire/types";
  * @returns L'ID du portefeuille recommandé
  */
 export const getRecommendedPortfolio = (riskScore: number, answers?: QuestionnaireResponses): string => {
-  // Vérifie d'abord la préférence pour "Économie de Guerre" basée sur la question sovereignty
   // Récupère soit les réponses passées en paramètre, soit celles stockées dans le localStorage
   const storedAnswers = localStorage.getItem('dadvisor_temp_answers') ? 
     JSON.parse(localStorage.getItem('dadvisor_temp_answers') || '{}') : {};
   
   const questionnaireAnswers = answers || storedAnswers;
   
-  console.log("Analysant les réponses du questionnaire:", JSON.stringify(questionnaireAnswers, null, 2));
+  console.log("Analyse complète des réponses:", JSON.stringify(questionnaireAnswers, null, 2));
   
-  // Vérification de la préférence pour la souveraineté économique
-  const sovereigntyAnswer = questionnaireAnswers['sovereignty'];
-  
-  if (sovereigntyAnswer) {
-    console.log("Réponse à la question de souveraineté:", JSON.stringify(sovereigntyAnswer, null, 2));
+  // PRIORITÉ ABSOLUE: Vérification de la préférence pour la souveraineté économique
+  if (questionnaireAnswers.sovereignty) {
+    const sovereigntyAnswer = questionnaireAnswers.sovereignty;
+    console.log("Réponse détaillée sur la souveraineté:", JSON.stringify(sovereigntyAnswer, null, 2));
     
-    // Détecte si l'utilisateur a exprimé une préférence pour l'Europe ou la France
-    // Option 2: "Je privilégie l'Europe mais sans exclusivité"
-    // Option 3: "Oui, je veux favoriser les entreprises françaises et européennes"
-    // Option 4: "Je souhaite investir exclusivement dans des entreprises contribuant à la souveraineté européenne"
-    if (sovereigntyAnswer.value >= 2 || 
-        sovereigntyAnswer.optionId === "sovereignty-2" || 
+    // Si l'utilisateur a exprimé une préférence forte pour l'Europe/France (options 2, 3, 4)
+    // ou si le texte contient des mots-clés liés à la France ou l'Europe
+    if (sovereigntyAnswer.optionId === "sovereignty-2" || 
         sovereigntyAnswer.optionId === "sovereignty-3" || 
         sovereigntyAnswer.optionId === "sovereignty-4" ||
-        (sovereigntyAnswer.text && (
-          sovereigntyAnswer.text.toLowerCase().includes("france") || 
-          sovereigntyAnswer.text.toLowerCase().includes("europe")
-        ))
-    ) {
-      console.log("Recommandation portfolio: Économie de Guerre basée sur préférences de souveraineté");
+        sovereigntyAnswer.value >= 2) {
+      
+      console.log("⭐ MATCH sur ID d'option ou valeur pour souveraineté");
       return "wareconomy";
     }
-  }
-  
-  // Recherche de mots-clés liés à la souveraineté dans toutes les réponses
-  // Cette analyse complémentaire capture les préférences exprimées dans d'autres questions
-  for (const questionId in questionnaireAnswers) {
-    const answer = questionnaireAnswers[questionId];
     
-    // Vérifier si la réponse contient un texte
-    if (answer && answer.text) {
-      const answerText = answer.text.toLowerCase();
-      // Recherche de mots-clés liés à la souveraineté économique
-      if (answerText.includes("france") || 
-          answerText.includes("europe") || 
-          answerText.includes("français") || 
-          answerText.includes("européen") || 
-          answerText.includes("souveraineté")) {
-        console.log("Mot-clé de souveraineté détecté dans la réponse à la question:", questionId);
-        console.log("Texte:", answerText);
+    // Vérification supplémentaire basée sur le texte de la réponse
+    if (sovereigntyAnswer.text) {
+      const lowercaseText = sovereigntyAnswer.text.toLowerCase();
+      if (lowercaseText.includes("france") || 
+          lowercaseText.includes("europe") || 
+          lowercaseText.includes("français") || 
+          lowercaseText.includes("européen") || 
+          lowercaseText.includes("souveraineté")) {
+        
+        console.log("⭐ MATCH sur le texte pour souveraineté:", lowercaseText);
         return "wareconomy";
       }
     }
   }
   
-  // Sinon, utiliser la logique habituelle basée sur le score de risque
-  console.log("Aucune préférence de souveraineté détectée, utilisation du score de risque:", riskScore);
+  // Recherche de mots-clés liés à la souveraineté dans TOUTES les réponses
+  for (const questionId in questionnaireAnswers) {
+    const answer = questionnaireAnswers[questionId];
+    
+    if (answer && answer.text) {
+      const lowercaseText = answer.text.toLowerCase();
+      
+      // Recherche plus large de mots-clés pertinents
+      if (lowercaseText.includes("france") || 
+          lowercaseText.includes("europe") || 
+          lowercaseText.includes("français") || 
+          lowercaseText.includes("européen") || 
+          lowercaseText.includes("souveraineté") ||
+          lowercaseText.includes("national") ||
+          lowercaseText.includes("local")) {
+        
+        console.log("⭐ MATCH sur le texte d'une autre question:", questionId, lowercaseText);
+        return "wareconomy";
+      }
+    }
+  }
+  
+  // Si aucune préférence de souveraineté n'est détectée, utiliser la logique basée sur le score
+  console.log("Aucune préférence de souveraineté détectée, utilisation du score:", riskScore);
   if (riskScore < 40) {
     return "conservative";
   } else if (riskScore < 70) {
@@ -95,25 +102,35 @@ export const analyzeInvestmentPreferences = (answers: QuestionnaireResponses): R
     if (answers.sovereignty.value >= 2 || 
         answers.sovereignty.optionId === "sovereignty-2" || 
         answers.sovereignty.optionId === "sovereignty-3" || 
-        answers.sovereignty.optionId === "sovereignty-4" ||
-        (answers.sovereignty.text && (
-          answers.sovereignty.text.toLowerCase().includes("france") || 
-          answers.sovereignty.text.toLowerCase().includes("europe")
-        ))) {
+        answers.sovereignty.optionId === "sovereignty-4") {
       preferences.sovereigntyFocus = true;
+    }
+    
+    // Vérification supplémentaire basée sur le texte
+    if (answers.sovereignty.text) {
+      const lowercaseText = answers.sovereignty.text.toLowerCase();
+      if (lowercaseText.includes("france") || 
+          lowercaseText.includes("europe") || 
+          lowercaseText.includes("français") || 
+          lowercaseText.includes("européen") || 
+          lowercaseText.includes("souveraineté")) {
+        preferences.sovereigntyFocus = true;
+      }
     }
   }
   
-  // Vérification alternative basée sur les mots-clés
+  // Vérification dans toutes les réponses
   for (const questionId in answers) {
     const answer = answers[questionId];
     if (answer && answer.text) {
-      const answerText = answer.text.toLowerCase();
-      if (answerText.includes("france") || 
-          answerText.includes("europe") || 
-          answerText.includes("français") || 
-          answerText.includes("européen") || 
-          answerText.includes("souveraineté")) {
+      const lowercaseText = answer.text.toLowerCase();
+      if (lowercaseText.includes("france") || 
+          lowercaseText.includes("europe") || 
+          lowercaseText.includes("français") || 
+          lowercaseText.includes("européen") || 
+          lowercaseText.includes("souveraineté") ||
+          lowercaseText.includes("national") ||
+          lowercaseText.includes("local")) {
         preferences.sovereigntyFocus = true;
       }
     }
