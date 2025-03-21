@@ -13,6 +13,7 @@ export const portfolios: Portfolio[] = [
     riskLevel: "Faible",
     description: "Une approche conservatrice axée sur la préservation du capital avec une volatilité minimale.",
     expectedReturn: "3% - 5% par an",
+    thesis: "Ce portefeuille vise à préserver votre capital tout en générant des revenus stables. Il est conçu pour résister aux turbulences des marchés et protéger vos actifs contre l'inflation et les crises économiques.",
     assets: [
       { name: "Métaux Précieux", percentage: 40 },
       { name: "Bitcoin", percentage: 20 },
@@ -33,6 +34,7 @@ export const portfolios: Portfolio[] = [
     riskLevel: "Modéré",
     description: "Un équilibre entre croissance et stabilité, offrant un compromis risque-rendement attractif.",
     expectedReturn: "5% - 8% par an",
+    thesis: "Ce portefeuille cherche à équilibrer la croissance du capital et la protection. Il est conçu pour capturer les opportunités de marché tout en intégrant des éléments stabilisateurs qui réduisent la volatilité globale.",
     assets: [
       { name: "Actions", percentage: 50 },
       { name: "Bitcoin", percentage: 30 },
@@ -52,6 +54,7 @@ export const portfolios: Portfolio[] = [
     riskLevel: "Élevé",
     description: "Une approche dynamique visant une croissance significative du capital sur le long terme.",
     expectedReturn: "6% - 40% par an",
+    thesis: "Ce portefeuille est conçu pour maximiser la croissance du capital sur le long terme. Il adopte une approche dynamique en privilégiant les actifs à fort potentiel de croissance, au prix d'une volatilité plus importante à court terme.",
     assets: [
       { name: "Actions", percentage: 60 },
       { name: "Cryptomonnaies", percentage: 30 },

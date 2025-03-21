@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Info } from "lucide-react";
 
 /**
  * Interface pour un portefeuille d'investissement
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
  * @param expectedReturn - Rendement attendu (format texte)
  * @param assets - Liste des actifs composant le portefeuille avec leur allocation
  * @param suitableFor - Liste des profils d'investisseurs pour lesquels ce portefeuille est adapté
+ * @param thesis - Thèse d'investissement (objectif principal du portefeuille)
  */
 export interface Portfolio {
   id: string;
@@ -24,6 +26,7 @@ export interface Portfolio {
     percentage: number;
   }[];
   suitableFor: string[];
+  thesis?: string;
 }
 
 /**
@@ -32,12 +35,14 @@ export interface Portfolio {
  * @param isRecommended - Indique si ce portefeuille est recommandé pour le profil de l'utilisateur
  * @param onSelect - Fonction de rappel appelée lorsque l'utilisateur sélectionne ce portefeuille
  * @param isSelected - Indique si ce portefeuille est actuellement sélectionné
+ * @param onViewDetails - Fonction de rappel appelée lorsque l'utilisateur souhaite voir les détails
  */
 interface PortfolioCardProps {
   portfolio: Portfolio;
   isRecommended?: boolean;
   onSelect: (portfolioId: string) => void;
   isSelected?: boolean;
+  onViewDetails?: (portfolioId: string) => void;
 }
 
 /**
@@ -48,7 +53,8 @@ const PortfolioCard = ({
   portfolio, 
   isRecommended = false, 
   onSelect,
-  isSelected = false
+  isSelected = false,
+  onViewDetails
 }: PortfolioCardProps) => {
   const { id, name, riskLevel, description, expectedReturn, assets, suitableFor } = portfolio;
   
@@ -137,14 +143,27 @@ const PortfolioCard = ({
           </ul>
         </div>
         
-        {/* Bouton de sélection */}
-        <Button 
-          className="w-full"
-          variant={isSelected ? "default" : "outline"}
-          onClick={() => onSelect(id)}
-        >
-          {isSelected ? "Sélectionné" : "Sélectionner"}
-        </Button>
+        {/* Section boutons */}
+        <div className="space-y-3">
+          {/* Bouton "Voir les détails" */}
+          <Button 
+            className="w-full"
+            variant="outline"
+            onClick={() => onViewDetails && onViewDetails(id)}
+          >
+            <Info size={16} className="mr-2" />
+            Voir les détails
+          </Button>
+          
+          {/* Bouton de sélection */}
+          <Button 
+            className="w-full"
+            variant={isSelected ? "default" : "outline"}
+            onClick={() => onSelect(id)}
+          >
+            {isSelected ? "Sélectionné" : "Sélectionner"}
+          </Button>
+        </div>
       </div>
     </motion.div>
   );

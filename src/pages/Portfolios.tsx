@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import PortfolioCard, { Portfolio } from "@/components/PortfolioCard";
+import PortfolioDetailsDialog from "@/components/portfolio/PortfolioDetailsDialog";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/use-toast";
 import { getPortfolios, getRecommendedPortfolio } from "@/utils/portfolios";
@@ -21,6 +22,10 @@ const Portfolios = () => {
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [recommendedPortfolioId, setRecommendedPortfolioId] = useState<string | null>(null);
+  
+  // État pour la boîte de dialogue des détails
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [detailsPortfolio, setDetailsPortfolio] = useState<Portfolio | null>(null);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -71,6 +76,25 @@ const Portfolios = () => {
         description: `Vous avez choisi le portefeuille ${selectedPortfolio.name}`
       });
     }
+  };
+  
+  /**
+   * Gère l'ouverture de la boîte de dialogue des détails
+   * @param portfolioId - ID du portefeuille à afficher en détail
+   */
+  const handleViewDetails = (portfolioId: string) => {
+    const portfolio = portfolios.find(p => p.id === portfolioId);
+    if (portfolio) {
+      setDetailsPortfolio(portfolio);
+      setIsDetailsOpen(true);
+    }
+  };
+  
+  /**
+   * Gère la fermeture de la boîte de dialogue des détails
+   */
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
   };
   
   /**
@@ -138,6 +162,7 @@ const Portfolios = () => {
                     isRecommended={portfolio.id === recommendedPortfolioId}
                     onSelect={handleSelectPortfolio}
                     isSelected={selectedPortfolioId === portfolio.id}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
@@ -161,6 +186,14 @@ const Portfolios = () => {
           )}
         </div>
       </div>
+      
+      {/* Boîte de dialogue des détails du portefeuille */}
+      <PortfolioDetailsDialog 
+        portfolio={detailsPortfolio}
+        isOpen={isDetailsOpen}
+        onClose={handleCloseDetails}
+      />
+      
       <BottomNavbar />
     </div>
   );
