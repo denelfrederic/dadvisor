@@ -1,4 +1,3 @@
-
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import ProfileContent from "@/components/profile/ProfileContent";
 import ProfileEmptyState from "@/components/profile/ProfileEmptyState";

@@ -5,6 +5,7 @@ import QuestionnaireNavigation from "@/components/questionnaire/QuestionnaireNav
 import ProfileAnalysisDisplay from "@/components/questionnaire/ProfileAnalysisDisplay";
 import QuestionnaireIntroduction from "@/components/questionnaire/QuestionnaireIntroduction";
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 import { motion } from "framer-motion";
 
 /**
@@ -37,9 +38,9 @@ const QuestionnaireContent = () => {
  */
 const Questionnaire = () => {
   return (
-    <>
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <div className="min-h-screen bg-gradient-radial py-10 sm:py-20 px-3 sm:px-4 pt-28">
+      <div className="flex-1 bg-gradient-radial py-10 sm:py-20 px-3 sm:px-4 pt-28">
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-8">Évaluation de votre profil</h1>
           
@@ -52,7 +53,8 @@ const Questionnaire = () => {
           </QuestionnaireProvider>
         </div>
       </div>
-    </>
+      <BottomNavbar />
+    </div>
   );
 };
 

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page 404 - Affichée lorsqu'une route n'existe pas
@@ -22,9 +23,9 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <div className="min-h-screen flex items-center justify-center bg-dadvisor-gray pt-24">
+      <div className="flex-1 flex items-center justify-center bg-dadvisor-gray pt-24">
         <div className="bg-white p-8 rounded-lg shadow-dadvisor text-center max-w-md">
           <h1 className="text-5xl font-bold mb-4 text-dadvisor-blue">404</h1>
           <p className="text-xl text-dadvisor-darkgray mb-6 font-heading">Oops! Page non trouvée</p>
@@ -39,7 +40,8 @@ const NotFound = () => {
           </Button>
         </div>
       </div>
-    </>
+      <BottomNavbar />
+    </div>
   );
 };
 

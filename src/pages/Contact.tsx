@@ -3,22 +3,21 @@ import React from 'react';
 import Navbar from "@/components/Navbar";
 import ContactHeader from "@/components/contact/ContactHeader";
 import ContactSection from "@/components/contact/ContactSection";
+import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page Contact - Permet aux utilisateurs de contacter directement DADVISOR
  */
 const Contact = () => {
   return (
-    <>
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      
-      <div className="min-h-screen bg-gradient-radial pt-32 pb-16 px-4">
-        <div className="container mx-auto max-w-3xl">
-          <ContactHeader />
-          <ContactSection />
-        </div>
+      <div className="flex-1 container mx-auto px-4 pt-32">
+        <ContactHeader />
+        <ContactSection />
       </div>
-    </>
+      <BottomNavbar />
+    </div>
   );
 };
 
