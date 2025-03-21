@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Facebook, Twitter, Github, MessageCircle, Headphones } from "lucide-react";
+import { Facebook, Twitter, Github, MessageCircle, Headphones, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 
@@ -37,6 +37,9 @@ const BottomNavbar = () => {
             </Link>
             <Link to="/dao" className="hover:text-primary transition-colors">
               DAO
+            </Link>
+            <Link to="/faq" className="hover:text-primary transition-colors">
+              FAQ
             </Link>
             <Link to="/contact" className="hover:text-primary transition-colors">
               Contact
@@ -84,6 +87,13 @@ const BottomNavbar = () => {
             >
               <MessageCircle size={20} />
             </button>
+            <Link 
+              to="/faq"
+              className="text-muted-foreground hover:text-primary transition-colors"
+              aria-label="FAQ"
+            >
+              <HelpCircle size={20} />
+            </Link>
           </div>
         </div>
 

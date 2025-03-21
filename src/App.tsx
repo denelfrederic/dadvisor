@@ -21,6 +21,7 @@ import About from './pages/About';
 import Vision from './pages/Vision';
 import Roadmap from './pages/Roadmap';
 import Dao from './pages/Dao';
+import Faq from './pages/Faq';
 
 // Import contexts
 import { AuthProvider } from './contexts/auth';
@@ -59,6 +60,7 @@ function App() {
               <Route path="/vision" element={<Vision />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/dao" element={<Dao />} />
+              <Route path="/faq" element={<Faq />} />
               <Route path="/admin-check" element={<AdminCheck />} />
               <Route path="/adminllm" element={<Assistant_Admin />} />
               {/* Redirection de /assistant vers /adminllm */}
