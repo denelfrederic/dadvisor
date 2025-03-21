@@ -1,3 +1,4 @@
+
 /**
  * Service pour interagir avec Pinecone via les fonctions edge de Supabase
  */
@@ -20,8 +21,24 @@ export const vectorizeDocument = async (
   
   addLog(`Début de l'indexation Pinecone pour le document ${document.id} (${document.title})`);
   
-  // Pour les documents volumineux, tronquer le contenu
-  const maxLength = document.content.length > 15000 ? 6000 : contentLength;
+  // Amélioration de la gestion des documents volumineux
+  // Pour les documents très volumineux, prendre plus de contenu
+  // Pour les documents extrêmement volumineux, découper en chunks (à implémenter dans une version future)
+  let maxLength = contentLength;
+  if (document.content.length > 20000) {
+    // Pour les documents très volumineux, prendre plus de texte mais pas tout
+    maxLength = 10000;
+    addLog(`Document volumineux détecté (${document.content.length} caractères). Utilisation d'une longueur optimisée: ${maxLength}`);
+  } else if (document.content.length > 8000) {
+    // Pour les documents moyennement volumineux
+    maxLength = 8000;
+    addLog(`Document moyennement volumineux (${document.content.length} caractères). Utilisation de la longueur standard: ${maxLength}`);
+  } else {
+    // Pour les petits documents, prendre tout le contenu
+    maxLength = document.content.length;
+    addLog(`Petit document (${document.content.length} caractères). Utilisation du contenu complet`);
+  }
+  
   const truncatedContent = document.content.substring(0, maxLength);
   
   addLog(`Contenu préparé: ${truncatedContent.length}/${document.content.length} caractères`);
@@ -46,7 +63,8 @@ export const vectorizeDocument = async (
         documentContent: truncatedContent,
         documentTitle: document.title,
         documentType: document.type,
-        _timestamp: new Date().getTime() // Éviter le cache
+        _timestamp: new Date().getTime(), // Éviter le cache
+        documentSize: document.content.length // Ajouter la taille pour référence
       }
       // Nous n'utilisons pas signal ici pour maintenir la compatibilité avec les types existants
     });

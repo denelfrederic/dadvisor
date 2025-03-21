@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePineconeSynchronizer } from "./hooks/usePineconeSynchronizer";
@@ -65,6 +64,7 @@ const DocumentEmbeddingTab = ({
   const isPineconeIndexed = document.pinecone_indexed === true;
   const hasEmbedding = !!document.embedding;
   const needsSync = hasEmbedding && !isPineconeIndexed;
+  const contentSize = document.content ? document.content.length : 0;
 
   // Gérer l'indexation avec une fonction locale pour éviter le scintillement
   const handleUpdateEmbedding = async () => {
@@ -119,7 +119,8 @@ const DocumentEmbeddingTab = ({
         isLoading={localUpdating || isSynchronizing} 
         isDisabled={!document.content} 
         needsSync={needsSync} 
-        onUpdate={handleUpdateEmbedding} 
+        onUpdate={handleUpdateEmbedding}
+        documentSize={contentSize}
       />
 
       <AltActionButtons 

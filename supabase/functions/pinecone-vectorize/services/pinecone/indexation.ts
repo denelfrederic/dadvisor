@@ -57,13 +57,27 @@ export async function indexDocumentInPinecone(
     
     console.log(`Embedding généré avec succès: ${embedding.length} dimensions`);
     
-    // Préparation du vecteur pour Pinecone
+    // Préparation du vecteur pour Pinecone avec extraction intelligente de métadonnées
+    // Amélioration pour les grands documents: extraction des points clés
+    let textMetadata = content.substring(0, 1000); // Extrait par défaut
+    
+    // Si le document est volumineux, essayer d'extraire des segments plus pertinents
+    if (content.length > 5000) {
+      // Extraire le début, un segment du milieu et la fin pour une meilleure représentation
+      const beginning = content.substring(0, 400);
+      const middle = content.substring(Math.floor(content.length / 2) - 200, Math.floor(content.length / 2) + 200);
+      const end = content.substring(content.length - 400);
+      textMetadata = `[DÉBUT] ${beginning} [MILIEU] ${middle} [FIN] ${end}`;
+    }
+    
     const vector = {
       id,
       values: embedding,
       metadata: {
         ...metadata,
-        text: content.substring(0, 1000) // Tronquer à 1000 caractères pour les métadonnées
+        text: textMetadata,
+        size: content.length, // Ajouter la taille pour référence
+        indexed_portion: Math.min(1, content.length > 0 ? 10000 / content.length : 0) // Pourcentage approximatif indexé
       }
     };
     
@@ -89,7 +103,9 @@ export async function indexDocumentInPinecone(
           values: embedding,
           metadata: {
             ...metadata,
-            text: content.substring(0, 1000)
+            text: textMetadata,
+            size: content.length,
+            indexed_portion: Math.min(1, content.length > 0 ? 10000 / content.length : 0)
           }
         }
       ],
