@@ -23,6 +23,7 @@ import Roadmap from './pages/Roadmap';
 import Dao from './pages/Dao';
 import Faq from './pages/Faq';
 import MyAdvisor from './pages/MyAdvisor';
+import MyPortfolioCreator from './pages/MyPortfolioCreator';
 
 // Import contexts
 import { AuthProvider } from './contexts/auth';
@@ -63,6 +64,7 @@ function App() {
               <Route path="/dao" element={<Dao />} />
               <Route path="/faq" element={<Faq />} />
               <Route path="/myadvisor" element={<MyAdvisor />} />
+              <Route path="/myportfoliocreator" element={<MyPortfolioCreator />} />
               <Route path="/admin-check" element={<AdminCheck />} />
               <Route path="/adminllm" element={<Assistant_Admin />} />
               {/* Redirection de /assistant vers /adminllm */}

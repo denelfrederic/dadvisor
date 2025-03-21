@@ -128,7 +128,11 @@ const Roadmap = () => {
                   🧠 My Advisor AI-Pilot - Votre copilote intelligent personnel
                 </Link>
               </li>
-              <li>Intégration de nouveaux actifs numériques régulés.</li>
+              <li className="font-medium text-dadvisor-blue hover:underline">
+                <Link to="/myportfoliocreator">
+                  🧬 My Portfolio Creator X - Compose ton propre portefeuille
+                </Link>
+              </li>
             </ul>
           </RoadmapItem>
         </div>
