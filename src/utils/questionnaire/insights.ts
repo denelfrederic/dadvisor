@@ -1,3 +1,4 @@
+
 import { QuestionnaireResponses } from "./types";
 
 /**
@@ -25,18 +26,8 @@ export const analyzeInvestmentStyle = (answers: QuestionnaireResponses): string[
     insights.push("Vous êtes ouvert aux actifs numériques et aux nouvelles technologies financières.");
   }
 
-  if (answers.diversification?.value >= 3) {
-    insights.push("La diversification est une priorité importante dans votre stratégie d'investissement.");
-  }
-
   if (answers.emergency?.value <= 2) {
     insights.push("La constitution d'un fonds d'urgence devrait être une priorité avant d'investir davantage.");
-  }
-
-  if (answers.management?.value >= 3) {
-    insights.push("Vous préférez un contrôle direct sur vos investissements et les décisions associées.");
-  } else {
-    insights.push("Vous appréciez les conseils et l'accompagnement professionnels pour vos investissements.");
   }
   
   // Nouvel insight pour la préférence de souveraineté

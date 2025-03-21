@@ -1,3 +1,4 @@
+
 import { Question } from "./types";
 
 /**
@@ -182,58 +183,6 @@ export const questions: Question[] = [
       {
         id: "crypto-4",
         text: "J'investis régulièrement dans plusieurs cryptomonnaies",
-        value: 4
-      }
-    ]
-  },
-  {
-    id: "diversification",
-    text: "Quelle importance accordez-vous à la diversification de vos investissements ?",
-    options: [
-      {
-        id: "diversification-1",
-        text: "Je préfère me concentrer sur un seul type d'investissement que je comprends bien",
-        value: 1
-      },
-      {
-        id: "diversification-2",
-        text: "Je diversifie un peu, mais reste dans des classes d'actifs similaires",
-        value: 2
-      },
-      {
-        id: "diversification-3",
-        text: "Je diversifie entre différentes classes d'actifs (actions, obligations, etc.)",
-        value: 3
-      },
-      {
-        id: "diversification-4",
-        text: "Je recherche une diversification maximale, y compris avec des actifs alternatifs",
-        value: 4
-      }
-    ]
-  },
-  {
-    id: "management",
-    text: "Comment préférez-vous gérer vos investissements ?",
-    options: [
-      {
-        id: "management-1",
-        text: "Je préfère déléguer entièrement la gestion à des professionnels",
-        value: 1
-      },
-      {
-        id: "management-2",
-        text: "Je suis les conseils des professionnels mais garde un droit de regard",
-        value: 2
-      },
-      {
-        id: "management-3",
-        text: "Je gère moi-même avec quelques conseils occasionnels",
-        value: 3
-      },
-      {
-        id: "management-4",
-        text: "Je veux tout gérer moi-même et prendre toutes les décisions",
         value: 4
       }
     ]
