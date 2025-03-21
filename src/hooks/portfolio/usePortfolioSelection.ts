@@ -157,14 +157,10 @@ export const usePortfolioSelection = (
             variant: "destructive",
             title: "Attention",
             description: "Vous avez sélectionné un portefeuille plus risqué que celui recommandé pour votre profil.",
-            action: (
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/wallet", { state: { portfolioId: selectedPortfolioId } })}
-              >
-                Continuer quand même
-              </Button>
-            )
+            action: {
+              label: "Continuer quand même",
+              onClick: () => navigate("/wallet", { state: { portfolioId: selectedPortfolioId } })
+            }
           });
         } else {
           // Poursuit vers la création du wallet
