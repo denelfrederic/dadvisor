@@ -87,11 +87,11 @@ const Roadmap = () => {
               </div>
               
               <div>
-                <p className="font-medium mb-2">Prévente PreSeed des jetons DAD :</p>
+                <p className="font-medium mb-2">Vente publique :</p>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li>Prix unitaire : 0,10 €</li>
-                  <li>Objectif de levée : 5 millions €</li>
-                  <li>Répartition : 50 % investisseurs, 20 % fondateurs, 30 % trésorerie DAO</li>
+                  <li>30% des jetons mis sur le marché.</li>
+                  <li>Fonds levés injectés dans le développement du projet, marketing et adoption.</li>
+                  <li>Verrouillage (Cliff) pour les fondateurs et équipe pour éviter toute revente immédiate.</li>
                 </ul>
               </div>
               
