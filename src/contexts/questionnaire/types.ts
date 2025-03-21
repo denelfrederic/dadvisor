@@ -8,6 +8,7 @@ export interface QuestionnaireResponses {
   [questionId: string]: {
     optionId: string;
     value: number;
+    text?: string; // Ajout de la propriété text optionnelle
   };
 }
 

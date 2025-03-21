@@ -70,7 +70,10 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
         if (question) {
           const option = question.options.find(opt => opt.id === answersWithText[questionId].optionId);
           if (option) {
-            answersWithText[questionId].text = option.text;
+            answersWithText[questionId] = {
+              ...answersWithText[questionId],
+              text: option.text
+            };
           }
         }
       });
@@ -179,12 +182,15 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       if (question) {
         const option = question.options.find(opt => opt.id === enrichedAnswers[questionId].optionId);
         if (option) {
-          enrichedAnswers[questionId].text = option.text;
+          enrichedAnswers[questionId] = {
+            ...enrichedAnswers[questionId],
+            text: option.text
+          };
         }
       }
     });
     
-    // Transmettreà la fois le score et les réponses au questionnaire
+    // Transmettre à la fois le score et les réponses au questionnaire
     navigate("/portfolios", { state: { score, answers: enrichedAnswers } });
   }, [navigate, score, answers]);
 
