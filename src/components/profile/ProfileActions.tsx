@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Wallet, PieChart } from "lucide-react";
 import { NavigateFunction } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProfileActionsProps {
   handleRetakeQuestionnaire: () => void;
@@ -18,6 +19,8 @@ const ProfileActions = ({
   handleSaveProfile,
   isLoggedIn
 }: ProfileActionsProps) => {
+  const isMobile = useIsMobile();
+  
   // Fonction de redémarrage avec navigation explicite
   const handleRestartQuestionnaire = () => {
     // D'abord exécute la logique de remise à zéro
@@ -30,8 +33,8 @@ const ProfileActions = ({
   };
   
   return (
-    <div className="flex justify-center mt-8">
-      <div className="flex flex-col md:flex-row gap-4">
+    <div className="mt-12 mb-4">
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-4'} gap-4`}>
         <Button 
           variant="outline" 
           onClick={handleRestartQuestionnaire}

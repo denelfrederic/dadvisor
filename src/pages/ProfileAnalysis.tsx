@@ -1,3 +1,4 @@
+
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import ProfileContent from "@/components/profile/ProfileContent";
 import ProfileEmptyState from "@/components/profile/ProfileEmptyState";
@@ -45,9 +46,15 @@ const ProfileAnalysis = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="flex-1 bg-gradient-radial py-20 px-4 pt-28">
-        <div className="container mx-auto max-w-4xl">
-          <h1 className="text-3xl font-bold mb-8">Votre profil d'investisseur</h1>
+      <div className="flex-1 bg-gradient-radial py-20 px-4 lg:px-8 pt-28 lg:pt-32">
+        <div className="container mx-auto max-w-7xl">
+          <div className="max-w-screen-2xl mx-auto">
+            <h1 className="text-3xl font-bold mb-4">Votre profil d'investisseur</h1>
+            <p className="text-muted-foreground mb-8 max-w-3xl">
+              Découvrez votre profil d'investisseur personnalisé et les recommandations 
+              adaptées à votre tolérance au risque et à vos objectifs financiers.
+            </p>
+          </div>
 
           {loading ? (
             <ProfileLoading />
