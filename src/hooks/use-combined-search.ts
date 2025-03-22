@@ -9,7 +9,7 @@ export interface CombinedSearchResult {
 }
 
 /**
- * Hook simplifié qui interroge directement OpenAI
+ * Hook simplifié qui interroge directement l'API OpenAI via Edge Function
  */
 export const useCombinedSearch = () => {
   const [response, setResponse] = useState("");
@@ -17,7 +17,7 @@ export const useCombinedSearch = () => {
   const { toast } = useToast();
 
   /**
-   * Effectue une recherche directe via OpenAI GPT-4o
+   * Effectue une recherche directe via OpenAI GPT-4o avec les instructions DADVISOR
    */
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -33,18 +33,13 @@ export const useCombinedSearch = () => {
     setResponse("");
 
     try {
-      console.log("Envoi direct à OpenAI GPT-4o pour:", query);
+      console.log("Envoi à l'agent DADVISOR (Frédéric) pour:", query);
       
-      // Instructions pour OpenAI
-      const prompt = 
-        "Tu es l'assistant IA de DADVISOR, spécialisé dans la finance et l'investissement. " +
-        "Donne une réponse complète et pertinente en utilisant tes connaissances générales. " +
-        "IMPORTANT: Réponds de manière pédagogique, concise mais complète, et adapte le niveau technique à un investisseur amateur. " +
-        "Question de l'utilisateur DADVISOR: " + query;
+      // Simple envoi de la question utilisateur
+      // Le prompt DADVISOR est maintenant géré dans l'Edge Function
+      const result = await sendMessageToGemini(query, [], false);
       
-      const result = await sendMessageToGemini(prompt, [], false);
-      
-      console.log(`Réponse reçue de OpenAI GPT-4o (${result.length} caractères)`);
+      console.log(`Réponse reçue de l'agent DADVISOR (${result.length} caractères)`);
       
       setResponse(result);
     } catch (error) {
