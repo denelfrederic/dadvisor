@@ -18,7 +18,7 @@ export const portfolios: Portfolio[] = [
     thesis: "Ce portefeuille vise à préserver votre capital tout en générant des revenus stables. Il est conçu pour résister aux turbulences des marchés et protéger vos actifs contre l'inflation et les crises économiques.",
     assets: [
       { name: "Métaux Précieux", percentage: 40 },
-      { name: "Bitcoin", percentage: 20 },
+      { name: "Obligations US", percentage: 20 },
       { name: "Actions", percentage: 20 },
       { name: "Immobilier", percentage: 10 },
       { name: "Liquidités", percentage: 10 }
@@ -35,12 +35,13 @@ export const portfolios: Portfolio[] = [
         ]
       },
       {
-        category: "Bitcoin (20%)",
-        description: "Exposition mesurée à la principale cryptomonnaie comme réserve de valeur numérique",
+        category: "Obligations US (20%)",
+        description: "Revenus stables et protection du capital avec des titres de dette gouvernementaux et d'entreprises américaines",
         examples: [
-          "Bitcoin détenu sur des plateformes sécurisées",
-          "Solutions de garde institutionnelles",
-          "ETF Bitcoin (FBTC, BTCE)"
+          "Bons du Trésor américain (Treasury Bonds)",
+          "ETF d'obligations américaines (AGG, BND)",
+          "Obligations d'entreprises investment grade américaines",
+          "TIPS (Treasury Inflation-Protected Securities)"
         ]
       },
       {
