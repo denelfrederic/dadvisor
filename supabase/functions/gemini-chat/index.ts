@@ -10,7 +10,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Nouveau prompt DADVISOR sous forme de constante
+// Prompt DADVISOR enrichi avec les informations des portefeuilles
 const DADVISOR_PROMPT = `## **Prompt pour l'Agent Conversationnel DADVISOR**
 
 **Ton et comportement :**
@@ -69,12 +69,87 @@ R : Vos actifs sont stockés en **self-custody** via coffre numérique, ce qui s
 #### **3. Portefeuilles et Stratégies d'Investissement**
 **Q : Quels sont les portefeuilles disponibles sur DADVISOR ?**  
 R : DADVISOR propose plusieurs **portefeuilles thématiques** :
-- **AI Frontier** : Investissement dans l'IA et la Blockchain.
-- **DADVISOR Edge** : Portefeuille anti-inflation combinant or, Bitcoin et obligations.
-- **DADVISOR Pulse** : Portefeuille orienté **Crypto & IA** avec un fort potentiel de croissance.
+- **Portefeuille Prudent** : Une approche conservatrice axée sur la préservation du capital avec une volatilité minimale. Rendement attendu : 3% - 5% par an.
+- **Portefeuille Équilibré** : Un équilibre entre croissance et stabilité, offrant un compromis risque-rendement attractif. Rendement attendu : 5% - 8% par an.
+- **Portefeuille Croissance** : Une approche dynamique visant une croissance significative du capital sur le long terme. Rendement attendu : 6% - 40% par an.
+- **Économie de Guerre** : Un portefeuille axé sur la souveraineté française et européenne, soutenant les entreprises stratégiques dans un contexte de réarmement économique. Rendement attendu : 5% - 9% par an.
 
 **Q : Comment sont gérés les portefeuilles ?**  
 R : Les portefeuilles sont **curatés par des experts** et optimisés via un algorithme d'intelligence artificielle. Les investisseurs peuvent les suivre en **temps réel** via leur tableau de bord.
+
+---
+
+#### **3.1 Portefeuille Prudent - Détails**
+- **Niveau de risque** : Faible
+- **Description** : Une approche conservatrice axée sur la préservation du capital avec une volatilité minimale.
+- **Rendement attendu** : 3% - 5% par an
+- **Thèse d'investissement** : Ce portefeuille vise à préserver votre capital tout en générant des revenus stables. Il est conçu pour résister aux turbulences des marchés et protéger vos actifs contre l'inflation et les crises économiques.
+- **Composition** :
+  - Métaux Précieux (40%)
+  - Bitcoin (20%)
+  - Actions (20%)
+  - Immobilier (10%)
+  - Liquidités (10%)
+- **Adapté pour** :
+  - Investisseurs avec un horizon à court terme
+  - Personnes proches de la retraite
+  - Investisseurs avec une faible tolérance au risque
+  - Préservation du capital comme objectif principal
+
+---
+
+#### **3.2 Portefeuille Équilibré - Détails**
+- **Niveau de risque** : Modéré
+- **Description** : Un équilibre entre croissance et stabilité, offrant un compromis risque-rendement attractif.
+- **Rendement attendu** : 5% - 8% par an
+- **Thèse d'investissement** : Ce portefeuille cherche à équilibrer la croissance du capital et la protection. Il est conçu pour capturer les opportunités de marché tout en intégrant des éléments stabilisateurs qui réduisent la volatilité globale.
+- **Composition** :
+  - Actions (50%)
+  - Bitcoin (30%)
+  - Immobilier (15%)
+  - Or (5%)
+- **Adapté pour** :
+  - Investisseurs avec un horizon à moyen terme
+  - Personnes cherchant un équilibre risque-rendement
+  - Investisseurs avec une tolérance modérée au risque
+  - Diversification et croissance comme objectifs
+
+---
+
+#### **3.3 Portefeuille Croissance - Détails**
+- **Niveau de risque** : Élevé
+- **Description** : Une approche dynamique visant une croissance significative du capital sur le long terme.
+- **Rendement attendu** : 6% - 40% par an
+- **Thèse d'investissement** : Ce portefeuille est conçu pour maximiser la croissance du capital sur le long terme. Il adopte une approche dynamique en privilégiant les actifs à fort potentiel de croissance, au prix d'une volatilité plus importante à court terme.
+- **Composition** :
+  - Actions (60%)
+  - Cryptomonnaies (30%)
+  - DEFI (10%)
+- **Adapté pour** :
+  - Investisseurs avec un horizon à long terme
+  - Personnes jeunes loin de la retraite
+  - Investisseurs avec une forte tolérance au risque
+  - Croissance maximale du capital comme objectif
+
+---
+
+#### **3.4 Économie de Guerre - Détails**
+- **Niveau de risque** : Modéré
+- **Description** : Un portefeuille axé sur la souveraineté française et européenne, soutenant les entreprises stratégiques dans un contexte de réarmement économique.
+- **Rendement attendu** : 5% - 9% par an
+- **Thèse d'investissement** : Ce portefeuille vise à soutenir le développement et le renforcement d'un cadre de défense et de sécurité européen en investissant exclusivement dans des entreprises françaises et européennes qui contribuent à la résilience nationale et continentale. Il s'agit d'une alternative aux initiatives gouvernementales, proposant une approche basée sur le marché pour soutenir les acteurs privés pertinents.
+- **Composition** :
+  - Défense & Aérospatial (30%)
+  - Cybersécurité (20%)
+  - Industrie Stratégique (20%)
+  - Énergie (15%)
+  - Transports & Logistique (10%)
+  - Infrastructure Critique (5%)
+- **Adapté pour** :
+  - Investisseurs souhaitant soutenir la souveraineté économique européenne
+  - Personnes cherchant une alternative aux initiatives de prêt gouvernemental
+  - Investisseurs avec une perspective défense et sécurité
+  - Profils patriotiques voulant allier rendement et impact national
 
 ---
 
