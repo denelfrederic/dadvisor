@@ -160,13 +160,15 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
       <Button
         variant="outline"
         className={cn(
-          "w-full justify-start text-left py-2 px-3 sm:p-4 h-auto min-h-[50px] sm:min-h-[60px] text-xs sm:text-sm transition-all duration-300",
+          "w-full justify-start text-left py-2 px-3 sm:p-4 h-auto min-h-[50px] sm:min-h-[60px] transition-all duration-300",
           isSelected && "border-primary bg-primary/5"
         )}
         onClick={() => onSelect(option.id, option.value)}
         disabled={isDisabled}
       >
-        <span className="flex-1 break-words text-[0.7rem] sm:text-xs">{option.text}</span>
+        <span className="flex-1 whitespace-normal break-words text-[0.7rem] sm:text-xs leading-tight">
+          {option.text}
+        </span>
       </Button>
     </motion.div>
   );
