@@ -4,10 +4,18 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { routeRequest } from "./router.ts";
 import { logMessage } from "./utils/logging.ts";
+import { corsHeaders } from "./utils/cors.ts";
 
-// Simple délégation vers le routeur
 serve(async (req) => {
   try {
+    // Gérer les requêtes OPTIONS (CORS preflight)
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders
+      });
+    }
+    
     logMessage(`Requête reçue: ${req.method} ${new URL(req.url).pathname}`, 'info');
     return await routeRequest(req);
   } catch (error) {
@@ -18,7 +26,7 @@ serve(async (req) => {
       error: `Erreur interne du serveur: ${error instanceof Error ? error.message : String(error)}`
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });

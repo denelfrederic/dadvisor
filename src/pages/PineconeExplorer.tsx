@@ -8,7 +8,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Database, Loader2, AlertCircle, Search, FileText, ExternalLink, RefreshCw, Download } from "lucide-react";
+import { 
+  Database, 
+  Loader2, 
+  AlertCircle, 
+  Search, 
+  FileText, 
+  ExternalLink, 
+  RefreshCw, 
+  Download,
+  AlertTriangle,
+  Shield
+} from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,11 +34,14 @@ const PineconeExplorer = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<any>(null);
   const [vectors, setVectors] = useState<any[]>([]);
   const [limit, setLimit] = useState(20);
   const [activeTab, setActiveTab] = useState("documents");
   const [filter, setFilter] = useState<string>("");
   const [filterType, setFilterType] = useState<string>("all");
+  const [retryCount, setRetryCount] = useState(0);
+  const [connectionError, setConnectionError] = useState<boolean>(false);
   
   // Filtres pour les types de documents
   const documentTypes = [
@@ -39,10 +53,18 @@ const PineconeExplorer = () => {
     { id: "other", name: "Autre" }
   ];
   
-  // Fonction pour charger les vecteurs depuis Pinecone
-  const loadVectors = async () => {
+  // Fonction pour charger les vecteurs depuis Pinecone avec gestion d'erreur améliorée
+  const loadVectors = async (isRetry = false) => {
+    if (isRetry) {
+      setRetryCount(prevCount => prevCount + 1);
+    } else if (!isLoading) {
+      setRetryCount(0);
+    }
+    
     setIsLoading(true);
     setError(null);
+    setErrorDetails(null);
+    setConnectionError(false);
     
     try {
       // Préparer les filtres de métadonnées si nécessaire
@@ -54,57 +76,140 @@ const PineconeExplorer = () => {
         };
       }
       
-      // Appeler la fonction edge
-      const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
-        body: {
-          action: 'list-vectors',
-          limit,
-          metadata_filters
-        }
-      });
+      console.log(`Tentative #${retryCount + 1} - Chargement des vecteurs...`);
       
-      if (error) {
-        console.error("Erreur lors de la récupération des vecteurs:", error);
-        setError(`Erreur: ${error.message}`);
-        toast({
-          title: "Erreur",
-          description: `Impossible de récupérer les vecteurs: ${error.message}`,
-          variant: "destructive"
+      // Ajouter un paramètre pour éviter la mise en cache
+      const cacheKey = new Date().getTime();
+      
+      // Appeler la fonction edge avec un timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 secondes de timeout
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
+          body: {
+            action: 'list-vectors',
+            limit,
+            metadata_filters,
+            _cache_buster: cacheKey
+          }
+          // Nous utilisons le timeout manuellement via AbortController
         });
-        setVectors([]);
-      } else if (!data.success) {
-        console.error("Échec de la récupération des vecteurs:", data.error);
-        setError(`Échec: ${data.error || "Erreur inconnue"}`);
-        toast({
-          title: "Échec",
-          description: data.error || "Impossible de récupérer les vecteurs",
-          variant: "destructive"
-        });
-        setVectors([]);
-      } else {
-        // Transformer les données en tableau
-        const vectorsArray = data.vectors ? 
-          Object.entries(data.vectors).map(([id, vector]: [string, any]) => ({
-            id,
-            metadata: vector.metadata || {}
-          })) : [];
         
-        console.log(`${vectorsArray.length} vecteurs récupérés:`, vectorsArray);
-        setVectors(vectorsArray);
+        // Annuler le timeout
+        clearTimeout(timeoutId);
         
-        toast({
-          title: "Succès",
-          description: `${vectorsArray.length} vecteurs récupérés de Pinecone`,
-        });
+        if (error) {
+          console.error("Erreur lors de l'appel à la fonction edge:", error);
+          
+          setConnectionError(true);
+          setError(`Erreur de connexion à la fonction edge: ${error.message || "Erreur inconnue"}`);
+          setErrorDetails({
+            type: "connectionError",
+            message: error.message,
+            status: error.status
+          });
+          
+          toast({
+            title: "Erreur de connexion",
+            description: "Impossible de contacter la fonction Edge. Vérifiez que la fonction est correctement déployée.",
+            variant: "destructive"
+          });
+          
+          setVectors([]);
+        } else if (!data.success) {
+          console.error("Échec de la récupération des vecteurs:", data.error);
+          
+          setError(`Échec: ${data.error || "Erreur inconnue"}`);
+          setErrorDetails({
+            type: "apiError",
+            message: data.error,
+            details: data.details
+          });
+          
+          toast({
+            title: "Échec",
+            description: data.error || "Impossible de récupérer les vecteurs",
+            variant: "destructive"
+          });
+          
+          setVectors([]);
+        } else {
+          // Transformer les données en tableau
+          const vectorsArray = data.vectors ? 
+            Object.entries(data.vectors).map(([id, vector]: [string, any]) => ({
+              id,
+              metadata: vector.metadata || {}
+            })) : [];
+          
+          console.log(`${vectorsArray.length} vecteurs récupérés:`, vectorsArray);
+          setVectors(vectorsArray);
+          
+          toast({
+            title: "Succès",
+            description: `${vectorsArray.length} vecteurs récupérés de Pinecone`,
+          });
+        }
+      } catch (fetchError) {
+        // Annuler le timeout
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          console.error("La requête a expiré après 15 secondes");
+          setError("Timeout: La requête a expiré après 15 secondes. Le serveur ne répond pas.");
+          setConnectionError(true);
+          
+          setErrorDetails({
+            type: "timeout",
+            message: "La requête a expiré après 15 secondes"
+          });
+          
+          toast({
+            title: "Timeout",
+            description: "La requête a expiré après 15 secondes. Le serveur ne répond pas.",
+            variant: "destructive"
+          });
+          
+          setVectors([]);
+        } else {
+          throw fetchError;
+        }
       }
+      
     } catch (err) {
       console.error("Exception lors de la récupération des vecteurs:", err);
-      setError(`Exception: ${err instanceof Error ? err.message : String(err)}`);
+      
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      
+      // Détection de divers types d'erreurs
+      if (errorMsg.includes("Failed to send") || errorMsg.includes("Failed to fetch")) {
+        setConnectionError(true);
+        setError("Erreur de connexion: Impossible de contacter la fonction Edge. Vérifiez que la fonction est bien déployée.");
+        setErrorDetails({
+          type: "networkError",
+          message: errorMsg
+        });
+      } else if (errorMsg.includes("Timeout")) {
+        setConnectionError(true);
+        setError("Timeout: La requête à la fonction Edge a expiré. Le serveur ne répond pas.");
+        setErrorDetails({
+          type: "timeout",
+          message: errorMsg
+        });
+      } else {
+        setError(`Exception: ${errorMsg}`);
+        setErrorDetails({
+          type: "exception",
+          message: errorMsg
+        });
+      }
+      
       toast({
         title: "Erreur",
-        description: `Exception: ${err instanceof Error ? err.message : String(err)}`,
+        description: `Exception: ${errorMsg}`,
         variant: "destructive"
       });
+      
       setVectors([]);
     } finally {
       setIsLoading(false);
@@ -171,6 +276,51 @@ const PineconeExplorer = () => {
     document.body.removeChild(link);
   };
   
+  // Rendu de l'aide au diagnostic pour les erreurs de connexion
+  const renderConnectionErrorHelp = () => {
+    if (!connectionError) return null;
+    
+    return (
+      <Alert variant="destructive" className="mt-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Erreur de connexion à la fonction Edge</AlertTitle>
+        <AlertDescription>
+          <p>Impossible de contacter la fonction edge <code>pinecone-vectorize</code>.</p>
+          <p className="text-xs mt-2">Ce problème peut être dû à :</p>
+          <ul className="text-xs list-disc pl-4 mt-1 space-y-1">
+            <li>Une erreur de déploiement de la fonction edge</li>
+            <li>Un problème de connectivité réseau</li>
+            <li>Un problème d'autorisation ou d'authentification</li>
+            <li>Un timeout de la fonction edge (la fonction prend trop de temps à répondre)</li>
+          </ul>
+          
+          <div className="mt-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold">Diagnostics:</p>
+              <code className="text-xs">
+                {errorDetails?.message || error || "Erreur inconnue"}
+              </code>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => loadVectors(true)}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3 mr-2" />
+              )}
+              Réessayer
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
+  };
+  
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -184,6 +334,9 @@ const PineconeExplorer = () => {
             <CardDescription>
               Visualisez et filtrez les documents vectorisés dans Pinecone
             </CardDescription>
+            
+            {/* Afficher l'aide au diagnostic pour les erreurs de connexion */}
+            {renderConnectionErrorHelp()}
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
               <TabsList>
@@ -242,7 +395,7 @@ const PineconeExplorer = () => {
               </div>
               
               <Button 
-                onClick={loadVectors}
+                onClick={() => loadVectors()}
                 disabled={isLoading}
                 className="w-full md:w-auto"
               >
@@ -260,12 +413,17 @@ const PineconeExplorer = () => {
               </Button>
             </div>
             
-            {error && (
+            {error && !connectionError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Erreur</AlertTitle>
                 <AlertDescription>
                   {error}
+                  {errorDetails?.details && (
+                    <div className="mt-2 text-xs overflow-x-auto font-mono">
+                      {errorDetails.details}
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
@@ -293,6 +451,26 @@ const PineconeExplorer = () => {
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                   <p className="text-sm text-muted-foreground">Chargement des vecteurs Pinecone...</p>
                 </div>
+              </div>
+            ) : connectionError ? (
+              <div className="flex flex-col items-center justify-center h-60 text-center p-4">
+                <Shield className="h-10 w-10 text-destructive mb-4" />
+                <h3 className="text-lg font-medium">Erreur de connexion</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                  Impossible de se connecter à la fonction edge <code>pinecone-vectorize</code>.
+                </p>
+                <p className="text-xs text-muted-foreground mt-4 max-w-md">
+                  Vérifiez que la fonction edge est correctement déployée et que vous avez les autorisations nécessaires.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => loadVectors(true)}
+                  className="mt-4"
+                >
+                  <RefreshCw className="h-3 w-3 mr-2" />
+                  Réessayer la connexion
+                </Button>
               </div>
             ) : filteredVectors.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-60 text-center p-4">
