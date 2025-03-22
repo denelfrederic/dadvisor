@@ -75,11 +75,29 @@ export const saveProfile = async (
       profile_data: profileDataForDb
     };
 
-    const { error } = await supabase
+    // Vérifier si l'utilisateur a déjà un profil
+    const { data: existingProfile } = await supabase
       .from('investment_profiles')
-      .insert(profileDataToSave);
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    if (error) throw error;
+    let result;
+    
+    if (existingProfile) {
+      // Mettre à jour le profil existant
+      result = await supabase
+        .from('investment_profiles')
+        .update(profileDataToSave)
+        .eq('user_id', userId);
+    } else {
+      // Créer un nouveau profil
+      result = await supabase
+        .from('investment_profiles')
+        .insert(profileDataToSave);
+    }
+
+    if (result.error) throw result.error;
 
     toast({
       title: "Profil sauvegardé",
