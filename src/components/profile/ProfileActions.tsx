@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Wallet } from "lucide-react";
+import { RefreshCw, Wallet, PieChart } from "lucide-react";
 import { NavigateFunction } from "react-router-dom";
 
 interface ProfileActionsProps {
@@ -49,6 +49,15 @@ const ProfileActions = ({
             Sauvegarder mon profil
           </Button>
         )}
+        
+        <Button 
+          onClick={() => navigate("/portfolios")}
+          className="flex items-center gap-2"
+          variant="outline"
+        >
+          <PieChart size={16} />
+          Voir mon portefeuille adapté
+        </Button>
         
         <Button 
           onClick={() => navigate("/wallet")}
