@@ -1,93 +1,91 @@
 
-import { handleVectorize } from "./handlers/vectorizeHandler.ts";
-import { handleQuery } from "./handlers/queryHandler.ts";
-import { handleConfig } from "./handlers/configHandler.ts";
-import { handleTestConnection } from "./handlers/testConnectionHandler.ts";
-import { handleUpdateConfig } from "./handlers/updateConfigHandler.ts";
-import { handleKnowledgeBase } from "./handlers/knowledgeBaseHandler.ts";
-import { handleOpenAI } from "./handlers/openaiHandler.ts";
-import { handleSearchKnowledgeBase } from "./handlers/searchKnowledgeBaseHandler.ts";
-import { handleListVectors } from "./handlers/listVectorsHandler.ts";
-import { corsHeaders } from "./utils/cors.ts";
 import { logMessage, logError } from "./utils/logging.ts";
-import { createErrorResponse, createSuccessResponse } from "./utils/response.ts";
+import { corsedResponse } from "./utils/response.ts";
+import { validateConfig } from "./config.ts";
+import { corsHeaders } from "./utils/cors.ts";
+
+// Importation des gestionnaires d'action
+import { handleConfigAction } from "./handlers/configHandler.ts";
+import { handleConnectionTestAction } from "./handlers/connectionHandler.ts";
+import { handleVectorizeAction } from "./handlers/vectorizeHandler.ts";
+import { handleOpenAICheckAction, handleGenerateEmbeddingAction } from "./handlers/openaiHandler.ts";
+import { handleSearchKnowledgeBaseAction } from "./handlers/knowledgeBaseHandler.ts"; // Nouveau gestionnaire
 
 /**
- * Routeur principal pour les requêtes entrantes
- * @param req La requête HTTP
- * @returns Response avec le résultat de l'action ou une erreur
+ * Router principal pour distribuer les requêtes aux handlers appropriés
  */
-export async function routeRequest(req: Request): Promise<Response> {
-  try {
-    // Vérifier si c'est une requête OPTIONS (CORS preflight)
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders
-      });
-    }
+export async function routeRequest(req: Request) {
+  const requestTime = new Date().toISOString();
+  logMessage(`Requête reçue: ${req.method} ${req.url}`, 'info');
+  
+  // Gérer les requêtes OPTIONS (CORS)
+  if (req.method === "OPTIONS") {
+    logMessage("Réponse OPTIONS pour CORS", 'info');
+    return new Response("ok", { headers: corsHeaders });
+  }
 
-    // Extraire l'action de la requête
-    let action;
-    let body;
+  try {
+    // Récupérer les données de la requête
+    const requestData = await req.json().catch(error => {
+      logMessage(`Erreur lors de la lecture du corps de la requête: ${error}`, 'error');
+      return { action: null };
+    });
     
-    try {
-      body = await req.json();
-      action = body.action;
-      logMessage(`Requête reçue pour l'action: ${action}`, "info");
-    } catch (parseError) {
-      logError("Erreur lors du parsing du JSON de la requête", parseError);
-      return createErrorResponse({
-        message: "Format de requête invalide: JSON attendu avec un champ 'action'",
-        status: 400
-      });
+    const { action, ...body } = requestData;
+
+    // Vérifier si une action est spécifiée
+    if (!action) {
+      logMessage("Action manquante dans la requête", 'error');
+      return corsedResponse({ success: false, error: "Action manquante" }, 400);
     }
     
-    // Router vers le bon handler selon l'action
-    try {
-      switch (action) {
-        case 'vectorize':
-          return await handleVectorize(req);
-        case 'query':
-          return await handleQuery(req);
-        case 'config':
-          return await handleConfig(req);
-        case 'test-connection':
-          return await handleTestConnection(req);
-        case 'update-config':
-          return await handleUpdateConfig(req);
-        case 'knowledge-base':
-          return await handleKnowledgeBase(req);
-        case 'openai':
-          return await handleOpenAI(req);
-        case 'search-knowledge-base':
-          return await handleSearchKnowledgeBase(req);
-        case 'list-vectors':
-          return await handleListVectors(req);
-        default:
-          return createErrorResponse({
-            message: `Action '${action}' non reconnue`,
-            status: 400
-          });
-      }
-    } catch (handlerError) {
-      // Capture les erreurs spécifiques aux handlers
-      logError(`Erreur dans le handler pour l'action '${action}':`, handlerError);
+    logMessage(`Traitement de l'action "${action}"...`, 'info');
+    
+    // Vérification préalable de la configuration
+    const configCheck = validateConfig();
+    if (!configCheck.valid) {
+      logMessage(`Configuration invalide: ${configCheck.warnings.join(", ")}`, 'warn');
       
-      return createErrorResponse({
-        message: `Erreur lors du traitement de l'action '${action}'`,
-        status: 500,
-        details: handlerError instanceof Error ? handlerError.message : String(handlerError)
-      });
+      // Pour certaines actions critiques, bloquer en cas de configuration invalide
+      if (action === 'vectorize') {
+        return corsedResponse({
+          success: false,
+          error: `Configuration invalide: ${configCheck.warnings.join(", ")}`,
+          config: configCheck.config,
+          timestamp: new Date().toISOString()
+        }, 500);
+      }
+    }
+    
+    // Router vers le handler approprié en fonction de l'action
+    switch (action) {
+      case 'config':
+        return await handleConfigAction();
+        
+      case 'test-connection':
+        return await handleConnectionTestAction();
+        
+      case 'vectorize':
+        return await handleVectorizeAction(body);
+        
+      case 'check-openai':
+        return await handleOpenAICheckAction();
+        
+      case 'generate-embedding':
+        return await handleGenerateEmbeddingAction(body);
+      
+      case 'search-knowledge-base':
+        return await handleSearchKnowledgeBaseAction(body);
+        
+      default:
+        logMessage(`Action inconnue: ${action}`, 'error');
+        return corsedResponse({ success: false, error: "Action inconnue" }, 400);
     }
   } catch (error) {
-    // Dernière ligne de défense contre les erreurs
-    logError(`Erreur non gérée dans le routeur: ${error instanceof Error ? error.message : String(error)}`, error);
-    
-    return createErrorResponse({
-      message: `Erreur interne du serveur`,
-      status: 500,
-      details: error instanceof Error ? error.message : String(error)
-    });
+    const errorMsg = logError("Erreur inattendue", error);
+    return corsedResponse({ 
+      success: false, 
+      error: errorMsg
+    }, 500);
   }
 }

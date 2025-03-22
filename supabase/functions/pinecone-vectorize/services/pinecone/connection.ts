@@ -82,7 +82,9 @@ export async function testPineconeConnection(): Promise<any> {
       testUrls.push(`${normalizedUrl}`); // URL de base
       testUrls.push(`${normalizedUrl}describe_index_stats`); // Stats d'index (serverless)
       testUrls.push(`${normalizedUrl}query`); // Endpoint query (legacy)
-      testUrls.push(`${normalizedUrl}vectors/upsert`); // Pour tester l'opération qui échoue
+      
+      // Essayer aussi avec un endpoint vectors/upsert pour tester l'opération qui échoue
+      testUrls.push(`${normalizedUrl}vectors/upsert`);
       
       // Essayer aussi avec databases
       if (!normalizedUrl.includes("databases")) {
@@ -170,11 +172,16 @@ export async function testPineconeConnection(): Promise<any> {
       
       // Vérifier si c'est une erreur 404 (URL incorrecte ou index inexistant)
       if (lastResponse && lastResponse.status === 404) {
-        errorMessage = `Erreur 404: L'URL Pinecone ou l'index '${indexName}' n'existe pas. Vérifiez la configuration.`;
+        errorMessage = `Erreur 404: L'URL Pinecone ou l'index '${indexName}' n'existe pas. Vérifiez les points suivants:\n`;
+        errorMessage += "1. Vérifiez que l'URL contient bien le nom de votre index et la région correcte\n";
+        errorMessage += "2. Assurez-vous que votre index est bien créé dans la console Pinecone\n";
+        errorMessage += "3. Si vous utilisez un plan gratuit, vérifiez que votre index n'est pas en pause\n";
+        errorMessage += "4. Essayez de récupérer une nouvelle URL depuis la console Pinecone";
       }
       // Vérifier si c'est une erreur 403 (problème d'accès ou de clé API)
       else if (lastResponse && lastResponse.status === 403) {
-        errorMessage = "Erreur 403: Accès refusé. Vérifiez votre clé API ou les permissions.";
+        errorMessage = "Erreur 403: Accès refusé. Vérifiez votre clé API Pinecone ou les permissions de votre compte.";
+        errorMessage += " Si vous utilisez un plan gratuit, votre index pourrait être en pause.";
       }
       
       return {
