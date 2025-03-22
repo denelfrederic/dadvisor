@@ -89,7 +89,7 @@ const QuestionCard = ({
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
     >
-      <h3 className="text-lg sm:text-xl font-medium mb-4 sm:mb-6">{question.text}</h3>
+      <h3 className="text-base sm:text-xl font-medium mb-3 sm:mb-6">{question.text}</h3>
       
       <div className="space-y-2 sm:space-y-3">
         {question.options.map((option) => (
@@ -160,32 +160,13 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
       <Button
         variant="outline"
         className={cn(
-          "w-full justify-start text-left py-3 px-3 sm:p-4 h-auto min-h-[60px] sm:min-h-[70px] text-xs sm:text-sm transition-all duration-300",
+          "w-full justify-start text-left py-2 px-3 sm:p-4 h-auto min-h-[50px] sm:min-h-[60px] text-xs sm:text-sm transition-all duration-300",
           isSelected && "border-primary bg-primary/5"
         )}
         onClick={() => onSelect(option.id, option.value)}
         disabled={isDisabled}
       >
-        <div className="flex items-start sm:items-center gap-2 sm:gap-3">
-          {/* Indicateur de sélection (bouton radio) */}
-          <div className={cn(
-            "min-w-4 h-4 sm:min-w-5 sm:h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 mt-0.5 sm:mt-0",
-            isSelected ? "border-primary" : "border-muted"
-          )}>
-            <AnimatePresence>
-              {isSelected && (
-                <motion.div
-                  className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-primary"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  transition={{ duration: 0.2 }}
-                />
-              )}
-            </AnimatePresence>
-          </div>
-          <span className="flex-1 break-words">{option.text}</span>
-        </div>
+        <span className="flex-1 break-words text-[0.7rem] sm:text-xs">{option.text}</span>
       </Button>
     </motion.div>
   );
