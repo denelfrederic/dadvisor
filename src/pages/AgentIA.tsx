@@ -10,7 +10,7 @@ import Footer from "@/components/landing/Footer";
 import { motion } from "framer-motion";
 
 /**
- * Page Agent IA - Version simplifiée qui interroge directement Frédéric (Agent DADVISOR)
+ * Page Agent IA - Version simplifiée qui interroge directement l'API OpenAI (GPT-4o)
  */
 const AgentIA = () => {
   const [query, setQuery] = useState("");
@@ -37,7 +37,7 @@ const AgentIA = () => {
           {/* En-tête de la page */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Frédéric, votre conseiller DADVISOR
+              Assistant DADVISOR
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Posez vos questions sur DADVISOR et les investissements thématiques
@@ -50,7 +50,7 @@ const AgentIA = () => {
               <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input
                   type="text"
-                  placeholder="Posez votre question à Frédéric..."
+                  placeholder="Posez votre question..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="flex-grow"
@@ -84,7 +84,7 @@ const AgentIA = () => {
                   <div className="flex flex-col items-center justify-center py-12">
                     <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
                     <p className="text-muted-foreground text-center">
-                      Frédéric réfléchit à votre question...
+                      Recherche en cours...
                     </p>
                   </div>
                 ) : (
