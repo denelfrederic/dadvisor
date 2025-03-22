@@ -8,8 +8,12 @@ import CTASection from "../components/landing/CTASection";
 import Footer from "../components/landing/Footer";
 import { KnowledgeSearch } from "@/components/knowledge-base/KnowledgeSearch";
 import { Card } from "@/components/ui/card";
+import { useParallax } from "@/hooks/use-parallax";
 
 const Index = () => {
+  // Utiliser le hook useParallax pour obtenir la valeur parallaxOffset
+  const parallaxOffset = useParallax();
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Boîte de recherche en première page */}
@@ -23,7 +27,7 @@ const Index = () => {
         </Card>
       </div>
 
-      <HeroSection />
+      <HeroSection parallaxOffset={parallaxOffset} />
       <FeaturesSection />
       <HowItWorksSection />
       <CTASection />
