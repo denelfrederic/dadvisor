@@ -42,6 +42,7 @@ const PineconeExplorer = () => {
   const [filterType, setFilterType] = useState<string>("all");
   const [retryCount, setRetryCount] = useState(0);
   const [connectionError, setConnectionError] = useState<boolean>(false);
+  const [errorLog, setErrorLog] = useState<string[]>([]);
   
   // Filtres pour les types de documents
   const documentTypes = [
@@ -53,12 +54,19 @@ const PineconeExplorer = () => {
     { id: "other", name: "Autre" }
   ];
   
+  // Ajouter un log pour la diagnostique
+  const addErrorLog = (message: string) => {
+    setErrorLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
+  };
+  
   // Fonction pour charger les vecteurs depuis Pinecone avec gestion d'erreur améliorée
   const loadVectors = async (isRetry = false) => {
     if (isRetry) {
       setRetryCount(prevCount => prevCount + 1);
+      addErrorLog(`Nouvelle tentative #${retryCount + 1}`);
     } else if (!isLoading) {
       setRetryCount(0);
+      setErrorLog([]); // Réinitialiser les logs d'erreur
     }
     
     setIsLoading(true);
@@ -76,16 +84,23 @@ const PineconeExplorer = () => {
         };
       }
       
-      console.log(`Tentative #${retryCount + 1} - Chargement des vecteurs...`);
+      addErrorLog(`Tentative #${retryCount + 1} - Chargement des vecteurs...`);
       
       // Ajouter un paramètre pour éviter la mise en cache
       const cacheKey = new Date().getTime();
       
       // Appeler la fonction edge avec un timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 secondes de timeout
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        addErrorLog("Timeout: La requête a été annulée après 15 secondes sans réponse");
+      }, 15000); // 15 secondes de timeout
       
       try {
+        addErrorLog("Envoi de la requête à la fonction edge pinecone-vectorize...");
+        
+        const startTime = performance.now();
+        
         const { data, error } = await supabase.functions.invoke('pinecone-vectorize', {
           body: {
             action: 'list-vectors',
@@ -93,13 +108,18 @@ const PineconeExplorer = () => {
             metadata_filters,
             _cache_buster: cacheKey
           }
-          // Nous utilisons le timeout manuellement via AbortController
         });
+        
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
         
         // Annuler le timeout
         clearTimeout(timeoutId);
         
+        addErrorLog(`Réponse reçue en ${responseTime}ms`);
+        
         if (error) {
+          addErrorLog(`Erreur retournée par supabase.functions.invoke: ${error.message}`);
           console.error("Erreur lors de l'appel à la fonction edge:", error);
           
           setConnectionError(true);
@@ -118,6 +138,7 @@ const PineconeExplorer = () => {
           
           setVectors([]);
         } else if (!data.success) {
+          addErrorLog(`Échec retourné par la fonction: ${data.error || "Raison inconnue"}`);
           console.error("Échec de la récupération des vecteurs:", data.error);
           
           setError(`Échec: ${data.error || "Erreur inconnue"}`);
@@ -142,7 +163,7 @@ const PineconeExplorer = () => {
               metadata: vector.metadata || {}
             })) : [];
           
-          console.log(`${vectorsArray.length} vecteurs récupérés:`, vectorsArray);
+          addErrorLog(`Succès: ${vectorsArray.length} vecteurs récupérés`);
           setVectors(vectorsArray);
           
           toast({
@@ -155,6 +176,7 @@ const PineconeExplorer = () => {
         clearTimeout(timeoutId);
         
         if (fetchError.name === 'AbortError') {
+          addErrorLog("La requête a expiré après 15 secondes");
           console.error("La requête a expiré après 15 secondes");
           setError("Timeout: La requête a expiré après 15 secondes. Le serveur ne répond pas.");
           setConnectionError(true);
@@ -172,14 +194,15 @@ const PineconeExplorer = () => {
           
           setVectors([]);
         } else {
+          addErrorLog(`Exception lors de l'appel: ${fetchError.message || fetchError}`);
           throw fetchError;
         }
       }
       
     } catch (err) {
-      console.error("Exception lors de la récupération des vecteurs:", err);
-      
       const errorMsg = err instanceof Error ? err.message : String(err);
+      addErrorLog(`Exception: ${errorMsg}`);
+      console.error("Exception lors de la récupération des vecteurs:", err);
       
       // Détection de divers types d'erreurs
       if (errorMsg.includes("Failed to send") || errorMsg.includes("Failed to fetch")) {
@@ -189,6 +212,11 @@ const PineconeExplorer = () => {
           type: "networkError",
           message: errorMsg
         });
+        
+        // Ajouter des données de diagnostic pour ce type d'erreur spécifique
+        addErrorLog("Diagnostic: Erreur de communication avec la fonction edge");
+        addErrorLog("Vérification de l'état de la fonction edge recommandée");
+        addErrorLog("Cette erreur peut indiquer que la fonction n'est pas déployée ou n'est pas accessible");
       } else if (errorMsg.includes("Timeout")) {
         setConnectionError(true);
         setError("Timeout: La requête à la fonction Edge a expiré. Le serveur ne répond pas.");
@@ -293,6 +321,19 @@ const PineconeExplorer = () => {
             <li>Un problème d'autorisation ou d'authentification</li>
             <li>Un timeout de la fonction edge (la fonction prend trop de temps à répondre)</li>
           </ul>
+          
+          <div className="mt-3">
+            <p className="text-xs font-semibold">Journal des tentatives :</p>
+            <div className="max-h-32 overflow-y-auto bg-black/10 p-2 rounded text-xs font-mono mt-1">
+              {errorLog.length > 0 ? (
+                errorLog.map((log, index) => (
+                  <div key={index}>{log}</div>
+                ))
+              ) : (
+                <div>Aucune information de diagnostic disponible</div>
+              )}
+            </div>
+          </div>
           
           <div className="mt-3 flex items-center justify-between">
             <div>

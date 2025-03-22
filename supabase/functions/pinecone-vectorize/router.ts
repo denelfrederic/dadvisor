@@ -10,6 +10,7 @@ import { handleSearchKnowledgeBase } from "./handlers/searchKnowledgeBaseHandler
 import { handleListVectors } from "./handlers/listVectorsHandler.ts";
 import { corsHeaders } from "./utils/cors.ts";
 import { logMessage, logError } from "./utils/logging.ts";
+import { createErrorResponse, createSuccessResponse } from "./utils/response.ts";
 
 /**
  * Routeur principal pour les requêtes entrantes
@@ -36,16 +37,10 @@ export async function routeRequest(req: Request): Promise<Response> {
       logMessage(`Requête reçue pour l'action: ${action}`, "info");
     } catch (parseError) {
       logError("Erreur lors du parsing du JSON de la requête", parseError);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Format de requête invalide: JSON attendu avec un champ 'action'"
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return createErrorResponse({
+        message: "Format de requête invalide: JSON attendu avec un champ 'action'",
+        status: 400
+      });
     }
     
     // Router vers le bon handler selon l'action
@@ -70,45 +65,29 @@ export async function routeRequest(req: Request): Promise<Response> {
         case 'list-vectors':
           return await handleListVectors(req);
         default:
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: `Action '${action}' non reconnue`
-            }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
+          return createErrorResponse({
+            message: `Action '${action}' non reconnue`,
+            status: 400
+          });
       }
     } catch (handlerError) {
       // Capture les erreurs spécifiques aux handlers
       logError(`Erreur dans le handler pour l'action '${action}':`, handlerError);
       
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Erreur lors du traitement de l'action '${action}': ${handlerError instanceof Error ? handlerError.message : String(handlerError)}`
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return createErrorResponse({
+        message: `Erreur lors du traitement de l'action '${action}'`,
+        status: 500,
+        details: handlerError instanceof Error ? handlerError.message : String(handlerError)
+      });
     }
   } catch (error) {
     // Dernière ligne de défense contre les erreurs
     logError(`Erreur non gérée dans le routeur: ${error instanceof Error ? error.message : String(error)}`, error);
     
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: `Erreur interne du serveur: ${error instanceof Error ? error.message : String(error)}`
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return createErrorResponse({
+      message: `Erreur interne du serveur`,
+      status: 500,
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 }

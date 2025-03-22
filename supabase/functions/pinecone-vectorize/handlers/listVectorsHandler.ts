@@ -1,160 +1,141 @@
 
-import { getPineconeUrl, PINECONE_API_KEY, getPineconeIndex } from "../config.ts";
-import { PINECONE_HEADERS } from "../services/pinecone/config.ts";
-import { logMessage, logError } from "../utils/logging.ts";
 import { corsHeaders } from "../utils/cors.ts";
-import { createErrorResponse, createSuccessResponse } from "../utils/response.ts";
+import { PINECONE_API_KEY, getPineconeUrl, getPineconeIndex, PINECONE_NAMESPACE } from "../config.ts";
+import { logMessage, logError } from "../utils/logging.ts";
+import { createSuccessResponse, createErrorResponse } from "../utils/response.ts";
+import { getPineconeOperationUrl, PINECONE_HEADERS, detectPineconeUrlType } from "../services/pinecone/config.ts";
+
+// Délai d'expiration pour les requêtes vers Pinecone (15 secondes)
+const PINECONE_TIMEOUT = 15000;
 
 /**
- * Handler pour lister les vecteurs et métadonnées dans Pinecone
+ * Gère la requête pour lister les vecteurs dans Pinecone
  * @param req La requête HTTP
  * @returns Response avec la liste des vecteurs ou une erreur
  */
 export async function handleListVectors(req: Request): Promise<Response> {
   try {
-    // Gérer les requêtes OPTIONS (CORS preflight)
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders
-      });
-    }
-
+    logMessage("Traitement de la requête listVectors", "info");
+    
     // Extraire les paramètres de la requête
-    const body = await req.json();
-    const { namespace, limit = 10, offset = 0, metadata_filters = null } = body;
+    const { limit = 20, metadata_filters = null } = await req.json();
     
-    logMessage(`Requête list-vectors reçue avec limit=${limit}, namespace=${namespace || "default"}`, "info");
-    
-    // Vérifier si la clé API est disponible
+    // Vérifier les paramètres requis
     if (!PINECONE_API_KEY) {
-      const errorMsg = "Clé API Pinecone manquante dans la configuration";
-      logMessage(errorMsg, "error");
+      logError("Clé API Pinecone manquante", new Error("PINECONE_API_KEY not set"));
       return createErrorResponse({
-        message: errorMsg,
-        status: 400,
-        headers: corsHeaders
+        message: "Clé API Pinecone manquante dans la configuration",
+        status: 500
       });
     }
     
-    // Construire l'URL de requête
-    const baseUrl = getPineconeUrl();
-    if (!baseUrl) {
-      const errorMsg = "URL Pinecone non configurée";
-      logMessage(errorMsg, "error");
-      return createErrorResponse({
-        message: errorMsg,
-        status: 400,
-        headers: corsHeaders
-      });
-    }
-    
+    // Récupérer l'URL et l'index Pinecone
+    const pineconeUrl = getPineconeUrl();
     const indexName = getPineconeIndex();
-    logMessage(`Utilisation de l'index Pinecone: ${indexName}`, "info");
+    const namespace = PINECONE_NAMESPACE;
     
-    // Normaliser l'URL de base
-    const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    
-    // Construire l'URL de liste
-    const listUrl = `${normalizedBaseUrl}vectors/list`;
-    
-    logMessage(`Envoi de la requête à Pinecone: ${listUrl}`, "info");
-    
-    // Préparer le corps de la requête
-    const requestBody: any = {
-      topK: parseInt(String(limit)),
-      includeMetadata: true
-    };
-    
-    // Ajouter le namespace si fourni
-    if (namespace) {
-      requestBody.namespace = namespace;
-      logMessage(`Namespace spécifié: ${namespace}`, "info");
+    if (!pineconeUrl) {
+      logError("URL Pinecone manquante", new Error("PINECONE_BASE_URL not set"));
+      return createErrorResponse({
+        message: "URL Pinecone manquante dans la configuration",
+        status: 500
+      });
     }
     
-    // Ajouter les filtres de métadonnées si fournis
-    if (metadata_filters) {
-      requestBody.filter = metadata_filters;
-      logMessage(`Filtres de métadonnées appliqués: ${JSON.stringify(metadata_filters)}`, "info");
-    }
-    
-    // Préparer les en-têtes avec CORS
-    const headers = {
-      ...PINECONE_HEADERS,
-      'Content-Type': 'application/json'
-    };
-    
-    logMessage(`En-têtes de la requête: ${JSON.stringify(headers)}`, "debug");
-    logMessage(`Corps de la requête: ${JSON.stringify(requestBody)}`, "debug");
-    
-    // Utiliser un timeout pour éviter que la requête ne reste bloquée
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 secondes de timeout
+    logMessage(`Récupération des vecteurs depuis Pinecone (limite: ${limit})`, "info");
+    logMessage(`URL Pinecone: ${pineconeUrl}`, "debug");
+    logMessage(`Index: ${indexName}`, "debug");
+    logMessage(`Namespace: ${namespace}`, "debug");
     
     try {
-      // Effectuer la requête avec un abort signal
-      const response = await fetch(listUrl, {
+      // Créer un AbortController pour gérer le timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), PINECONE_TIMEOUT);
+      
+      // Déterminer le type d'API Pinecone (serverless ou legacy)
+      const apiType = detectPineconeUrlType(pineconeUrl);
+      logMessage(`Type d'API Pinecone détecté: ${apiType}`, "info");
+      
+      // Construire l'URL pour la requête en fonction du type d'API
+      const operationUrl = getPineconeOperationUrl(pineconeUrl, indexName, apiType, "query");
+      logMessage(`URL de l'opération: ${operationUrl}`, "debug");
+      
+      // Configurer les paramètres de la requête
+      const body: any = {
+        topK: limit,
+        includeMetadata: true,
+        namespace: namespace
+      };
+      
+      // Ajouter les filtres de métadonnées si fournis
+      if (metadata_filters) {
+        body.filter = { metadata: metadata_filters };
+      }
+      
+      // Exécuter la requête avec un timeout
+      const response = await fetch(operationUrl, {
         method: "POST",
-        headers: headers,
-        body: JSON.stringify(requestBody),
+        headers: PINECONE_HEADERS,
+        body: JSON.stringify(body),
         signal: controller.signal
       });
       
       // Annuler le timeout
       clearTimeout(timeoutId);
       
-      // Vérifier le statut HTTP
+      // Traiter la réponse
       if (!response.ok) {
-        const errorData = await response.text();
-        logMessage(`Erreur de l'API Pinecone: ${response.status} ${response.statusText}`, "error");
-        logMessage(`Détails de l'erreur: ${errorData}`, "error");
+        const errorText = await response.text();
+        logError(`Erreur Pinecone (${response.status}): ${errorText}`, new Error(`Pinecone API error: ${response.status}`));
         
         return createErrorResponse({
-          message: `Erreur de l'API Pinecone: ${response.status} ${response.statusText}`,
-          details: errorData,
+          message: `Erreur lors de la récupération des vecteurs depuis Pinecone: ${response.status} ${response.statusText}`,
           status: response.status,
-          headers: corsHeaders
+          details: errorText
         });
       }
       
-      // Extraire les données de la réponse
+      // Analyser la réponse JSON
       const data = await response.json();
+      logMessage(`Réponse Pinecone reçue, nombre de correspondances: ${data.matches?.length || 0}`, "info");
       
-      // Journaliser le succès
-      const vectorCount = data.vectors ? Object.keys(data.vectors).length : 0;
-      logMessage(`Requête de liste Pinecone réussie, ${vectorCount} vecteurs récupérés`, "info");
-      
-      // Renvoyer les résultats
       return createSuccessResponse({
-        vectors: data.vectors || {},
-        total: vectorCount,
-        namespace: namespace || "default"
-      }, { headers: corsHeaders });
+        vectors: data.matches.reduce((acc: any, match: any) => {
+          acc[match.id] = {
+            score: match.score,
+            metadata: match.metadata || {}
+          };
+          return acc;
+        }, {}),
+        count: data.matches.length,
+        totalCount: data.matches.length
+      });
       
     } catch (fetchError) {
-      clearTimeout(timeoutId);
-      
-      // Gérer spécifiquement les erreurs de timeout
-      if (fetchError.name === 'AbortError') {
-        logMessage("La requête à Pinecone a expiré après 15 secondes", "error");
+      // Vérifier si l'erreur est due à un timeout
+      if (fetchError.name === "AbortError") {
+        logError("Timeout lors de la requête à Pinecone", new Error("Pinecone request timeout"));
         return createErrorResponse({
-          message: "Timeout: La requête à Pinecone a expiré après 15 secondes",
-          status: 504, // Gateway Timeout
-          headers: corsHeaders
+          message: "La requête à Pinecone a expiré après 15 secondes",
+          status: 504,
+          details: "Vérifiez que votre index Pinecone est actif et répond correctement"
         });
       }
       
-      // Autres erreurs fetch
-      throw fetchError;
+      // Autres erreurs de fetch
+      logError(`Erreur lors de l'appel à l'API Pinecone: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`, fetchError);
+      return createErrorResponse({
+        message: `Erreur lors de l'appel à l'API Pinecone: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
+        status: 500
+      });
     }
     
   } catch (error) {
-    // Journaliser et retourner l'erreur
-    const errorMessage = logError("Erreur lors de la requête de liste Pinecone", error);
+    // Capturer et loguer toute autre erreur
+    logError(`Exception non gérée dans listVectorsHandler: ${error instanceof Error ? error.message : String(error)}`, error);
     return createErrorResponse({
-      message: errorMessage,
-      status: 500,
-      headers: corsHeaders
+      message: `Exception non gérée dans listVectorsHandler: ${error instanceof Error ? error.message : String(error)}`,
+      status: 500
     });
   }
 }
