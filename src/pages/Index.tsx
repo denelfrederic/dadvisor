@@ -1,5 +1,6 @@
 
 import React from "react";
+import Navbar from "../components/Navbar";
 import HeroSection from "../components/landing/HeroSection";
 import FeatureCard from "../components/landing/FeatureCard";
 import FeaturesSection from "../components/landing/FeaturesSection";
@@ -14,6 +15,7 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      <Navbar />
       <HeroSection parallaxOffset={parallaxOffset} />
       <FeaturesSection />
       <HowItWorksSection />
