@@ -7,7 +7,7 @@ import { useKnowledgeSearch } from "./search/useKnowledgeSearch";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import SearchErrorFallback from "./search/SearchErrorFallback";
 
-const KnowledgeSearch = () => {
+export const KnowledgeSearch = () => {
   const {
     query,
     setQuery,
@@ -43,7 +43,7 @@ const KnowledgeSearch = () => {
               includeLocalContent={includeLocalContent}
               setIncludeLocalContent={setIncludeLocalContent}
               isSearching={isSearching}
-              onSubmit={handleSearch}
+              onSubmit={() => handleSearch()}
             />
           </ErrorBoundary>
         </div>

@@ -2,8 +2,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +22,7 @@ serve(async (req) => {
     console.log("Received request with prompt:", prompt.substring(0, 100));
     console.log("Using RAG:", useRAG);
     
-    // More detailed system message with DADVISOR-specific information
+    // Message système détaillé avec informations spécifiques à DADVISOR
     let systemMessage = `Vous êtes l'assistant virtuel de DADVISOR, une plateforme technologique et financière permettant aux investisseurs d'accéder à des actifs diversifiés . 
     Elle simplifie l'investissement en combinant crypto-actifs, actifs traditionnels et finance décentralisée tout en garantissant la transparence, la sécurité et la conformité. 
     Elle évolue pour offrir une expérience d'investissement intuitive et sécurisée, notamment grâce à des wallets décentralisés et un cadre réglementaire robuste.
@@ -56,98 +56,79 @@ Voici les règles précises à suivre:
 Répondez de façon professionnelle mais accessible, en utilisant un ton courtois et rassurant qui reflète l'image de DADVISOR.`;
     }
 
-    // Format messages pour l'API Gemini
+    // Formater les messages pour l'API OpenAI
     const messages = [];
     
     // Ajout du message système
     messages.push({
-      role: "model",
-      parts: [{ text: systemMessage }]
+      role: "system",
+      content: systemMessage
     });
     
     // Optimisation de l'intégration du contexte documentaire
     if (useRAG && documentContext) {
       messages.push({
         role: "user",
-        parts: [{ text: "Voici les documents et informations pertinentes de DADVISOR pour répondre à la prochaine question:" }]
+        content: "Voici les documents et informations pertinentes de DADVISOR pour répondre à la prochaine question:"
       });
       
       messages.push({
-        role: "model", 
-        parts: [{ text: "Je vais analyser soigneusement ces informations de DADVISOR pour vous répondre avec précision." }]
+        role: "assistant", 
+        content: "Je vais analyser soigneusement ces informations de DADVISOR pour vous répondre avec précision."
       });
       
       messages.push({
         role: "user",
-        parts: [{ text: documentContext }]
+        content: documentContext
       });
       
       messages.push({
-        role: "model",
-        parts: [{ text: "J'ai pris connaissance des informations DADVISOR. Comment puis-je vous aider aujourd'hui?" }]
+        role: "assistant",
+        content: "J'ai pris connaissance des informations DADVISOR. Comment puis-je vous aider aujourd'hui?"
       });
     }
     
     // Ajout de l'historique des conversations
     history.forEach((msg: { role: string, content: string }) => {
       messages.push({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }]
+        role: msg.role === "user" ? "user" : "assistant",
+        content: msg.content
       });
     });
     
     // Ajout du message utilisateur actuel
     messages.push({
       role: "user",
-      parts: [{ text: prompt }]
+      content: prompt
     });
     
-    console.log("Sending messages to Gemini API:", JSON.stringify(messages.length, null, 2));
+    console.log("Sending messages to OpenAI API:", JSON.stringify(messages.length, null, 2));
 
-    // Requête à l'API Gemini avec des paramètres optimisés
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    // Requête à l'API OpenAI avec des paramètres optimisés
+    const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        contents: messages,
-        generationConfig: {
-          temperature: useRAG ? 0.1 : 0.7, // Température plus basse pour RAG
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          }
-        ]
+        model: "gpt-4o",
+        messages: messages,
+        temperature: useRAG ? 0.1 : 0.7, // Température plus basse pour RAG
+        max_tokens: 1024,
+        top_p: 0.95,
       }),
     });
 
     const data = await response.json();
     
-    console.log("Gemini API response status:", response.status);
+    console.log("OpenAI API response status:", response.status);
 
     if (data.error) {
-      throw new Error(`Gemini API Error: ${data.error.message}`);
+      throw new Error(`OpenAI API Error: ${data.error.message || data.error}`);
     }
 
-    const generatedText = data.candidates[0]?.content?.parts[0]?.text || "Désolé, je n'ai pas pu générer de réponse.";
+    const generatedText = data.choices?.[0]?.message?.content || "Désolé, je n'ai pas pu générer de réponse.";
 
     return new Response(JSON.stringify({ 
       response: generatedText,
@@ -156,9 +137,9 @@ Répondez de façon professionnelle mais accessible, en utilisant un ton courtoi
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in gemini-chat function:', error);
+    console.error('Error in openai-chat function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || "Une erreur s'est produite lors de la communication avec l'API Gemini." 
+      error: error.message || "Une erreur s'est produite lors de la communication avec l'API OpenAI." 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

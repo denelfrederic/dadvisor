@@ -35,7 +35,7 @@ export const useInternetSearch = () => {
     setSources([]);
     setDebugLogs([]); // Reset logs
     
-    addLog(`[${new Date().toISOString()}] Starting internet search for: "${query}" (include local: ${includeLocalContent})`);
+    addLog(`[${new Date().toISOString()}] Starting internet search with OpenAI for: "${query}" (include local: ${includeLocalContent})`);
     
     try {
       let context = "";
@@ -70,17 +70,17 @@ export const useInternetSearch = () => {
           toast({
             title: "Attention",
             description: "La recherche dans le contenu local a échoué, mais la recherche internet continue.",
-            variant: "default" // Changed from "warning" to "default"
+            variant: "default"
           });
         }
       }
       
-      // Instructions plus précises pour Gemini
-      addLog(`Building prompt for Gemini with${includeLocalContent ? '' : 'out'} local context...`);
+      // Instructions plus précises pour OpenAI
+      addLog(`Building prompt for OpenAI with${includeLocalContent ? '' : 'out'} local context...`);
       const promptPrefix = buildPromptForLocalContent(query, includeLocalContent && context.length > 0, context);
       
-      // Utiliser Gemini pour la recherche Internet
-      addLog(`Sending request to Gemini...`);
+      // Utiliser OpenAI pour la recherche Internet (via la fonction sendMessageToGemini qui a maintenant été modifiée)
+      addLog(`Sending request to OpenAI GPT-4o...`);
       const result = await sendMessageToGemini(
         promptPrefix, 
         [], 
@@ -88,9 +88,9 @@ export const useInternetSearch = () => {
         includeLocalContent ? context : ""
       );
       
-      addLog(`Received response from Gemini (${result.length} characters)`);
+      addLog(`Received response from OpenAI (${result.length} characters)`);
       setResponse(result);
-      setSources([...usedSources, "Recherche Internet via Gemini"]);
+      setSources([...usedSources, "Recherche Internet via OpenAI GPT-4o"]);
     } catch (error) {
       console.error("Erreur lors de la recherche:", error);
       addLog(`SEARCH ERROR: ${error instanceof Error ? error.message : String(error)}`);

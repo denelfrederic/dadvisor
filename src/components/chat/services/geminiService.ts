@@ -5,7 +5,7 @@ import { searchLocalDocuments } from './document/searchService';
 import { formatMessagesForApi } from './messageService';
 
 /**
- * Envoie un message à l'API Gemini (modèle gemini-1.5-flash)
+ * Envoie un message à l'API OpenAI (modèle GPT-4o)
  * @param prompt Le message à envoyer
  * @param history L'historique des messages
  * @param useLocalSearch Indique si on doit chercher dans les documents locaux
@@ -55,7 +55,7 @@ export const sendMessageToGemini = async (
     // Log what we're sending
     console.log("Envoi à l'API avec contexte DADVISOR:", useLocalSearch && (contextFromDocuments.length > 0 || additionalContext.length > 0));
     
-    // Invoke the Gemini Edge Function
+    // Invoke the OpenAI Edge Function (previously Gemini)
     const { data, error } = await supabase.functions.invoke("gemini-chat", {
       body: {
         prompt: enhancedPrompt,

@@ -1,30 +1,33 @@
 
-import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
-import HeroSection from "@/components/landing/HeroSection";
-import FeaturesSection from "@/components/landing/FeaturesSection";
-import HowItWorksSection from "@/components/landing/HowItWorksSection";
-import CTASection from "@/components/landing/CTASection";
-import { useParallax } from "@/hooks/use-parallax";
+import React from "react";
+import HeroSection from "../components/landing/HeroSection";
+import FeatureCard from "../components/landing/FeatureCard";
+import FeaturesSection from "../components/landing/FeaturesSection";
+import HowItWorksSection from "../components/landing/HowItWorksSection";
+import CTASection from "../components/landing/CTASection";
+import Footer from "../components/landing/Footer";
+import { KnowledgeSearch } from "@/components/knowledge-base/KnowledgeSearch";
+import { Card } from "@/components/ui/card";
 
-/**
- * Page d'accueil de l'application
- * Utilise un hook personnalisé pour l'effet de parallaxe et contient toutes les sections principales
- */
 const Index = () => {
-  // Utilisation du hook personnalisé pour l'effet de parallaxe
-  const parallaxOffset = useParallax();
-  
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <div className="flex-1">
-        <HeroSection parallaxOffset={parallaxOffset} />
-        <FeaturesSection />
-        <HowItWorksSection />
-        <CTASection />
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      {/* Boîte de recherche en première page */}
+      <div className="container mx-auto px-4 py-8">
+        <Card className="p-6 shadow-lg">
+          <h2 className="text-2xl font-bold mb-4 text-center">Recherche DADVISOR</h2>
+          <p className="text-center text-muted-foreground mb-6">
+            Posez vos questions sur l'investissement et la finance
+          </p>
+          <KnowledgeSearch />
+        </Card>
       </div>
-      <BottomNavbar />
+
+      <HeroSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <CTASection />
+      <Footer />
     </div>
   );
 };

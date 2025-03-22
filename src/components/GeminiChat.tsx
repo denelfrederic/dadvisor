@@ -29,7 +29,7 @@ const GeminiChat = () => {
   return (
     <div className="flex flex-col h-[85vh] max-w-4xl mx-auto bg-gradient-radial rounded-xl overflow-hidden border shadow-lg">
       <div className="flex justify-between items-center">
-        <ChatHeader title="Assistant IA DADVISOR" />
+        <ChatHeader title="Assistant IA DADVISOR (GPT-4o)" />
         <ChatToolbar 
           docCount={stats.count} 
           onOpenDocManager={() => setIsDocManagerOpen(true)}
