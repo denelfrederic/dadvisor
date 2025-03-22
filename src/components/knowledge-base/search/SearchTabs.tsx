@@ -9,54 +9,42 @@ interface SearchTabsProps {
 
 const SearchTabs = ({ activeTab, setActiveTab }: SearchTabsProps) => {
   return (
-    <TabsList className="grid grid-cols-4 mb-6">
+    <TabsList className="flex w-full mb-6 overflow-x-auto">
       <TabsTrigger 
         value="internet" 
-        className="flex items-center gap-2 py-3"
+        className="flex items-center gap-1 py-2 px-3"
         data-active={activeTab === "internet"}
         onClick={() => setActiveTab("internet")}
       >
         <Globe size={16} />
-        <div className="flex flex-col items-start text-left">
-          <span className="font-medium">Recherche Internet</span>
-          <span className="text-xs text-muted-foreground">Via Gemini</span>
-        </div>
+        <span className="font-medium">Recherche Web</span>
       </TabsTrigger>
       <TabsTrigger 
         value="local" 
-        className="flex items-center gap-2 py-3"
+        className="flex items-center gap-1 py-2 px-3"
         data-active={activeTab === "local"}
         onClick={() => setActiveTab("local")}
       >
         <Database size={16} />
-        <div className="flex flex-col items-start text-left">
-          <span className="font-medium">Base de Connaissances</span>
-          <span className="text-xs text-muted-foreground">Enrichie par Gemini</span>
-        </div>
+        <span className="font-medium">Base de Connaissances</span>
       </TabsTrigger>
       <TabsTrigger 
         value="documents" 
-        className="flex items-center gap-2 py-3"
+        className="flex items-center gap-1 py-2 px-3"
         data-active={activeTab === "documents"}
         onClick={() => setActiveTab("documents")}
       >
         <FileText size={16} />
-        <div className="flex flex-col items-start text-left">
-          <span className="font-medium">Documents</span>
-          <span className="text-xs text-muted-foreground">PDF et autres fichiers</span>
-        </div>
+        <span className="font-medium">Documents</span>
       </TabsTrigger>
       <TabsTrigger 
         value="semantic" 
-        className="flex items-center gap-2 py-3"
+        className="flex items-center gap-1 py-2 px-3"
         data-active={activeTab === "semantic"}
         onClick={() => setActiveTab("semantic")}
       >
         <Network size={16} />
-        <div className="flex flex-col items-start text-left">
-          <span className="font-medium">Recherche Sémantique</span>
-          <span className="text-xs text-muted-foreground">Vectorisation</span>
-        </div>
+        <span className="font-medium">Recherche Sémantique</span>
       </TabsTrigger>
     </TabsList>
   );
