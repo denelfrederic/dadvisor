@@ -160,16 +160,16 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
       <Button
         variant="outline"
         className={cn(
-          "w-full justify-start text-left p-2 sm:p-4 h-auto text-xs sm:text-sm transition-all duration-300",
+          "w-full justify-start text-left py-3 px-3 sm:p-4 h-auto min-h-[60px] sm:min-h-[70px] text-xs sm:text-sm transition-all duration-300",
           isSelected && "border-primary bg-primary/5"
         )}
         onClick={() => onSelect(option.id, option.value)}
         disabled={isDisabled}
       >
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-start sm:items-center gap-2 sm:gap-3">
           {/* Indicateur de sélection (bouton radio) */}
           <div className={cn(
-            "min-w-4 h-4 sm:min-w-5 sm:h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0",
+            "min-w-4 h-4 sm:min-w-5 sm:h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 mt-0.5 sm:mt-0",
             isSelected ? "border-primary" : "border-muted"
           )}>
             <AnimatePresence>
@@ -184,7 +184,7 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
               )}
             </AnimatePresence>
           </div>
-          <span className="flex-1">{option.text}</span>
+          <span className="flex-1 break-words">{option.text}</span>
         </div>
       </Button>
     </motion.div>
