@@ -99,7 +99,7 @@ const BottomNavbar = () => {
 
         {/* Copyright */}
         <div className="text-xs text-center text-muted-foreground mt-4">
-          © 2023 DADVISOR. Tous droits réservés.
+          © 2025 DADVISOR. Tous droits réservés.
         </div>
       </div>
     </div>

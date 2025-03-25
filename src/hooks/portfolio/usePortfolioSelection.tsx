@@ -79,17 +79,24 @@ export const usePortfolioSelection = (
         setRecommendedPortfolioId(recommendedId);
         setSelectedPortfolioId(recommendedId);
         
-        // Afficher une notification pour le portefeuille recommandé
-        const recommendedPortfolio = portfolioData.find(p => p.id === recommendedId);
-        if (recommendedPortfolio) {
-          const isWarEconomy = recommendedId === "wareconomy";
-          
-          toast({
-            title: "Recommandation",
-            description: isWarEconomy 
-              ? `Basé sur votre préférence pour les investissements en France/Europe, nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
-              : `Basé sur votre profil de risque (${riskScore}), nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
-          });
+        // Afficher une notification pour le portefeuille recommandé SEULEMENT si elle n'a pas déjà été affichée
+        const hasSeenRecommendation = localStorage.getItem('dadvisor_recommendation_shown');
+        
+        if (!hasSeenRecommendation) {
+          const recommendedPortfolio = portfolioData.find(p => p.id === recommendedId);
+          if (recommendedPortfolio) {
+            const isWarEconomy = recommendedId === "wareconomy";
+            
+            toast({
+              title: "Recommandation",
+              description: isWarEconomy 
+                ? `Basé sur votre préférence pour les investissements en France/Europe, nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
+                : `Basé sur votre profil de risque (${riskScore}), nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
+            });
+            
+            // Marquer la recommandation comme ayant été affichée
+            localStorage.setItem('dadvisor_recommendation_shown', 'true');
+          }
         }
       } catch (error) {
         console.error("Error fetching portfolios:", error);

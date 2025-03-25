@@ -9,7 +9,7 @@ const Footer = () => {
           <div className="mb-6 md:mb-0">
             <div className="text-2xl font-bold">DADVISOR</div>
             <p className="text-sm text-muted-foreground mt-2">
-              © 2023 DADVISOR. Tous droits réservés.
+              © 2025 DADVISOR. Tous droits réservés.
             </p>
           </div>
           
