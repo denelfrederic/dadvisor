@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -58,11 +58,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Open Sans', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Roboto', sans-serif;
     @apply font-medium;
   }
 }
@@ -81,11 +81,11 @@
   }
   
   .btn-primary {
-    @apply bg-dadvisor-blue hover:bg-dadvisor-navy text-white px-4 py-2 rounded-md transition-colors;
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors;
   }
   
   .btn-outline {
-    @apply border border-dadvisor-blue text-dadvisor-blue hover:bg-dadvisor-lightblue px-4 py-2 rounded-md transition-colors;
+    @apply border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-md transition-colors;
   }
   
   .dadvisor-container {
@@ -98,18 +98,6 @@
   
   .dadvisor-shadow {
     @apply shadow-[0_5px_20px_rgba(0,0,0,0.06)];
-  }
-  
-  .dadvisor-heading {
-    @apply font-montserrat font-semibold text-dadvisor-navy;
-  }
-  
-  .dadvisor-text {
-    @apply font-montserrat text-gray-700;
-  }
-  
-  .dadvisor-card {
-    @apply bg-white rounded-lg shadow-dadvisor p-6 border border-gray-50;
   }
 }
 
