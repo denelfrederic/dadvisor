@@ -23,8 +23,9 @@ export default {
 				'xs': '480px',
 			},
 			fontFamily: {
-				sans: ['Open Sans', 'system-ui', 'sans-serif'],
-				heading: ['Roboto', 'sans-serif'],
+				sans: ['Montserrat', 'system-ui', 'sans-serif'],
+				montserrat: ['Montserrat', 'sans-serif'],
+				heading: ['Montserrat', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
