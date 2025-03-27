@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { storeUserSession } from "@/utils/auth";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export function useAuthCallback() {
   const [error, setError] = useState<string | null>(null);
@@ -70,10 +70,7 @@ export function useAuthCallback() {
           storeUserSession(user);
           
           // Show success message
-          toast({
-            title: "Connexion réussie",
-            description: `Bienvenue, ${user.name} !`,
-          });
+          toast.success(`Bienvenue, ${user.name} !`);
           
           // Redirect to home page
           console.log("Redirection vers la page d'accueil après authentification");
@@ -86,6 +83,7 @@ export function useAuthCallback() {
       } catch (e: any) {
         console.error("Erreur dans le processus d'authentification:", e);
         setError(e.message || "Une erreur s'est produite durant l'authentification.");
+        toast.error("Erreur de connexion: " + (e.message || "Veuillez réessayer"));
         navigate("/auth");
       }
     };
