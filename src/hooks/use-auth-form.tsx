@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -184,15 +183,11 @@ export function useAuthForm() {
       setAuthError(null);
       console.log("Envoi d'un magic link à :", email);
       
-      // Détecter l'URL de production
-      // Récupérer l'URL complète actuelle du navigateur
+      // Définir explicitement l'URL de production pour le redirectTo
+      // Utiliser l'URL actuelle mais forcér la redirection vers la page de callback
       const currentUrl = window.location.href;
-      
-      // Extraire le domaine et le protocole (https://example.com ou http://localhost:5173)
       const urlObject = new URL(currentUrl);
       const baseUrl = `${urlObject.protocol}//${urlObject.host}`;
-      
-      console.log(`URL de base pour la redirection: ${baseUrl}`);
       
       // URL de redirection pour le magic link
       const redirectUrl = `${baseUrl}/auth/callback`;
