@@ -6,7 +6,7 @@ import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
 import { AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const QuestionnaireProgress = () => {
   const { 
@@ -20,26 +20,31 @@ const QuestionnaireProgress = () => {
   } = useQuestionnaire();
   
   const isMobile = useIsMobile();
+  const [showCompletionMessage, setShowCompletionMessage] = useState(false);
   
   // Vérification que currentQuestionIndex est valide
   const safeIndex = Math.min(Math.max(0, currentQuestionIndex || 0), questions.length - 1);
   const currentQuestion = questions[safeIndex];
   const totalQuestions = questions.length;
 
-  // Effet pour rediriger automatiquement après un délai
+  // Effet pour gérer l'affichage du message de complétion et la redirection
   useEffect(() => {
-    if (isComplete) {
-      console.log("Questionnaire complet, redirection vers l'analyse dans 2 secondes");
+    if (isComplete && !showCompletionMessage) {
+      console.log("Questionnaire complet, affichage du message de complétion");
+      setShowCompletionMessage(true);
+      
+      // Redirection après délai
       const timer = setTimeout(() => {
+        console.log("Redirection vers l'analyse après 2 secondes");
         setShowAnalysis(true);
       }, 2000);
       
       return () => clearTimeout(timer);
     }
-  }, [isComplete, setShowAnalysis]);
+  }, [isComplete, setShowAnalysis, showCompletionMessage]);
 
-  // Si le questionnaire est complet, afficher un message
-  if (isComplete) {
+  // Si le message de complétion doit être affiché
+  if (showCompletionMessage) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}

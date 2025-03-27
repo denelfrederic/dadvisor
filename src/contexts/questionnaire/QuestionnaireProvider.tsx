@@ -20,6 +20,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showIntroduction, setShowIntroduction] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
   
   // Hooks personnalisés
   const { 
@@ -129,15 +130,18 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       setScore(calculatedScore);
     }
     
-    if (isComplete && Object.keys(answers).length === questions.length) {
+    if (isComplete && Object.keys(answers).length === questions.length && !hasShownCompletionToast) {
       const calculatedScore = calculateRiskScore(answers);
       setScore(calculatedScore);
       
-      // Afficher un toast de confirmation
+      // Afficher un toast de confirmation (une seule fois)
       toast({
         title: "Questionnaire terminé !",
         description: `Votre score de risque est de ${calculatedScore}`,
       });
+      
+      // Marquer que le toast a été affiché
+      setHasShownCompletionToast(true);
       
       // Ne pas automatiquement montrer l'analyse si on est sur la page questionnaire
       // L'utilisateur doit cliquer sur un bouton pour la voir
@@ -146,7 +150,14 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
         setShowAnalysis(true);
       }
     }
-  }, [isComplete, answers]);
+  }, [isComplete, answers, hasShownCompletionToast]);
+
+  // Réinitialiser le toast lors de la reprise du questionnaire
+  useEffect(() => {
+    if (!isComplete) {
+      setHasShownCompletionToast(false);
+    }
+  }, [isComplete]);
 
   // Fonction pour envelopper saveInvestmentProfile avec les arguments corrects
   const wrappedSaveInvestmentProfile = () => {
