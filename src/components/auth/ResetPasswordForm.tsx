@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AuthError } from "./AuthError";
 import { CardContent } from "@/components/ui/card";
 import { Mail } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ResetPasswordFormProps {
   onSubmit: (email: string) => Promise<void>;
@@ -18,11 +19,15 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const handleSubmit = async () => {
+    if (!email) {
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       setSuccessMessage(null);
       await onSubmit(email);
-      setSuccessMessage(`Un magic link a été envoyé à ${email}. Vérifiez votre boîte mail.`);
+      setSuccessMessage(`Un magic link a été envoyé à ${email}. Vérifiez votre boîte mail et vos spams.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -33,9 +38,10 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
       <AuthError error={authError} />
       
       {successMessage && (
-        <div className="bg-green-50 text-green-800 p-3 rounded-md border border-green-200">
-          {successMessage}
-        </div>
+        <Alert className="bg-green-50 border-green-200 text-green-800">
+          <AlertTitle>Envoi réussi</AlertTitle>
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
       )}
       
       <div className="space-y-2">
@@ -46,13 +52,18 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
           placeholder="votre.email@exemple.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSubmit();
+            }
+          }}
         />
       </div>
       
       <Button 
         className="w-full flex items-center justify-center gap-2" 
         onClick={handleSubmit}
-        disabled={isSubmitting}
+        disabled={isSubmitting || !email}
       >
         {isSubmitting ? (
           <>

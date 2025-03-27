@@ -186,7 +186,11 @@ export function useAuthForm() {
       
       // Récupérer l'URL complète actuelle du navigateur
       const currentOrigin = window.location.origin;
-      const redirectUrl = `${currentOrigin}/auth/callback`;
+      // Éviter d'utiliser localhost en production
+      const baseRedirectUrl = currentOrigin.includes('localhost') ? 
+        'https://9c4e07df-ed89-470d-9701-f1c96edef3d7.lovableproject.com' : 
+        currentOrigin;
+      const redirectUrl = `${baseRedirectUrl}/auth/callback`;
       
       console.log(`Magic link configuré pour rediriger vers: ${redirectUrl}`);
       

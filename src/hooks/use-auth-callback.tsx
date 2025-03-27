@@ -15,6 +15,27 @@ export function useAuthCallback() {
         console.log("Traitement du callback d'authentification OAuth ou Magic Link...");
         console.log("URL actuelle:", window.location.href);
         
+        // Vérifier si l'URL contient une erreur
+        const url = new URL(window.location.href);
+        const hashParams = new URLSearchParams(url.hash.substring(1));
+        
+        if (hashParams.has('error')) {
+          const errorCode = hashParams.get('error_code');
+          const errorDescription = hashParams.get('error_description');
+          
+          console.error("Erreur détectée dans l'URL:", {
+            error: hashParams.get('error'),
+            errorCode,
+            errorDescription
+          });
+          
+          if (errorCode === 'otp_expired') {
+            throw new Error("Le lien de connexion a expiré. Veuillez demander un nouveau lien.");
+          } else {
+            throw new Error(errorDescription || "Une erreur s'est produite durant l'authentification.");
+          }
+        }
+        
         // Add a timeout to prevent indefinite loading
         const timeoutId = setTimeout(() => {
           console.error("Auth callback timeout - redirecting to login");
