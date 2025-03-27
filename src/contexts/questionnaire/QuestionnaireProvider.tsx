@@ -128,15 +128,3 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     </QuestionnaireContext.Provider>
   );
 };
-
-/**
- * Hook pour utiliser le contexte du questionnaire
- * @returns Le contexte du questionnaire
- */
-export const useQuestionnaire = () => {
-  const context = import("react").useContext(QuestionnaireContext);
-  if (context === undefined) {
-    throw new Error("useQuestionnaire must be used within a QuestionnaireProvider");
-  }
-  return context;
-};
