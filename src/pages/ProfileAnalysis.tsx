@@ -34,6 +34,7 @@ const ProfileAnalysis = () => {
         });
       } else {
         console.log("ProfileAnalysis - Aucune session Supabase active");
+        setDirectSessionUser(null);
       }
     };
     

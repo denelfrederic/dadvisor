@@ -28,8 +28,9 @@ export function useProfileData(user: User | null): ProfileCheckResult {
   useEffect(() => {
     const targetUserId = userIdParam || (user?.id || null);
     
-    console.log("Chargement des données de profil pour l'utilisateur:", targetUserId);
-    console.log("État de l'utilisateur:", user);
+    console.log("useProfileData - Chargement des données de profil pour l'utilisateur:", targetUserId);
+    console.log("useProfileData - État de l'utilisateur:", user);
+    console.log("useProfileData - Données temporaires présentes:", hasTempData());
     
     // Marquer que nous avons tenté de charger les données
     if (!loadAttempted) {

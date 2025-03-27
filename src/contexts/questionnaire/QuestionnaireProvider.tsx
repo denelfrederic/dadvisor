@@ -1,26 +1,33 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle, questions, InvestorProfileAnalysis } from "@/utils/questionnaire";
 import { QuestionnaireContextType, QuestionnaireResponses } from "./types";
 import { useQuestionnaireStorage } from "./hooks/useQuestionnaireStorage";
 import { useQuestionnaireAnalysis } from "./hooks/useQuestionnaireAnalysis";
 import { useQuestionnaireNavigation } from "./hooks/useQuestionnaireNavigation";
 import { useQuestionnaireSaving } from "./hooks/useQuestionnaireSaving";
+import { useQuestionnaireState } from "./hooks/useQuestionnaireState";
 import { toast } from "@/components/ui/use-toast";
 
 const QuestionnaireContext = createContext<QuestionnaireContextType | undefined>(undefined);
 
+/**
+ * Fournisseur du contexte du questionnaire
+ * @param children Composants enfants
+ */
 export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => {
-  // États principaux
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<QuestionnaireResponses>({});
-  const [previousScore, setPreviousScore] = useState(0);
-  const [score, setScore] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [showIntroduction, setShowIntroduction] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
+  // Utiliser le hook d'état pour gérer tous les états du questionnaire
+  const {
+    currentQuestionIndex, setCurrentQuestionIndex,
+    answers, setAnswers,
+    previousScore, setPreviousScore,
+    score, setScore,
+    isComplete, setIsComplete,
+    showAnalysis, setShowAnalysis,
+    showIntroduction, setShowIntroduction,
+    saving, setSaving,
+    hasShownCompletionToast, setHasShownCompletionToast,
+    profileAnalysis, investmentStyleInsights
+  } = useQuestionnaireState();
   
   // Hooks personnalisés
   const { 
@@ -43,7 +50,8 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     setScore,
     setIsComplete,
     setShowIntroduction,
-    setShowAnalysis
+    setShowAnalysis,
+    clearStorage
   });
   
   const {
@@ -58,10 +66,6 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   } = useQuestionnaireSaving({
     setSaving
   });
-  
-  // Valeurs dérivées
-  const profileAnalysis = isComplete ? getInvestorProfileAnalysis(score, answers) : null;
-  const investmentStyleInsights = isComplete ? analyzeInvestmentStyle(answers) : [];
 
   // Charger les données lors du montage initial
   useEffect(() => {
@@ -112,8 +116,6 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   useEffect(() => {
     if (Object.keys(answers).length > 0) {
       saveAnswersToLocalStorage(answers);
-      
-      // Enrichir les réponses avec le texte pour l'analyse
       enrichResponsesWithText(answers);
     }
   }, [answers]);
@@ -123,34 +125,22 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     saveScoreAndCompletionStatus(score, isComplete);
   }, [score, isComplete]);
 
-  // Calculer le score et gérer la complétion du questionnaire
+  // Gestion des notifications de complétion
   useEffect(() => {
-    if (Object.keys(answers).length > 0) {
-      const calculatedScore = calculateRiskScore(answers);
-      setScore(calculatedScore);
-    }
-    
-    if (isComplete && Object.keys(answers).length === questions.length && !hasShownCompletionToast) {
-      const calculatedScore = calculateRiskScore(answers);
-      setScore(calculatedScore);
-      
-      // Afficher un toast de confirmation (une seule fois)
+    if (isComplete && Object.keys(answers).length > 0 && !hasShownCompletionToast) {
       toast({
         title: "Questionnaire terminé !",
-        description: `Votre score de risque est de ${calculatedScore}`,
+        description: `Votre score de risque est de ${score}`,
       });
       
-      // Marquer que le toast a été affiché
       setHasShownCompletionToast(true);
       
-      // Ne pas automatiquement montrer l'analyse si on est sur la page questionnaire
-      // L'utilisateur doit cliquer sur un bouton pour la voir
       const isQuestionnairePage = window.location.pathname.includes("questionnaire");
       if (!isQuestionnairePage) {
         setShowAnalysis(true);
       }
     }
-  }, [isComplete, answers, hasShownCompletionToast]);
+  }, [isComplete, answers, hasShownCompletionToast, score]);
 
   // Réinitialiser le toast lors de la reprise du questionnaire
   useEffect(() => {
@@ -199,6 +189,10 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   );
 };
 
+/**
+ * Hook pour utiliser le contexte du questionnaire
+ * @returns Le contexte du questionnaire
+ */
 export const useQuestionnaire = () => {
   const context = useContext(QuestionnaireContext);
   if (context === undefined) {

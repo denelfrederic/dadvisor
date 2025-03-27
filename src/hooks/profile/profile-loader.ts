@@ -13,25 +13,34 @@ export const fetchProfileData = async ({
   setProfileData,
   setLoading
 }: LoadProfileParams): Promise<void> => {
-  // Double-vérification de l'authentification directement depuis Supabase
-  const { data: sessionData } = await supabase.auth.getSession();
-  const isAuthenticated = !!sessionData.session;
-  
-  // Cas spécial: administrateur visualisant le profil d'un utilisateur spécifique
-  // ou l'utilisateur visualisant son propre profil
-  const targetUserId = userId || (isAuthenticated ? sessionData.session?.user.id : null);
-  
-  console.log("ID utilisateur cible:", targetUserId);
-  console.log("Session courante:", sessionData.session);
-  
   try {
     setLoading(true);
     
+    // Double-vérification de l'authentification directement depuis Supabase
+    const { data: sessionData } = await supabase.auth.getSession();
+    const isAuthenticated = !!sessionData.session;
+    
+    // Cas spécial: administrateur visualisant le profil d'un utilisateur spécifique
+    // ou l'utilisateur visualisant son propre profil
+    const targetUserId = userId || (isAuthenticated ? sessionData.session?.user.id : null);
+    
+    console.log("fetchProfileData - ID utilisateur cible:", targetUserId);
+    console.log("fetchProfileData - Session courante:", sessionData.session);
+    
+    // Log du flux de contrôle pour diagnostic
+    console.log("fetchProfileData - Flux de contrôle: Début du chargement");
+    
     // Vérifier d'abord s'il existe des données temporaires (pour les utilisateurs connectés ou non)
     const tempData = checkForTemporaryData();
+    console.log("fetchProfileData - Données temporaires trouvées:", !!tempData);
+    
+    // Variable pour stocker les données de profil de la base de données
+    let dbProfileData = null;
     
     // Si l'utilisateur est connecté, essayer de récupérer son profil depuis la base de données
     if (targetUserId) {
+      console.log("fetchProfileData - Tentative de récupération du profil depuis la base de données");
+      
       const { data, error } = await supabase
         .from('investment_profiles')
         .select('*')
@@ -40,7 +49,7 @@ export const fetchProfileData = async ({
 
       if (data) {
         // Profil trouvé dans la base de données
-        console.log("Profil trouvé dans la base de données:", data);
+        console.log("fetchProfileData - Profil trouvé dans la base de données:", data);
         
         // Utiliser une assertion de type pour gérer les données JSON
         const profileDataObj = data.profile_data as unknown as {
@@ -49,18 +58,15 @@ export const fetchProfileData = async ({
           answers: Record<string, { optionId: string; value: number }>;
         };
 
-        setProfileData({
+        dbProfileData = {
           score: data.score,
           profileType: data.profile_type,
           analysis: profileDataObj.analysis,
           investmentStyleInsights: profileDataObj.investmentStyleInsights
-        });
-        
-        setLoading(false);
-        return;
+        };
       } else if (error && error.code !== 'PGRST116') {
         // Erreur autre que "no rows returned"
-        console.error("Erreur lors du chargement du profil:", error);
+        console.error("fetchProfileData - Erreur lors du chargement du profil:", error);
         toast({
           variant: "destructive",
           title: "Erreur",
@@ -69,21 +75,23 @@ export const fetchProfileData = async ({
         setLoading(false);
         return;
       }
-      
-      // Si on arrive ici, c'est qu'aucun profil n'a été trouvé pour l'utilisateur connecté
-      console.log("Aucun profil trouvé dans la base de données pour l'utilisateur connecté");
     }
     
-    // Si on n'a pas trouvé de profil dans la base de données, utiliser les données temporaires
-    if (tempData) {
-      console.log("Utilisation des données temporaires de profil");
+    // Décider quelles données utiliser en priorité
+    if (dbProfileData) {
+      console.log("fetchProfileData - Utilisation des données de la base de données");
+      setProfileData(dbProfileData);
+      setLoading(false);
+      return;
+    } else if (tempData) {
+      console.log("fetchProfileData - Utilisation des données temporaires");
       setProfileData(tempData);
       setLoading(false);
       return;
     }
     
     // Aucune donnée trouvée, ni dans la base ni temporaire
-    console.log("Aucun profil trouvé, redirection vers le questionnaire");
+    console.log("fetchProfileData - Aucun profil trouvé, redirection vers le questionnaire");
     toast({
       title: "Profil non trouvé",
       description: "Vous n'avez pas encore créé de profil d'investissement."
@@ -93,7 +101,7 @@ export const fetchProfileData = async ({
     navigate("/questionnaire");
     
   } catch (error) {
-    console.error("Erreur lors de l'analyse du profil:", error);
+    console.error("fetchProfileData - Erreur lors de l'analyse du profil:", error);
     toast({
       variant: "destructive", 
       title: "Erreur",
