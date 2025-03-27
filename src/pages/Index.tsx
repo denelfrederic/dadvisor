@@ -6,7 +6,7 @@ import FeatureCard from "../components/landing/FeatureCard";
 import FeaturesSection from "../components/landing/FeaturesSection";
 import HowItWorksSection from "../components/landing/HowItWorksSection";
 import CTASection from "../components/landing/CTASection";
-import BottomNavbar from "../components/BottomNavbar";
+import Footer from "../components/landing/Footer";
 import { useParallax } from "@/hooks/use-parallax";
 
 const Index = () => {
@@ -20,7 +20,7 @@ const Index = () => {
       <FeaturesSection />
       <HowItWorksSection />
       <CTASection />
-      <BottomNavbar />
+      <Footer />
     </div>
   );
 };
