@@ -214,13 +214,18 @@ const Auth = () => {
   };
 
   /**
-   * Gère la demande de réinitialisation de mot de passe
+   * Gère l'envoi d'un magic link pour la connexion
    */
   const handleResetPassword = async (email: string) => {
     try {
       setAuthError(null);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/auth?reset=true',
+      console.log("Envoi d'un magic link à :", email);
+      
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          emailRedirectTo: window.location.origin + '/auth/callback',
+        }
       });
       
       if (error) {
@@ -228,16 +233,17 @@ const Auth = () => {
       }
       
       toast({
-        title: "Demande envoyée",
-        description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe.",
+        title: "Magic Link envoyé",
+        description: "Vérifiez votre boîte mail pour vous connecter.",
       });
       setShowResetForm(false);
     } catch (error: any) {
-      setAuthError(error.message || "Une erreur s'est produite lors de la demande de réinitialisation.");
+      console.error("Erreur lors de l'envoi du magic link:", error);
+      setAuthError(error.message || "Une erreur s'est produite lors de l'envoi du magic link.");
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message || "Une erreur s'est produite lors de la demande de réinitialisation.",
+        description: error.message || "Une erreur s'est produite lors de l'envoi du magic link.",
       });
     }
   };
@@ -277,12 +283,12 @@ const Auth = () => {
     return <AuthLoading />;
   }
 
-  // Formulaire de réinitialisation de mot de passe
+  // Formulaire d'envoi de magic link
   if (showResetForm) {
     return (
       <AuthLayout 
-        title="Réinitialiser le mot de passe"
-        description="Entrez votre adresse email pour recevoir les instructions de réinitialisation"
+        title="Connexion par Magic Link"
+        description="Cliquez ici pour recevoir un magic link"
         showBackButton
         backButtonAction={() => setShowResetForm(false)}
       >

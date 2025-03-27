@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { AuthError } from "./AuthError";
 import { CardContent } from "@/components/ui/card";
+import { Mail } from "lucide-react";
 
 interface ResetPasswordFormProps {
   onSubmit: (email: string) => Promise<void>;
@@ -40,7 +41,7 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
       </div>
       
       <Button 
-        className="w-full" 
+        className="w-full flex items-center justify-center gap-2" 
         onClick={handleSubmit}
         disabled={isSubmitting}
       >
@@ -53,7 +54,10 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
             Envoi en cours...
           </>
         ) : (
-          "Envoyer les instructions"
+          <>
+            <Mail size={18} />
+            Recevoir un magic link
+          </>
         )}
       </Button>
     </CardContent>
