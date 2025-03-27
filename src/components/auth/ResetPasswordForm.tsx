@@ -28,7 +28,7 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
       setSuccessMessage(null);
       await onSubmit(email);
       setSuccessMessage(`Un magic link a été envoyé à ${email}. Vérifiez votre boîte mail et vos spams.`);
-      console.log(`Magic link demandé pour ${email}, redirection configurée vers la page de callback`);
+      console.log(`Magic link demandé pour ${email}`);
     } catch (error) {
       console.error("Erreur lors de l'envoi du magic link:", error);
     } finally {

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -183,14 +184,27 @@ export function useAuthForm() {
       setAuthError(null);
       console.log("Envoi d'un magic link à :", email);
       
-      // Définir explicitement l'URL de production pour le redirectTo
-      // Utiliser l'URL actuelle mais forcér la redirection vers la page de callback
+      // Obtenir le domaine de l'application
+      // Priorité aux variables d'environnement si elles existent
+      let appDomain;
+      
+      // Récupérer l'URL du navigateur comme fallback
       const currentUrl = window.location.href;
       const urlObject = new URL(currentUrl);
-      const baseUrl = `${urlObject.protocol}//${urlObject.host}`;
       
-      // URL de redirection pour le magic link
-      const redirectUrl = `${baseUrl}/auth/callback`;
+      // Si l'URL contient localhost, il s'agit d'un environnement de développement
+      // Sinon, c'est probablement l'environnement de production
+      if (urlObject.hostname.includes('localhost') || urlObject.hostname.includes('127.0.0.1')) {
+        appDomain = `${urlObject.protocol}//${urlObject.host}`;
+        console.log("URL de développement détectée:", appDomain);
+      } else {
+        // En production, utiliser l'URL courante sans les chemins
+        appDomain = `${urlObject.protocol}//${urlObject.host}`;
+        console.log("URL de production détectée:", appDomain);
+      }
+      
+      // URL de redirection finale pour le magic link
+      const redirectUrl = `${appDomain}/auth/callback`;
       
       console.log(`Magic link configuré pour rediriger vers: ${redirectUrl}`);
       
