@@ -221,10 +221,13 @@ const Auth = () => {
       setAuthError(null);
       console.log("Envoi d'un magic link à :", email);
       
+      // Récupérer l'URL complète actuelle
+      const currentUrl = window.location.origin;
+      
       const { data, error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
-          emailRedirectTo: window.location.origin + '/auth/callback',
+          emailRedirectTo: `${currentUrl}/auth/callback`,
         }
       });
       

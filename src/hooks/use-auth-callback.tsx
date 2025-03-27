@@ -12,7 +12,7 @@ export function useAuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        console.log("Traitement du callback d'authentification OAuth...");
+        console.log("Traitement du callback d'authentification OAuth ou Magic Link...");
         
         // Add a timeout to prevent indefinite loading
         const timeoutId = setTimeout(() => {
@@ -21,7 +21,7 @@ export function useAuthCallback() {
           navigate("/auth");
         }, 15000); // 15 seconds timeout
         
-        // Check the current session to see if the OAuth flow succeeded
+        // Check the current session to see if the OAuth or Magic Link flow succeeded
         const { data, error } = await supabase.auth.getSession();
         
         // Clear the timeout since we got a response
@@ -33,7 +33,7 @@ export function useAuthCallback() {
         }
         
         if (data?.session?.user) {
-          console.log("OAuth callback: User authenticated successfully", data.session.user);
+          console.log("Callback: Utilisateur authentifié avec succès", data.session.user);
           
           // Create user object
           const user = {
@@ -53,16 +53,16 @@ export function useAuthCallback() {
             description: `Bienvenue, ${user.name} !`,
           });
           
-          // Redirect to home page instead of questionnaire
-          console.log("Redirecting to home page after OAuth login");
+          // Redirect to home page
+          console.log("Redirection vers la page d'accueil après authentification");
           navigate("/");
         } else {
-          console.error("OAuth callback: No session found");
+          console.error("Callback: Aucune session trouvée");
           setError("Aucune session trouvée après l'authentification. Veuillez réessayer.");
           navigate("/auth");
         }
       } catch (e: any) {
-        console.error("Error in OAuth callback:", e);
+        console.error("Erreur dans le processus d'authentification:", e);
         setError(e.message || "Une erreur s'est produite durant l'authentification.");
         navigate("/auth");
       }
