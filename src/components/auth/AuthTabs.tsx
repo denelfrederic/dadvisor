@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CardContent, CardFooter } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
 import { SocialLoginButtons } from "./SocialLoginButtons";
@@ -75,15 +75,6 @@ export const AuthTabs = ({
           </TabsContent>
         </Tabs>
         
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-muted-foreground/30"></span>
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-card px-2 text-muted-foreground">ou continuer avec</span>
-          </div>
-        </div>
-        
         <SocialLoginButtons 
           onGoogleLogin={onGoogleLogin}
           onLinkedInLogin={onLinkedInLogin}
@@ -93,19 +84,6 @@ export const AuthTabs = ({
           }}
         />
       </CardContent>
-      <CardFooter className="flex flex-col space-y-4">
-        <div className="text-sm text-center text-muted-foreground">
-          En vous connectant, vous acceptez nos{" "}
-          <a href="#" className="underline hover:text-primary">
-            conditions d'utilisation
-          </a>{" "}
-          et notre{" "}
-          <a href="#" className="underline hover:text-primary">
-            politique de confidentialité
-          </a>
-          .
-        </div>
-      </CardFooter>
     </>
   );
 };

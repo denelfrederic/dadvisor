@@ -37,12 +37,6 @@ export const SocialLoginButtons = ({
             Contacter le support
           </a>
         </Button>
-        
-        <div className="text-center text-sm text-muted-foreground">
-          <a href="/contact" className="underline hover:text-primary">
-            Signaler un problème ou faire un retour
-          </a>
-        </div>
       </div>
     </div>
   );
