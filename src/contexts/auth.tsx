@@ -28,15 +28,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { user, isLoading, setUser } = useAuthStatus();
   const [error, setError] = useState<string | null>(null);
 
-  // Fonction de déconnexion
+  // Fonction de déconnexion améliorée pour résoudre les problèmes en production
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log("Tentative de déconnexion...");
+      
+      // 1. D'abord nettoyer le localStorage pour s'assurer que toutes les données utilisateur sont supprimées
       localStorage.removeItem('user');
+      localStorage.removeItem('dadvisor_user');
+      localStorage.removeItem('supabase.auth.token');
+      
+      // 2. Mettre à jour l'état interne avant l'appel à Supabase 
+      // pour éviter les tentatives d'accès avec une session invalide
       setUser(null);
+      
+      // 3. Appeler la déconnexion Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Erreur Supabase lors de la déconnexion:", error);
+        throw error;
+      }
+      
+      console.log("Déconnexion réussie");
     } catch (e) {
+      console.error('Erreur détaillée lors de la déconnexion:', e);
       setError('Erreur lors de la déconnexion');
-      console.error('Erreur lors de la déconnexion:', e);
+      // Ne pas propager l'erreur pour permettre la navigation
     }
   };
 

@@ -160,6 +160,7 @@ export const getLoggedInUser = async (): Promise<User | null> => {
   } else {
     // S'il n'y a pas de session, s'assurer que le localStorage est nettoyé
     localStorage.removeItem("user");
+    localStorage.removeItem("dadvisor_user");
     return null;
   }
 };
@@ -173,8 +174,23 @@ export const storeUserSession = (user: User): void => {
 
 /**
  * Déconnecte l'utilisateur en supprimant les données de session
+ * Méthode améliorée pour éviter les problèmes en production
  */
 export const logout = async (): Promise<void> => {
-  await supabase.auth.signOut();
+  console.log("Exécution de la fonction de déconnexion utils/auth.ts");
+  
+  // Nettoyer d'abord le localStorage
   localStorage.removeItem("user");
+  localStorage.removeItem("dadvisor_user");
+  localStorage.removeItem("supabase.auth.token");
+  
+  // Ensuite déconnecter via Supabase
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Erreur lors de la déconnexion Supabase:", error);
+    }
+  } catch (error) {
+    console.error("Exception lors de la déconnexion:", error);
+  }
 };
