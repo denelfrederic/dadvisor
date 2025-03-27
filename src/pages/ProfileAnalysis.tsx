@@ -14,11 +14,17 @@ const ProfileAnalysis = () => {
   const { user: authUser } = useAuthStatus();
   const [directSessionUser, setDirectSessionUser] = useState<User | null>(null);
   
+  console.log("ProfileAnalysis - Rendu initial");
+  console.log("ProfileAnalysis - Utilisateur depuis useAuthStatus:", authUser);
+  
   // Double-check authentication directly with Supabase
   useEffect(() => {
     const checkSession = async () => {
+      console.log("ProfileAnalysis - Vérification de la session Supabase");
       const { data } = await supabase.auth.getSession();
+      
       if (data.session) {
+        console.log("ProfileAnalysis - Session Supabase trouvée:", data.session.user.id);
         const sessionUser = data.session.user;
         setDirectSessionUser({
           id: sessionUser.id,
@@ -26,6 +32,8 @@ const ProfileAnalysis = () => {
           name: sessionUser.email?.split('@')[0] || "",
           authProvider: "email" 
         });
+      } else {
+        console.log("ProfileAnalysis - Aucune session Supabase active");
       }
     };
     
@@ -34,6 +42,7 @@ const ProfileAnalysis = () => {
   
   // Use either the auth context user or the direct session user
   const user = authUser || directSessionUser;
+  console.log("ProfileAnalysis - Utilisateur final:", user);
   
   const { 
     loading, 
@@ -42,6 +51,10 @@ const ProfileAnalysis = () => {
     saveProfile, 
     handleRetakeQuestionnaire 
   } = useProfileData(user);
+
+  console.log("ProfileAnalysis - État de chargement:", loading);
+  console.log("ProfileAnalysis - Données de profil:", profileData);
+  console.log("ProfileAnalysis - Données temporaires présentes:", hasTempData);
 
   return (
     <div className="flex flex-col min-h-screen">
