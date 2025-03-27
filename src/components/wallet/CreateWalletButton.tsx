@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 
 interface CreateWalletButtonProps {
@@ -9,6 +9,10 @@ interface CreateWalletButtonProps {
   onClick: () => void;
 }
 
+/**
+ * Bouton de création de coffre numérique
+ * Affiche un dialogue indiquant que la fonctionnalité est en cours de développement
+ */
 const CreateWalletButton = ({ isCreating, onClick }: CreateWalletButtonProps) => {
   const [showDialog, setShowDialog] = useState(false);
   
@@ -33,21 +37,21 @@ const CreateWalletButton = ({ isCreating, onClick }: CreateWalletButtonProps) =>
         Créer un coffre numérique
       </Button>
 
-      <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>En cours de développement</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>En cours de développement</DialogTitle>
+            <DialogDescription>
               Ce n'est pas encore prêt mais si vous avez laissé votre mail en sauvegardant votre profil vous serez prévenu avant les autres !
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={handleCloseDialog}>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={handleCloseDialog}>
               Compris
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

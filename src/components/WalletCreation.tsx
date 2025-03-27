@@ -6,9 +6,13 @@ import WalletInfo from "./wallet/WalletInfo";
 import CreateWalletButton from "./wallet/CreateWalletButton";
 
 interface WalletCreationProps {
-  onWalletCreated: (walletAddress: string) => void;
+  onWalletCreated?: (walletAddress: string) => void;
 }
 
+/**
+ * Composant de création de coffre numérique (wallet)
+ * Affiche les informations sur le coffre et un bouton pour en créer un
+ */
 const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
   const [isCreating, setIsCreating] = useState(false);
   

@@ -8,6 +8,10 @@ import { AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
 
+/**
+ * Composant d'affichage de la progression du questionnaire
+ * Gère l'affichage des questions, la barre de progression et le message de complétion
+ */
 const QuestionnaireProgress = () => {
   const { 
     currentQuestionIndex, 
@@ -29,18 +33,27 @@ const QuestionnaireProgress = () => {
 
   // Effet pour gérer l'affichage du message de complétion et la redirection
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
     if (isComplete && !showCompletionMessage) {
       console.log("Questionnaire complet, affichage du message de complétion");
       setShowCompletionMessage(true);
       
       // Redirection après délai
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         console.log("Redirection vers l'analyse après 2 secondes");
         setShowAnalysis(true);
+        // Réinitialiser l'état du message de complétion après la redirection
+        setShowCompletionMessage(false);
       }, 2000);
-      
-      return () => clearTimeout(timer);
     }
+    
+    // Nettoyage du timer si le composant est démonté ou si isComplete change
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [isComplete, setShowAnalysis, showCompletionMessage]);
 
   // Si le message de complétion doit être affiché
