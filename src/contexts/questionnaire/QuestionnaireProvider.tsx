@@ -6,7 +6,7 @@ import { useQuestionnaireAnalysis } from "./hooks/useQuestionnaireAnalysis";
 import { useQuestionnaireNavigation } from "./hooks/useQuestionnaireNavigation";
 import { useQuestionnaireSaving } from "./hooks/useQuestionnaireSaving";
 import { useQuestionnaireState } from "./hooks/useQuestionnaireState";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const QuestionnaireContext = createContext<QuestionnaireContextType | undefined>(undefined);
 
@@ -128,17 +128,9 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   // Gestion des notifications de complétion
   useEffect(() => {
     if (isComplete && Object.keys(answers).length > 0 && !hasShownCompletionToast) {
-      toast({
-        title: "Questionnaire terminé !",
-        description: `Votre score de risque est de ${score}`,
-      });
+      toast("Questionnaire terminé ! Votre score de risque est de " + score);
       
       setHasShownCompletionToast(true);
-      
-      const isQuestionnairePage = window.location.pathname.includes("questionnaire");
-      if (!isQuestionnairePage) {
-        setShowAnalysis(true);
-      }
     }
   }, [isComplete, answers, hasShownCompletionToast, score]);
 

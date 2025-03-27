@@ -1,12 +1,13 @@
 
 import { questions } from "@/utils/questionnaire";
 import { useQuestionnaire } from "@/contexts/questionnaire";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
-import { AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Composant d'affichage de la progression du questionnaire
@@ -24,7 +25,9 @@ const QuestionnaireProgress = () => {
   } = useQuestionnaire();
   
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
   
   // Vérification que currentQuestionIndex est valide
   const safeIndex = Math.min(Math.max(0, currentQuestionIndex || 0), questions.length - 1);
@@ -38,13 +41,32 @@ const QuestionnaireProgress = () => {
     if (isComplete && !showCompletionMessage) {
       console.log("Questionnaire complet, affichage du message de complétion");
       setShowCompletionMessage(true);
+      setRedirectAttempted(false);
       
       // Redirection après délai
       timer = setTimeout(() => {
         console.log("Redirection vers l'analyse après 2 secondes");
-        setShowAnalysis(true);
-        // Réinitialiser l'état du message de complétion après la redirection
-        setShowCompletionMessage(false);
+        setRedirectAttempted(true);
+        
+        try {
+          // Double méthode de redirection pour garantir la fiabilité
+          setShowAnalysis(true);
+          
+          // Si après 500ms l'analyse n'est pas affichée, forcer la navigation
+          setTimeout(() => {
+            if (showCompletionMessage) {
+              console.log("Redirection secondaire vers profile-analysis");
+              navigate("/profile-analysis");
+              // Réinitialiser l'état du message de complétion après la redirection
+              setShowCompletionMessage(false);
+            }
+          }, 500);
+        } catch (error) {
+          console.error("Erreur lors de la redirection:", error);
+          // En cas d'erreur, forcer la navigation
+          navigate("/profile-analysis");
+          setShowCompletionMessage(false);
+        }
       }, 2000);
     }
     
@@ -54,7 +76,28 @@ const QuestionnaireProgress = () => {
         clearTimeout(timer);
       }
     };
-  }, [isComplete, setShowAnalysis, showCompletionMessage]);
+  }, [isComplete, setShowAnalysis, showCompletionMessage, navigate]);
+
+  // Effet de secours si le message persiste trop longtemps
+  useEffect(() => {
+    let backupTimer: NodeJS.Timeout;
+    
+    if (showCompletionMessage && redirectAttempted) {
+      // Si après 3 secondes on est toujours sur le message de complétion, forcer la navigation
+      backupTimer = setTimeout(() => {
+        console.log("Mécanisme de secours activé pour la redirection");
+        toast.info("Redirection en cours...");
+        navigate("/profile-analysis");
+        setShowCompletionMessage(false);
+      }, 3000);
+    }
+    
+    return () => {
+      if (backupTimer) {
+        clearTimeout(backupTimer);
+      }
+    };
+  }, [showCompletionMessage, redirectAttempted, navigate]);
 
   // Si le message de complétion doit être affiché
   if (showCompletionMessage) {
@@ -69,6 +112,15 @@ const QuestionnaireProgress = () => {
         <p className="text-xs sm:text-sm text-muted-foreground mt-2">
           Vous allez être redirigé vers l'analyse détaillée...
         </p>
+        
+        {redirectAttempted && (
+          <button 
+            onClick={() => navigate("/profile-analysis")} 
+            className="mt-4 text-sm text-primary underline"
+          >
+            Cliquer ici si la redirection ne se fait pas automatiquement
+          </button>
+        )}
       </motion.div>
     );
   }
