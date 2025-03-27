@@ -6,6 +6,7 @@ import { Portfolio } from "@/components/PortfolioCard";
 import { getPortfolios, getRecommendedPortfolio, isPortfolioMoreRisky } from "@/utils/portfolios";
 import { QuestionnaireResponses } from "@/utils/questionnaire";
 import { Button } from "@/components/ui/button";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 
 /**
  * Interface pour le retour du hook usePortfolioSelection
@@ -40,6 +41,9 @@ export const usePortfolioSelection = (
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsPortfolio, setDetailsPortfolio] = useState<Portfolio | null>(null);
   
+  // Récupération de l'état d'authentification
+  const { user } = useAuthStatus();
+  
   const navigate = useNavigate();
   
   // Afficher les données reçues pour le débogage
@@ -72,31 +76,39 @@ export const usePortfolioSelection = (
         const portfolioData = getPortfolios();
         setPortfolios(portfolioData);
         
-        // Détermination du portefeuille recommandé en fonction du score de risque et des réponses au questionnaire
-        const recommendedId = getRecommendedPortfolio(riskScore, questionnaireAnswers);
-        console.log("Portefeuille recommandé:", recommendedId, "Score:", riskScore);
-        
-        setRecommendedPortfolioId(recommendedId);
-        setSelectedPortfolioId(recommendedId);
-        
-        // Afficher une notification pour le portefeuille recommandé SEULEMENT si elle n'a pas déjà été affichée
-        const hasSeenRecommendation = localStorage.getItem('dadvisor_recommendation_shown');
-        
-        if (!hasSeenRecommendation) {
-          const recommendedPortfolio = portfolioData.find(p => p.id === recommendedId);
-          if (recommendedPortfolio) {
-            const isWarEconomy = recommendedId === "wareconomy";
-            
-            toast({
-              title: "Recommandation",
-              description: isWarEconomy 
-                ? `Basé sur votre préférence pour les investissements en France/Europe, nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
-                : `Basé sur votre profil de risque (${riskScore}), nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
-            });
-            
-            // Marquer la recommandation comme ayant été affichée
-            localStorage.setItem('dadvisor_recommendation_shown', 'true');
+        // Vérifier si l'utilisateur est connecté avant de déterminer et afficher un portefeuille recommandé
+        if (user) {
+          // Détermination du portefeuille recommandé en fonction du score de risque et des réponses au questionnaire
+          const recommendedId = getRecommendedPortfolio(riskScore, questionnaireAnswers);
+          console.log("Portefeuille recommandé:", recommendedId, "Score:", riskScore);
+          
+          setRecommendedPortfolioId(recommendedId);
+          setSelectedPortfolioId(recommendedId);
+          
+          // Afficher une notification pour le portefeuille recommandé SEULEMENT si elle n'a pas déjà été affichée
+          const hasSeenRecommendation = localStorage.getItem('dadvisor_recommendation_shown');
+          
+          if (!hasSeenRecommendation) {
+            const recommendedPortfolio = portfolioData.find(p => p.id === recommendedId);
+            if (recommendedPortfolio) {
+              const isWarEconomy = recommendedId === "wareconomy";
+              
+              toast({
+                title: "Recommandation",
+                description: isWarEconomy 
+                  ? `Basé sur votre préférence pour les investissements en France/Europe, nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
+                  : `Basé sur votre profil de risque (${riskScore}), nous vous recommandons le portefeuille ${recommendedPortfolio.name}`
+              });
+              
+              // Marquer la recommandation comme ayant été affichée
+              localStorage.setItem('dadvisor_recommendation_shown', 'true');
+            }
           }
+        } else {
+          // Si utilisateur non connecté, ne pas définir de portefeuille recommandé
+          console.log("Utilisateur non connecté, aucune recommandation automatique");
+          setRecommendedPortfolioId(null);
+          setSelectedPortfolioId(null);
         }
       } catch (error) {
         console.error("Error fetching portfolios:", error);
@@ -111,7 +123,7 @@ export const usePortfolioSelection = (
     };
     
     fetchPortfolios();
-  }, [riskScore, questionnaireAnswers]);
+  }, [riskScore, questionnaireAnswers, user]);
   
   /**
    * Gère la sélection d'un portefeuille par l'utilisateur
@@ -153,6 +165,23 @@ export const usePortfolioSelection = (
    * Gère la validation et le passage à l'étape suivante
    */
   const handleProceed = () => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      // Si l'utilisateur n'est pas connecté, le rediriger vers la page d'authentification
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour continuer et sauvegarder votre sélection."
+      });
+      
+      // Stockage temporaire de l'ID du portefeuille sélectionné avant la redirection
+      if (selectedPortfolioId) {
+        sessionStorage.setItem('temp_selected_portfolio', selectedPortfolioId);
+      }
+      
+      navigate("/auth");
+      return;
+    }
+    
     if (selectedPortfolioId) {
       // Vérifie si l'utilisateur a sélectionné un portefeuille plus risqué que celui recommandé
       if (recommendedPortfolioId) {
