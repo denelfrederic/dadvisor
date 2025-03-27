@@ -83,7 +83,6 @@ const Navbar = () => {
           <NavLink to="/" label="Accueil" currentPath={location.pathname} />
           <NavLink to="/questionnaire" label="Questionnaire" currentPath={location.pathname} />
           <NavLink to="/portfolios" label="Portefeuilles" currentPath={location.pathname} />
-          <NavLink to="/agent-ia" label={<span className="whitespace-nowrap">Agent IA</span>} currentPath={location.pathname} />
           <NavLink to="/wallet" label={<span className="whitespace-nowrap">Mon coffre</span>} currentPath={location.pathname} />
           <NavLink to="/contact" label="Contact" currentPath={location.pathname} />
           
