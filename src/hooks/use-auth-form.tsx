@@ -139,11 +139,14 @@ export function useAuthForm() {
       setAuthError(null);
       setIsLoading(prev => ({ ...prev, [provider]: true }));
       
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log(`Redirection OAuth configurée vers: ${redirectUrl}`);
+      
       if (provider === "google") {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/auth/callback`
+            redirectTo: redirectUrl
           }
         });
         
@@ -153,7 +156,7 @@ export function useAuthForm() {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'linkedin_oidc',
           options: {
-            redirectTo: `${window.location.origin}/auth/callback`
+            redirectTo: redirectUrl
           }
         });
         
@@ -181,13 +184,16 @@ export function useAuthForm() {
       setAuthError(null);
       console.log("Envoi d'un magic link à :", email);
       
-      // Récupérer l'URL complète actuelle
-      const currentUrl = window.location.origin;
+      // Récupérer l'URL complète actuelle du navigateur
+      const currentOrigin = window.location.origin;
+      const redirectUrl = `${currentOrigin}/auth/callback`;
+      
+      console.log(`Magic link configuré pour rediriger vers: ${redirectUrl}`);
       
       const { data, error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
-          emailRedirectTo: `${currentUrl}/auth/callback`,
+          emailRedirectTo: redirectUrl,
         }
       });
       

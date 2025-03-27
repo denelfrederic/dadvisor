@@ -13,6 +13,7 @@ export function useAuthCallback() {
     const handleCallback = async () => {
       try {
         console.log("Traitement du callback d'authentification OAuth ou Magic Link...");
+        console.log("URL actuelle:", window.location.href);
         
         // Add a timeout to prevent indefinite loading
         const timeoutId = setTimeout(() => {

@@ -15,11 +15,14 @@ interface ResetPasswordFormProps {
 export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProps) => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
+      setSuccessMessage(null);
       await onSubmit(email);
+      setSuccessMessage(`Un magic link a été envoyé à ${email}. Vérifiez votre boîte mail.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -28,6 +31,12 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
   return (
     <CardContent className="space-y-4">
       <AuthError error={authError} />
+      
+      {successMessage && (
+        <div className="bg-green-50 text-green-800 p-3 rounded-md border border-green-200">
+          {successMessage}
+        </div>
+      )}
       
       <div className="space-y-2">
         <Label htmlFor="reset-email">Adresse email</Label>
