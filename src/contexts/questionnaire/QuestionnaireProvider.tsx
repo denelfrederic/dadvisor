@@ -1,14 +1,13 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { QuestionnaireContextType, QuestionnaireResponses } from "./types";
+import { ReactNode } from "react";
+import { QuestionnaireContext } from "./context";
+import { useQuestionnaireState } from "./hooks/useQuestionnaireState";
 import { useQuestionnaireStorage } from "./hooks/useQuestionnaireStorage";
 import { useQuestionnaireAnalysis } from "./hooks/useQuestionnaireAnalysis";
 import { useQuestionnaireNavigation } from "./hooks/useQuestionnaireNavigation";
 import { useQuestionnaireSaving } from "./hooks/useQuestionnaireSaving";
-import { useQuestionnaireState } from "./hooks/useQuestionnaireState";
-import { toast } from "sonner";
-
-const QuestionnaireContext = createContext<QuestionnaireContextType | undefined>(undefined);
+import { useQuestionnaireEffects } from "./hooks/useQuestionnaireEffects";
+import { useQuestionnaireInitializer } from "./hooks/useQuestionnaireInitializer";
 
 /**
  * Fournisseur du contexte du questionnaire
@@ -29,7 +28,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     profileAnalysis, investmentStyleInsights
   } = useQuestionnaireState();
   
-  // Hooks personnalisés
+  // Hooks personnalisés pour les différentes fonctionnalités
   const { 
     loadStoredData, 
     saveAnswersToLocalStorage, 
@@ -67,79 +66,28 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     setSaving
   });
 
-  // Charger les données lors du montage initial
-  useEffect(() => {
-    try {
-      // Vérifier si on est sur la page du questionnaire (pathname contient "questionnaire")
-      const isQuestionnairePage = window.location.pathname.includes("questionnaire");
-      console.log("Chargement des données - Page questionnaire:", isQuestionnairePage);
-      
-      const { savedAnswers, savedScore, savedComplete } = loadStoredData();
-      
-      if (savedAnswers && Object.keys(savedAnswers).length > 0) {
-        console.log("Chargement des réponses sauvegardées:", Object.keys(savedAnswers).length, "réponses");
-        setAnswers(savedAnswers);
-        
-        // Détermine si on doit montrer l'introduction (seulement si aucune réponse)
-        if (Object.keys(savedAnswers).length > 0) {
-          setShowIntroduction(false);
-        }
-      }
-      
-      if (savedScore !== null) {
-        console.log("Chargement du score sauvegardé:", savedScore);
-        setScore(savedScore);
-      }
-      
-      if (savedComplete !== null) {
-        console.log("Chargement de l'état de complétion:", savedComplete);
-        setIsComplete(savedComplete);
-        
-        // Si c'est la page du questionnaire, afficher l'introduction plutôt que l'analyse
-        if (savedComplete && !isQuestionnairePage) {
-          setShowAnalysis(true);
-          setShowIntroduction(false);
-        } else if (isQuestionnairePage) {
-          // Sur la page questionnaire, on priorise l'affichage du questionnaire
-          setShowAnalysis(false);
-          setShowIntroduction(Object.keys(savedAnswers || {}).length === 0);
-        }
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des données:", error);
-      // En cas d'erreur, réinitialiser pour éviter un état incohérent
-      clearStorage();
-    }
-  }, []);
+  // Initialisation des données
+  useQuestionnaireInitializer({
+    setAnswers,
+    setScore,
+    setIsComplete,
+    setShowAnalysis,
+    setShowIntroduction,
+    loadStoredData,
+    clearStorage
+  });
 
-  // Sauvegarder les réponses dans le localStorage
-  useEffect(() => {
-    if (Object.keys(answers).length > 0) {
-      saveAnswersToLocalStorage(answers);
-      enrichResponsesWithText(answers);
-    }
-  }, [answers]);
-
-  // Sauvegarder le score et l'état de complétion
-  useEffect(() => {
-    saveScoreAndCompletionStatus(score, isComplete);
-  }, [score, isComplete]);
-
-  // Gestion des notifications de complétion
-  useEffect(() => {
-    if (isComplete && Object.keys(answers).length > 0 && !hasShownCompletionToast) {
-      toast("Questionnaire terminé ! Votre score de risque est de " + score);
-      
-      setHasShownCompletionToast(true);
-    }
-  }, [isComplete, answers, hasShownCompletionToast, score]);
-
-  // Réinitialiser le toast lors de la reprise du questionnaire
-  useEffect(() => {
-    if (!isComplete) {
-      setHasShownCompletionToast(false);
-    }
-  }, [isComplete]);
+  // Gestion des effets secondaires
+  useQuestionnaireEffects({
+    answers,
+    score,
+    isComplete,
+    hasShownCompletionToast,
+    setHasShownCompletionToast,
+    saveAnswersToLocalStorage,
+    saveScoreAndCompletionStatus,
+    enrichResponsesWithText
+  });
 
   // Fonction pour envelopper saveInvestmentProfile avec les arguments corrects
   const wrappedSaveInvestmentProfile = () => {
@@ -186,7 +134,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
  * @returns Le contexte du questionnaire
  */
 export const useQuestionnaire = () => {
-  const context = useContext(QuestionnaireContext);
+  const context = import("react").useContext(QuestionnaireContext);
   if (context === undefined) {
     throw new Error("useQuestionnaire must be used within a QuestionnaireProvider");
   }
