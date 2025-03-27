@@ -184,13 +184,18 @@ export function useAuthForm() {
       setAuthError(null);
       console.log("Envoi d'un magic link à :", email);
       
+      // Détecter l'URL de production
       // Récupérer l'URL complète actuelle du navigateur
-      const currentOrigin = window.location.origin;
-      // Éviter d'utiliser localhost en production
-      const baseRedirectUrl = currentOrigin.includes('localhost') ? 
-        'https://9c4e07df-ed89-470d-9701-f1c96edef3d7.lovableproject.com' : 
-        currentOrigin;
-      const redirectUrl = `${baseRedirectUrl}/auth/callback`;
+      const currentUrl = window.location.href;
+      
+      // Extraire le domaine et le protocole (https://example.com ou http://localhost:5173)
+      const urlObject = new URL(currentUrl);
+      const baseUrl = `${urlObject.protocol}//${urlObject.host}`;
+      
+      console.log(`URL de base pour la redirection: ${baseUrl}`);
+      
+      // URL de redirection pour le magic link
+      const redirectUrl = `${baseUrl}/auth/callback`;
       
       console.log(`Magic link configuré pour rediriger vers: ${redirectUrl}`);
       

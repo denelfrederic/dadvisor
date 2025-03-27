@@ -30,7 +30,7 @@ export function useAuthCallback() {
           });
           
           if (errorCode === 'otp_expired') {
-            throw new Error("Le lien de connexion a expiré. Veuillez demander un nouveau lien.");
+            throw new Error("Le lien de connexion a expiré. Veuillez demander un nouveau magic link.");
           } else {
             throw new Error(errorDescription || "Une erreur s'est produite durant l'authentification.");
           }
