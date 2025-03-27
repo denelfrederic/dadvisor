@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { useRef } from "react";
+import { useAuthStatus } from "@/hooks/use-auth-status";
+import { useHasProfile } from "@/hooks/use-has-profile";
 
 /**
  * Interface pour les propriétés du composant HeroSection
@@ -20,6 +22,19 @@ interface HeroSectionProps {
 const HeroSection = ({
   parallaxOffset
 }: HeroSectionProps) => {
+  const { user } = useAuthStatus();
+  const { hasProfile, isLoading } = useHasProfile();
+  
+  const getButtonText = () => {
+    if (!user) return "Découvrir mon profil";
+    if (isLoading) return "Chargement...";
+    return hasProfile ? "Voir mon profil d'investisseur" : "Découvrir mon profil";
+  };
+
+  const getDestination = () => {
+    if (!user) return "/auth";
+    return hasProfile ? "/profile-analysis" : "/questionnaire";
+  };
   
   // Fonction pour défiler vers la section des fonctionnalités
   const scrollToFeatures = () => {
@@ -88,8 +103,12 @@ const HeroSection = ({
               transition={{ duration: 0.6, delay: 0.5 }} 
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Button size="lg" asChild>
-                <Link to="/questionnaire">Découvrir mon profil</Link>
+              <Button 
+                size="lg" 
+                asChild 
+                disabled={isLoading}
+              >
+                <Link to={getDestination()}>{getButtonText()}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/portfolios">Explorer les portefeuilles</Link>
