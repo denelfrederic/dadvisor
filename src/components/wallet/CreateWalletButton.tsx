@@ -38,7 +38,7 @@ const CreateWalletButton = ({ isCreating, onClick }: CreateWalletButtonProps) =>
           <AlertDialogHeader>
             <AlertDialogTitle>En cours de développement</AlertDialogTitle>
             <AlertDialogDescription>
-              Ce n'est pas encore prêt mais si vous créez un compte pour sauvegarder votre profil d'investisseur vous serez les premiers prévenus.
+              Ce n'est pas encore prêt mais si vous avez laissé votre mail en sauvegardant votre profil vous serez prévenu avant les autres !
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
