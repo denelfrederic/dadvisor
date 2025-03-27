@@ -1,4 +1,3 @@
-
 /**
  * Utilitaires pour l'authentification des utilisateurs
  * Gère les connexions via Google, LinkedIn, et Email/Password
@@ -174,23 +173,72 @@ export const storeUserSession = (user: User): void => {
 
 /**
  * Déconnecte l'utilisateur en supprimant les données de session
- * Méthode améliorée pour éviter les problèmes en production
+ * Méthode entièrement revue pour une robustesse maximale en production
  */
 export const logout = async (): Promise<void> => {
   console.log("Exécution de la fonction de déconnexion utils/auth.ts");
   
-  // Nettoyer d'abord le localStorage
-  localStorage.removeItem("user");
-  localStorage.removeItem("dadvisor_user");
-  localStorage.removeItem("supabase.auth.token");
+  // 1. Identifier toutes les clés potentiellement liées à l'authentification
+  const keysToRemove = [
+    'user', 
+    'dadvisor_user', 
+    'supabase.auth.token',
+    'sb-zbiyxrzbqisamabxkeqg-auth-token'
+  ];
   
-  // Ensuite déconnecter via Supabase
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Erreur lors de la déconnexion Supabase:", error);
+  // 2. Nettoyer systématiquement localStorage et sessionStorage
+  keysToRemove.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`Erreur lors de la suppression de ${key}:`, e);
     }
-  } catch (error) {
-    console.error("Exception lors de la déconnexion:", error);
+  });
+  
+  // 3. Rechercher et supprimer tous les éléments liés à Supabase
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('supabase') || key.includes('sb-'))) {
+        localStorage.removeItem(key);
+      }
+    }
+    
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && (key.includes('supabase') || key.includes('sb-'))) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  } catch (e) {
+    console.warn("Erreur lors de la suppression des clés Supabase:", e);
   }
+  
+  // 4. Appeler l'API Supabase avec gestion d'erreur robuste
+  try {
+    // Définir un timeout pour éviter que l'attente ne soit trop longue
+    const signOutPromise = supabase.auth.signOut();
+    const timeoutPromise = new Promise<void>((resolve) => {
+      setTimeout(() => resolve(), 3000);
+    });
+    
+    // Race entre la déconnexion et un timeout de 3 secondes
+    await Promise.race([signOutPromise, timeoutPromise]);
+    
+    console.log("Déconnexion Supabase terminée (avec ou sans succès)");
+  } catch (error) {
+    console.error("Exception lors de la déconnexion Supabase:", error);
+    // Continuer malgré l'erreur
+  }
+  
+  // 5. Nettoyage final pour s'assurer que tout est bien supprimé
+  keysToRemove.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch (e) {
+      // Ignorer les erreurs à cette étape
+    }
+  });
 };

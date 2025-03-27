@@ -33,24 +33,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Tentative de déconnexion...");
       
-      // 1. D'abord nettoyer le localStorage pour s'assurer que toutes les données utilisateur sont supprimées
-      localStorage.removeItem('user');
-      localStorage.removeItem('dadvisor_user');
-      localStorage.removeItem('supabase.auth.token');
+      // 1. Nettoyer TOUS les éléments de stockage local utilisateur
+      // Méthode défensive: supprimer tout élément susceptible de contenir des infos de session
+      const keysToRemove = [
+        'user', 
+        'dadvisor_user', 
+        'supabase.auth.token',
+        'sb-zbiyxrzbqisamabxkeqg-auth-token'
+      ];
       
-      // 2. Mettre à jour l'état interne avant l'appel à Supabase 
-      // pour éviter les tentatives d'accès avec une session invalide
-      setUser(null);
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (e) {
+          console.warn(`Erreur lors de la suppression de ${key}:`, e);
+        }
+      });
       
-      // 3. Appeler la déconnexion Supabase
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Erreur Supabase lors de la déconnexion:", error);
-        throw error;
+      // 2. Forcer l'effacement de tout le localStorage et sessionStorage lié à Supabase
+      try {
+        // Identifie et supprime tous les éléments qui pourraient être liés à Supabase
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-'))) {
+            localStorage.removeItem(key);
+          }
+        }
+        
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('sb-'))) {
+            sessionStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        console.warn("Erreur lors de la suppression des clés Supabase:", e);
       }
       
-      console.log("Déconnexion réussie");
+      // 3. Mettre à jour l'état interne AVANT l'appel à Supabase
+      setUser(null);
+      
+      // 4. Appeler la déconnexion Supabase avec un délai de timeout
+      const timeoutPromise = new Promise<{error: Error | null}>((resolve) => {
+        setTimeout(() => resolve({error: null}), 2000);
+      });
+      
+      // Race entre la déconnexion Supabase et un timeout
+      const result = await Promise.race([
+        supabase.auth.signOut(),
+        timeoutPromise
+      ]);
+      
+      if (result.error) {
+        console.error("Erreur Supabase lors de la déconnexion:", result.error);
+        // On ne lance pas l'erreur, on continue
+      }
+      
+      console.log("Déconnexion réussie côté client");
+      
+      // 5. Dernier nettoyage après signOut pour s'assurer que tout est propre
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (e) {
+          // Ignorer les erreurs ici
+        }
+      });
+      
     } catch (e) {
       console.error('Erreur détaillée lors de la déconnexion:', e);
       setError('Erreur lors de la déconnexion');
