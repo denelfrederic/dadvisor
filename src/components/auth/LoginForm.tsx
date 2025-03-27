@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -65,7 +66,7 @@ export const LoginForm = ({ onSubmit, onResetPassword, isLoading, authError }: L
                   className="text-dadvisor-blue hover:underline"
                   onClick={onResetPassword}
                 >
-                  Connexion par magic link
+                  J'ai oublié mon mot de passe
                 </button>
               </div>
               <FormMessage />

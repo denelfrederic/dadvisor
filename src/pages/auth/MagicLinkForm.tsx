@@ -12,7 +12,7 @@ interface MagicLinkFormProps {
 export const MagicLinkForm = ({ authError, onSubmit, onBack }: MagicLinkFormProps) => {
   return (
     <AuthLayout 
-      title="Connexion par Magic Link"
+      title="J'ai oublié mon mot de passe"
       description="Cliquez ici pour recevoir un magic link"
       showBackButton
       backButtonAction={onBack}
