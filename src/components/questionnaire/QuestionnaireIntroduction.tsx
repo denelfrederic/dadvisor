@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface QuestionnaireIntroductionProps {
   onStart: () => void;
@@ -14,44 +15,92 @@ interface QuestionnaireIntroductionProps {
  */
 const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) => {
   const [isClicked, setIsClicked] = useState(false);
+  const navigate = useNavigate();
   
   // Effet pour suivre l'état du clic et éviter les clics multiples
   useEffect(() => {
     if (isClicked) {
       const timer = setTimeout(() => {
         setIsClicked(false);
-      }, 2000);
+      }, 3000); // Augmenté à 3 secondes pour éviter les clics accidentels multiples
       
       return () => clearTimeout(timer);
     }
   }, [isClicked]);
   
-  // Fonction pour gérer le clic avec un log de débogage
+  // Fonction pour gérer le clic avec un log de débogage et fallbacks
   const handleStartClick = () => {
-    if (isClicked) return; // Éviter les clics multiples
+    if (isClicked) {
+      console.log("Tentative de double-clic ignorée");
+      return; // Éviter les clics multiples
+    }
     
-    console.log("Bouton commencer cliqué - Tentative de démarrage");
+    console.log("⭐ Bouton commencer cliqué - Tentative de démarrage");
     setIsClicked(true);
     
-    // Notification visible pour l'utilisateur et feedback tactile
-    toast.info("Démarrage du questionnaire...");
+    // Notification visible pour l'utilisateur
+    toast.success("Démarrage du questionnaire...");
     
-    // Stocker l'intention de démarrer dans le localStorage pour redondance
-    localStorage.setItem('questionnaire_start_intent', 'true');
+    // Stocker l'état dans localStorage pour forcer l'interface
+    try {
+      localStorage.setItem('questionnaire_started', 'true');
+      localStorage.setItem('show_introduction', 'false');
+      console.log("✅ État stocké dans localStorage: questionnaire_started=true, show_introduction=false");
+    } catch (error) {
+      console.error("❌ Erreur lors du stockage dans localStorage:", error);
+    }
     
-    // Appel explicite de la fonction onStart après un court délai
-    setTimeout(() => {
+    // Méthode 1: Appel direct de la fonction onStart
+    try {
       if (typeof onStart === 'function') {
-        console.log("Exécution de la fonction onStart");
-        // Double call pour garantir l'exécution (bug potentiel avec React)
+        console.log("🔄 Appel de onStart() - méthode 1");
         onStart();
-        // Second call après un court délai pour s'assurer que l'état est mis à jour
-        setTimeout(() => onStart(), 50);
       } else {
-        console.error("La fonction onStart n'est pas définie correctement");
-        toast.error("Erreur de démarrage. Veuillez rafraîchir la page.");
+        console.error("❌ onStart n'est pas une fonction - méthode 1");
       }
-    }, 100);
+    } catch (error) {
+      console.error("❌ Erreur lors de l'appel de onStart() - méthode 1:", error);
+    }
+    
+    // Méthode 2: Appel différé (timeout) pour s'assurer que le state a été mis à jour
+    setTimeout(() => {
+      try {
+        if (typeof onStart === 'function') {
+          console.log("🔄 Appel de onStart() - méthode 2 (timeout)");
+          onStart();
+        } else {
+          console.error("❌ onStart n'est pas une fonction - méthode 2");
+        }
+      } catch (error) {
+        console.error("❌ Erreur lors de l'appel de onStart() - méthode 2:", error);
+      }
+    }, 300);
+    
+    // Méthode 3: Fallback - forcer la navigation après un délai
+    setTimeout(() => {
+      // Vérifier si localStorage indique toujours l'introduction
+      const stillShowingIntro = localStorage.getItem('show_introduction') !== 'false';
+      
+      if (stillShowingIntro) {
+        console.log("⚠️ L'introduction est toujours affichée après le délai - activation du fallback");
+        try {
+          // Forcer la navigation programmatique comme dernier recours
+          navigate("/questionnaire", { replace: true, state: { forceStart: true } });
+          console.log("✅ Navigation forcée vers /questionnaire");
+          
+          // Réexécution de onStart comme dernier recours
+          if (typeof onStart === 'function') {
+            console.log("🔄 Appel de onStart() - méthode 3 (fallback)");
+            onStart();
+          }
+        } catch (error) {
+          console.error("❌ Erreur lors de la navigation forcée:", error);
+          // Ultime solution - rafraîchir la page
+          toast.error("Problème de démarrage. Tentative de rechargement...");
+          window.location.href = "/questionnaire?start=true";
+        }
+      }
+    }, 1000);
   };
 
   return (

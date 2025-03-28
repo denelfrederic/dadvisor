@@ -9,6 +9,7 @@ import BottomNavbar from "@/components/BottomNavbar";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useLocation, useNavigate } from "react-router-dom";
 
 /**
  * Main content component for the questionnaire
@@ -16,47 +17,89 @@ import { toast } from "sonner";
 const QuestionnaireContent = () => {
   const { showAnalysis, showIntroduction, setShowIntroduction } = useQuestionnaire();
   const [forceRender, setForceRender] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Fonction pour démarrer le questionnaire avec gestion d'erreur
+  // Fonction pour démarrer le questionnaire avec gestion d'erreur et logging
   const handleStartQuestionnaire = () => {
     try {
-      console.log("Démarrage du questionnaire depuis QuestionnaireContent");
+      console.log("🚀 Démarrage du questionnaire depuis QuestionnaireContent");
       
       // Utiliser le toast pour une notification visible
-      toast.success("Questionnaire démarré");
+      toast.success("Questionnaire démarré", {
+        id: "questionnaire-started", // ID unique pour éviter les duplications
+        duration: 3000
+      });
       
-      // Forcer un rendu et un changement d'état
+      // Stocker dans localStorage pour persistance et système de fallback
       localStorage.setItem('questionnaire_started', 'true');
+      localStorage.setItem('show_introduction', 'false');
       
-      // Définir explicitement à false avec callback pour garantir l'exécution
+      // Définir explicitement à false avec console.log pour traçage
+      console.log("État avant mise à jour - showIntroduction:", showIntroduction);
       setShowIntroduction(false);
-      console.log("showIntroduction défini à false");
+      console.log("✅ showIntroduction défini à false");
       
-      // Forcer un nouveau rendu après l'état mis à jour
+      // Forcer un nouveau rendu immédiatement
+      setForceRender(prev => !prev);
+      
+      // Double vérification après un court délai
       setTimeout(() => {
-        setForceRender(prev => !prev);
-      }, 50);
+        if (showIntroduction) {
+          console.log("⚠️ showIntroduction est toujours true après la mise à jour, forçage direct");
+          setShowIntroduction(false);
+          setForceRender(prev => !prev);
+        }
+      }, 300);
     } catch (error) {
-      console.error("Erreur lors du démarrage:", error);
-      toast.error("Une erreur est survenue. Veuillez rafraîchir la page.");
+      console.error("❌ Erreur lors du démarrage:", error);
+      toast.error("Une erreur est survenue. Tentative de correction en cours...");
+      
+      // Fallback ultime - force le rendu sans l'introduction
+      setTimeout(() => {
+        setShowIntroduction(false);
+        setForceRender(prev => !prev);
+      }, 500);
     }
   };
 
-  // Log d'état pour le débogage
+  // Vérifier les paramètres d'URL ou l'état de location pour le démarrage forcé
   useEffect(() => {
-    console.log("État actuel - showIntroduction:", showIntroduction, "showAnalysis:", showAnalysis, "forceRender:", forceRender);
+    const searchParams = new URLSearchParams(location.search);
+    const forceStart = searchParams.get('start') === 'true' || 
+                      (location.state && location.state.forceStart === true);
+    
+    if (forceStart) {
+      console.log("⚡ Démarrage forcé détecté via URL ou état");
+      handleStartQuestionnaire();
+    }
+  }, [location]);
+
+  // Log d'état pour le débogage et vérification de cohérence
+  useEffect(() => {
+    console.log("📊 État actuel - showIntroduction:", showIntroduction, 
+                "showAnalysis:", showAnalysis, 
+                "forceRender:", forceRender,
+                "localStorage.questionnaire_started:", localStorage.getItem('questionnaire_started'),
+                "localStorage.show_introduction:", localStorage.getItem('show_introduction'));
     
     // Vérifier si nous devons forcer l'affichage du questionnaire
     const hasStarted = localStorage.getItem('questionnaire_started') === 'true';
-    if (hasStarted && showIntroduction) {
-      console.log("Force l'affichage du questionnaire via localStorage");
+    const forceHideIntro = localStorage.getItem('show_introduction') === 'false';
+    
+    if ((hasStarted || forceHideIntro) && showIntroduction) {
+      console.log("🔄 Force l'affichage du questionnaire via localStorage");
       setShowIntroduction(false);
     }
   }, [showIntroduction, showAnalysis, forceRender, setShowIntroduction]);
 
-  // Rendu conditionnel basé sur l'état et forceRender
-  if (showIntroduction && localStorage.getItem('questionnaire_started') !== 'true') {
-    console.log("Affichage de l'introduction");
+  // Rendu conditionnel avec vérification supplémentaire de localStorage
+  const shouldShowIntroduction = showIntroduction && 
+                               localStorage.getItem('questionnaire_started') !== 'true' &&
+                               localStorage.getItem('show_introduction') !== 'false';
+  
+  if (shouldShowIntroduction) {
+    console.log("🖥️ Affichage de l'introduction");
     return (
       <motion.div
         key="introduction"
@@ -70,7 +113,7 @@ const QuestionnaireContent = () => {
   }
 
   // Si l'introduction n'est pas affichée, montrer le questionnaire ou l'analyse
-  console.log("Affichage du questionnaire ou de l'analyse");
+  console.log("🖥️ Affichage du questionnaire ou de l'analyse");
   return (
     <motion.div
       key="questionnaire-content"
@@ -95,20 +138,48 @@ const QuestionnaireContent = () => {
  * Présente une série de questions pour déterminer la tolérance au risque
  */
 const Questionnaire = () => {
-  // Réinitialiser l'état du démarrage si on vient de recharger la page
+  const navigate = useNavigate();
+  
+  // Réinitialiser l'état du démarrage et gérer les états incohérents
   useEffect(() => {
+    console.log("🔁 Montage de la page Questionnaire - vérification des états");
+    
+    // Fonction pour nettoyer ou réinitialiser les états
     const cleanup = () => {
-      // Effacer seulement si on est sur la page questionnaire pour éviter les conflits
-      if (window.location.pathname.includes('questionnaire')) {
-        localStorage.removeItem('questionnaire_started');
-        console.log("État du questionnaire réinitialisé");
+      try {
+        // Vérifiez si nous sommes sur la page questionnaire
+        if (window.location.pathname.includes('questionnaire')) {
+          console.log("✅ Nettoyage des états au chargement de la page questionnaire");
+          
+          // Si on recharge la page, on vérifie la cohérence de l'état
+          if (document.referrer === "" || document.referrer.includes('questionnaire')) {
+            // C'est un rechargement de page ou navigation directe
+            console.log("📝 Maintien des paramètres de progression si disponibles");
+          } else {
+            // C'est une navigation depuis une autre page
+            console.log("🧹 Réinitialisation complète des états pour nouveau démarrage");
+            localStorage.removeItem('questionnaire_started');
+            localStorage.removeItem('show_introduction');
+          }
+        }
+      } catch (error) {
+        console.error("❌ Erreur lors du nettoyage des états:", error);
       }
     };
     
-    // Nettoyer à la fois au montage (page reload) et au démontage (navigation)
+    // Appliquer la logique de nettoyage
     cleanup();
+    
+    // Vérifier si nous devons forcer la navigation vers analyse de profil
+    const isComplete = localStorage.getItem('dadvisor_temp_complete') === 'true';
+    if (isComplete) {
+      console.log("⚠️ Questionnaire déjà complété, redirection vers l'analyse de profil");
+      navigate("/profile-analysis");
+    }
+    
+    // Nettoyer aussi au démontage
     return cleanup;
-  }, []);
+  }, [navigate]);
   
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -1,5 +1,5 @@
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { QuestionnaireContext } from "./context";
 import { useQuestionnaireState } from "./hooks/useQuestionnaireState";
 import { useQuestionnaireStorage } from "./hooks/useQuestionnaireStorage";
@@ -90,6 +90,18 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     enrichResponsesWithText
   });
 
+  // Synchronisation avec localStorage pour garantir la cohérence d'état
+  useEffect(() => {
+    // Vérification et synchronisation avec localStorage
+    const started = localStorage.getItem('questionnaire_started') === 'true';
+    const hideIntro = localStorage.getItem('show_introduction') === 'false';
+    
+    if ((started || hideIntro) && showIntroduction) {
+      console.log("🔄 QuestionnaireProvider: Synchronisation de l'état avec localStorage");
+      setShowIntroduction(false);
+    }
+  }, [showIntroduction, setShowIntroduction]);
+
   // Fonction pour envelopper saveInvestmentProfile avec les arguments corrects
   const wrappedSaveInvestmentProfile = () => {
     if (profileAnalysis && investmentStyleInsights.length > 0) {
@@ -104,7 +116,8 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   };
 
   // Log pour débogage
-  console.log("QuestionnaireProvider actif - État setShowIntroduction:", typeof setShowIntroduction);
+  console.log("📋 QuestionnaireProvider actif - État showIntroduction:", showIntroduction, 
+              "typeof setShowIntroduction:", typeof setShowIntroduction);
 
   return (
     <QuestionnaireContext.Provider value={{
