@@ -281,8 +281,8 @@ const Auth = () => {
   if (showResetForm) {
     return (
       <AuthLayout 
-        title="Réinitialiser le mot de passe"
-        description="Entrez votre adresse email pour recevoir les instructions de réinitialisation"
+        title="Envoyer un magic link"
+        description="Entrez votre adresse email pour recevoir un lien de connexion magique"
         showBackButton
         backButtonAction={() => setShowResetForm(false)}
       >

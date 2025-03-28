@@ -53,7 +53,7 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
             Envoi en cours...
           </>
         ) : (
-          "Envoyer les instructions"
+          "Envoyer un magic link"
         )}
       </Button>
     </CardContent>
