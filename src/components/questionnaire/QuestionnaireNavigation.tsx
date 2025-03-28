@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { useQuestionnaire } from "@/contexts/questionnaire";
 import { questions } from "@/utils/questionnaire";
@@ -10,24 +11,37 @@ const QuestionnaireNavigation = () => {
     setCurrentQuestionIndex, 
     answers, 
     isComplete, 
-    score, 
-    setPreviousScore,
     setIsComplete
   } = useQuestionnaire();
   
   const isMobile = useIsMobile();
   const currentQuestion = questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+
+  // Gestion améliorée des clics sur le bouton suivant
+  const handleNextClick = React.useCallback(() => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      setIsComplete(true);
+    }
+  }, [currentQuestionIndex, setCurrentQuestionIndex, setIsComplete]);
+
+  // Gestion améliorée des clics sur le bouton précédent
+  const handlePreviousClick = React.useCallback(() => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  }, [currentQuestionIndex, setCurrentQuestionIndex]);
+
+  // Déterminer si le bouton suivant est désactivé
+  const isNextDisabled = !answers[currentQuestion?.id] || isComplete;
 
   return (
     <div className="flex justify-between items-center mt-4">
       <Button
         variant="outline"
-        onClick={() => {
-          if (currentQuestionIndex > 0) {
-            const previousQuestionIndex = currentQuestionIndex - 1;
-            setCurrentQuestionIndex(previousQuestionIndex);
-          }
-        }}
+        onClick={handlePreviousClick}
         disabled={currentQuestionIndex === 0 || isComplete}
         className="text-[11px] sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
       >
@@ -39,17 +53,11 @@ const QuestionnaireNavigation = () => {
       </div>
       
       <Button
-        onClick={() => {
-          if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(currentQuestionIndex + 1);
-          } else {
-            setIsComplete(true);
-          }
-        }}
-        disabled={!answers[currentQuestion.id] || isComplete}
+        onClick={handleNextClick}
+        disabled={isNextDisabled}
         className="text-[11px] sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
       >
-        {isMobile ? "Suiv." : currentQuestionIndex < questions.length - 1 ? "Question suivante" : "Terminer"}
+        {isMobile ? "Suiv." : isLastQuestion ? "Terminer" : "Question suivante"}
       </Button>
     </div>
   );

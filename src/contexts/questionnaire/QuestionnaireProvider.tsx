@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle, questions, InvestorProfileAnalysis } from "@/utils/questionnaire";
 import { QuestionnaireContextType, QuestionnaireResponses } from "./types";
 import { useQuestionnaireStorage } from "./hooks/useQuestionnaireStorage";
@@ -115,12 +115,12 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       // Enrichir les réponses avec le texte pour l'analyse
       enrichResponsesWithText(answers);
     }
-  }, [answers]);
+  }, [answers, enrichResponsesWithText]);
 
   // Sauvegarder le score et l'état de complétion
   useEffect(() => {
     saveScoreAndCompletionStatus(score, isComplete);
-  }, [score, isComplete]);
+  }, [score, isComplete, saveScoreAndCompletionStatus]);
 
   // Calculer le score et gérer la complétion du questionnaire
   useEffect(() => {
@@ -149,7 +149,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   }, [isComplete, answers]);
 
   // Fonction pour envelopper saveInvestmentProfile avec les arguments corrects
-  const wrappedSaveInvestmentProfile = () => {
+  const wrappedSaveInvestmentProfile = useCallback(() => {
     if (profileAnalysis && investmentStyleInsights.length > 0) {
       return saveInvestmentProfile(
         profileAnalysis,
@@ -159,7 +159,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
       );
     }
     return Promise.resolve();
-  };
+  }, [profileAnalysis, investmentStyleInsights, answers, score, saveInvestmentProfile]);
 
   return (
     <QuestionnaireContext.Provider value={{

@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { questions } from "@/utils/questionnaire";
 import { QuestionnaireResponses } from "../types";
+import { useCallback } from "react";
 
 /**
  * Props pour le hook useQuestionnaireNavigation
@@ -23,7 +24,7 @@ export const useQuestionnaireNavigation = ({
   /**
    * Redirige vers la page des portefeuilles avec les données du profil
    */
-  const handleContinueToPortfolios = () => {
+  const handleContinueToPortfolios = useCallback(() => {
     console.log("Redirection vers les portefeuilles avec:", {
       score,
       answers
@@ -53,7 +54,7 @@ export const useQuestionnaireNavigation = ({
     
     // Transmettre à la fois le score et les réponses au questionnaire
     navigate("/portfolios", { state: { score, answers: enrichedAnswers } });
-  };
+  }, [score, answers, navigate]);
   
   return {
     handleContinueToPortfolios
