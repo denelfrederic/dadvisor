@@ -7,7 +7,7 @@ import QuestionnaireIntroduction from "@/components/questionnaire/QuestionnaireI
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 /**
@@ -15,21 +15,27 @@ import { toast } from "sonner";
  */
 const QuestionnaireContent = () => {
   const { showAnalysis, showIntroduction, setShowIntroduction } = useQuestionnaire();
+  const [forceRender, setForceRender] = useState(false);
 
   // Fonction pour démarrer le questionnaire avec gestion d'erreur
   const handleStartQuestionnaire = () => {
     try {
       console.log("Démarrage du questionnaire depuis QuestionnaireContent");
+      
       // Utiliser le toast pour une notification visible
       toast.success("Questionnaire démarré");
       
-      // Définir explicitement à false pour garantir le changement d'état
-      setShowIntroduction(false);
+      // Forcer un rendu et un changement d'état
+      localStorage.setItem('questionnaire_started', 'true');
       
-      // Double vérification après un court délai
+      // Définir explicitement à false avec callback pour garantir l'exécution
+      setShowIntroduction(false);
+      console.log("showIntroduction défini à false");
+      
+      // Forcer un nouveau rendu après l'état mis à jour
       setTimeout(() => {
-        setShowIntroduction(false);
-      }, 100);
+        setForceRender(prev => !prev);
+      }, 50);
     } catch (error) {
       console.error("Erreur lors du démarrage:", error);
       toast.error("Une erreur est survenue. Veuillez rafraîchir la page.");
@@ -38,11 +44,19 @@ const QuestionnaireContent = () => {
 
   // Log d'état pour le débogage
   useEffect(() => {
-    console.log("État actuel - showIntroduction:", showIntroduction, "showAnalysis:", showAnalysis);
-  }, [showIntroduction, showAnalysis]);
+    console.log("État actuel - showIntroduction:", showIntroduction, "showAnalysis:", showAnalysis, "forceRender:", forceRender);
+    
+    // Vérifier si nous devons forcer l'affichage du questionnaire
+    const hasStarted = localStorage.getItem('questionnaire_started') === 'true';
+    if (hasStarted && showIntroduction) {
+      console.log("Force l'affichage du questionnaire via localStorage");
+      setShowIntroduction(false);
+    }
+  }, [showIntroduction, showAnalysis, forceRender, setShowIntroduction]);
 
-  // Rendu conditionnel basé sur l'état
-  if (showIntroduction) {
+  // Rendu conditionnel basé sur l'état et forceRender
+  if (showIntroduction && localStorage.getItem('questionnaire_started') !== 'true') {
+    console.log("Affichage de l'introduction");
     return (
       <motion.div
         key="introduction"
@@ -56,6 +70,7 @@ const QuestionnaireContent = () => {
   }
 
   // Si l'introduction n'est pas affichée, montrer le questionnaire ou l'analyse
+  console.log("Affichage du questionnaire ou de l'analyse");
   return (
     <motion.div
       key="questionnaire-content"
@@ -80,6 +95,21 @@ const QuestionnaireContent = () => {
  * Présente une série de questions pour déterminer la tolérance au risque
  */
 const Questionnaire = () => {
+  // Réinitialiser l'état du démarrage si on vient de recharger la page
+  useEffect(() => {
+    const cleanup = () => {
+      // Effacer seulement si on est sur la page questionnaire pour éviter les conflits
+      if (window.location.pathname.includes('questionnaire')) {
+        localStorage.removeItem('questionnaire_started');
+        console.log("État du questionnaire réinitialisé");
+      }
+    };
+    
+    // Nettoyer à la fois au montage (page reload) et au démontage (navigation)
+    cleanup();
+    return cleanup;
+  }, []);
+  
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
