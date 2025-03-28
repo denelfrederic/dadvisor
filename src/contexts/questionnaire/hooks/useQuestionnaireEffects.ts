@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { QuestionnaireResponses } from "../types";
 import { toast } from "sonner";
 
@@ -20,6 +20,7 @@ interface UseQuestionnaireEffectsProps {
 /**
  * Hook personnalisé pour gérer les effets secondaires du questionnaire
  * Centralise tous les useEffect liés au questionnaire
+ * Optimisé pour réduire les rendus et la consommation de ressources
  */
 export const useQuestionnaireEffects = ({
   answers,
@@ -32,20 +33,30 @@ export const useQuestionnaireEffects = ({
   enrichResponsesWithText
 }: UseQuestionnaireEffectsProps) => {
   
-  // Sauvegarder les réponses dans le localStorage
-  useEffect(() => {
+  // Mémoisation de l'enrichissement des réponses pour éviter des calculs redondants
+  const processAnswers = useCallback(() => {
     if (Object.keys(answers).length > 0) {
       saveAnswersToLocalStorage(answers);
       enrichResponsesWithText(answers);
     }
   }, [answers, saveAnswersToLocalStorage, enrichResponsesWithText]);
   
-  // Sauvegarder le score et l'état de complétion
-  useEffect(() => {
+  // Mémoisation de la sauvegarde du score et de l'état
+  const processScoringState = useCallback(() => {
     saveScoreAndCompletionStatus(score, isComplete);
   }, [score, isComplete, saveScoreAndCompletionStatus]);
   
-  // Gestion des notifications de complétion
+  // Sauvegarder les réponses dans le localStorage - optimisé avec useCallback
+  useEffect(() => {
+    processAnswers();
+  }, [processAnswers]);
+  
+  // Sauvegarder le score et l'état de complétion - optimisé avec useCallback
+  useEffect(() => {
+    processScoringState();
+  }, [processScoringState]);
+  
+  // Gestion des notifications de complétion - avec vérification pour éviter les doublons
   useEffect(() => {
     if (isComplete && Object.keys(answers).length > 0 && !hasShownCompletionToast) {
       toast("Questionnaire terminé ! Votre score de risque est de " + score);

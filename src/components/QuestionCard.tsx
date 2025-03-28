@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,14 @@ const QuestionCard = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const isMobile = useIsMobile();
 
+  // Mémoisation du calcul de la différence de score pour éviter des re-rendus inutiles
+  const scoreDifference = useMemo(() => {
+    if (currentScore !== undefined && previousScore !== undefined) {
+      return currentScore - previousScore;
+    }
+    return null;
+  }, [currentScore, previousScore]);
+
   // Gère la sélection d'une option par l'utilisateur
   const handleOptionSelect = (optionId: string, value: number) => {
     setSelected(optionId);
@@ -76,10 +84,31 @@ const QuestionCard = ({
     }, 400);
   };
 
-  // Calcule la différence de score
-  const scoreDifference = (currentScore !== undefined && previousScore !== undefined) 
-    ? currentScore - previousScore 
-    : null;
+  // Mémoisation du contenu de l'affichage de la différence de score
+  const scoreDisplay = useMemo(() => {
+    if (scoreDifference === null) return null;
+    
+    return (
+      <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-[#ea384c]/10 border border-[#ea384c] rounded-lg text-[#ea384c] font-medium">
+        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          {scoreDifference > 0 ? (
+            <>
+              <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>{isMobile ? "+"+scoreDifference.toFixed(1) : "Score augmenté de "+scoreDifference.toFixed(1)+" points"}</span>
+            </>
+          ) : scoreDifference < 0 ? (
+            <>
+              <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>{isMobile ? Math.abs(scoreDifference).toFixed(1) : "Score diminué de "+Math.abs(scoreDifference).toFixed(1)+" points"}</span>
+            </>
+          ) : (
+            <span>Score inchangé</span>
+          )}
+          <span className="ml-auto font-bold">Score: {currentScore?.toFixed(1)}</span>
+        </div>
+      </div>
+    );
+  }, [scoreDifference, isMobile, currentScore]);
 
   return (
     <motion.div 
@@ -103,32 +132,8 @@ const QuestionCard = ({
         ))}
       </div>
 
-      {/* Affichage de l'évolution du score */}
-      {scoreDifference !== null && (
-        <motion.div 
-          className="mt-3 sm:mt-4 p-2 sm:p-3 bg-[#ea384c]/10 border border-[#ea384c] rounded-lg text-[#ea384c] font-medium"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-        >
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            {scoreDifference > 0 ? (
-              <>
-                <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{isMobile ? "+"+scoreDifference.toFixed(1) : "Score augmenté de "+scoreDifference.toFixed(1)+" points"}</span>
-              </>
-            ) : scoreDifference < 0 ? (
-              <>
-                <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{isMobile ? Math.abs(scoreDifference).toFixed(1) : "Score diminué de "+Math.abs(scoreDifference).toFixed(1)+" points"}</span>
-              </>
-            ) : (
-              <span>Score inchangé</span>
-            )}
-            <span className="ml-auto font-bold">Score: {currentScore?.toFixed(1)}</span>
-          </div>
-        </motion.div>
-      )}
+      {/* Affichage de l'évolution du score - utilisation d'une condition standard au lieu d'AnimatePresence pour éviter le scintillement */}
+      {scoreDifference !== null && scoreDisplay}
     </motion.div>
   );
 };
@@ -150,6 +155,7 @@ interface OptionButtonProps {
 /**
  * Composant OptionButton - Bouton représentant une option de réponse
  * Composant interne utilisé par QuestionCard
+ * Maintenant mémoizé pour éviter les re-rendus inutiles
  */
 const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButtonProps) => {
   return (

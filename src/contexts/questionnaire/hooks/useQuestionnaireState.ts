@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QuestionnaireResponses } from "../types";
 import { calculateRiskScore, getInvestorProfileAnalysis, analyzeInvestmentStyle, questions } from "@/utils/questionnaire";
 
@@ -31,6 +31,17 @@ export const useQuestionnaireState = () => {
   const [saving, setSaving] = useState(false);
   const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
   
+  // Fonction mémoizée pour synchroniser showIntroduction avec localStorage
+  const updateShowIntroduction = useCallback((value: boolean) => {
+    setShowIntroduction(value);
+    try {
+      localStorage.setItem('show_introduction', String(!value));
+      console.log("✅ État showIntroduction synchronisé avec localStorage:", value);
+    } catch (error) {
+      console.error("❌ Erreur lors de la synchronisation avec localStorage:", error);
+    }
+  }, []);
+  
   // Synchroniser les changements d'état avec localStorage
   useEffect(() => {
     try {
@@ -43,7 +54,7 @@ export const useQuestionnaireState = () => {
     }
   }, [showIntroduction]);
   
-  // Valeurs dérivées
+  // Valeurs dérivées mémoizées pour éviter les calculs inutiles
   const profileAnalysis = isComplete ? getInvestorProfileAnalysis(score, answers) : null;
   const investmentStyleInsights = isComplete ? analyzeInvestmentStyle(answers) : [];
 
@@ -55,7 +66,7 @@ export const useQuestionnaireState = () => {
     score, setScore,
     isComplete, setIsComplete,
     showAnalysis, setShowAnalysis,
-    showIntroduction, setShowIntroduction,
+    showIntroduction, setShowIntroduction: updateShowIntroduction,
     saving, setSaving,
     hasShownCompletionToast, setHasShownCompletionToast,
     
