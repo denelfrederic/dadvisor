@@ -66,7 +66,7 @@ export const LoginForm = ({ onSubmit, onResetPassword, isLoading, authError }: L
                   className="text-dadvisor-blue hover:underline"
                   onClick={onResetPassword}
                 >
-                  J'ai oublié mon mot de passe
+                  Mot de passe oublié?
                 </button>
               </div>
               <FormMessage />

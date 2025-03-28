@@ -2,6 +2,7 @@
 import { questions } from "@/utils/questionnaire";
 import { QuestionnaireResponses } from "../types";
 import { calculateRiskScore } from "@/utils/questionnaire";
+import { clearQuestionnaireStorage } from "../storage";
 
 /**
  * Props pour le hook useQuestionnaireAnalysis
@@ -16,7 +17,6 @@ interface UseQuestionnaireAnalysisProps {
   setIsComplete: React.Dispatch<React.SetStateAction<boolean>>;
   setShowIntroduction: React.Dispatch<React.SetStateAction<boolean>>;
   setShowAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
-  clearStorage: () => void;
 }
 
 /**
@@ -31,8 +31,7 @@ export const useQuestionnaireAnalysis = ({
   setScore,
   setIsComplete,
   setShowIntroduction,
-  setShowAnalysis,
-  clearStorage
+  setShowAnalysis
 }: UseQuestionnaireAnalysisProps) => {
   
   /**
@@ -117,7 +116,7 @@ export const useQuestionnaireAnalysis = ({
     setShowAnalysis(false); // S'assurer que l'analyse n'est pas affichée
     
     // Effacer localStorage
-    clearStorage();
+    clearQuestionnaireStorage();
     
     console.log("Questionnaire réinitialisé complètement");
   };

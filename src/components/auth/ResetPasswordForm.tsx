@@ -5,8 +5,6 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { AuthError } from "./AuthError";
 import { CardContent } from "@/components/ui/card";
-import { Mail } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ResetPasswordFormProps {
   onSubmit: (email: string) => Promise<void>;
@@ -16,21 +14,11 @@ interface ResetPasswordFormProps {
 export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProps) => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const handleSubmit = async () => {
-    if (!email) {
-      return;
-    }
-    
     try {
       setIsSubmitting(true);
-      setSuccessMessage(null);
       await onSubmit(email);
-      setSuccessMessage(`Un magic link a été envoyé à ${email}. Vérifiez votre boîte mail et vos spams.`);
-      console.log(`Magic link demandé pour ${email}`);
-    } catch (error) {
-      console.error("Erreur lors de l'envoi du magic link:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -40,13 +28,6 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
     <CardContent className="space-y-4">
       <AuthError error={authError} />
       
-      {successMessage && (
-        <Alert className="bg-green-50 border-green-200 text-green-800">
-          <AlertTitle>Envoi réussi</AlertTitle>
-          <AlertDescription>{successMessage}</AlertDescription>
-        </Alert>
-      )}
-      
       <div className="space-y-2">
         <Label htmlFor="reset-email">Adresse email</Label>
         <Input 
@@ -55,18 +36,13 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
           placeholder="votre.email@exemple.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSubmit();
-            }
-          }}
         />
       </div>
       
       <Button 
-        className="w-full flex items-center justify-center gap-2" 
+        className="w-full" 
         onClick={handleSubmit}
-        disabled={isSubmitting || !email}
+        disabled={isSubmitting}
       >
         {isSubmitting ? (
           <>
@@ -77,10 +53,7 @@ export const ResetPasswordForm = ({ onSubmit, authError }: ResetPasswordFormProp
             Envoi en cours...
           </>
         ) : (
-          <>
-            <Mail size={18} />
-            Recevoir un magic link
-          </>
+          "Envoyer les instructions"
         )}
       </Button>
     </CardContent>

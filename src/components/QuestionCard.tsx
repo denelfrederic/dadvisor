@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
@@ -35,8 +36,8 @@ export interface Question {
  * @param onAnswer - Fonction de rappel appelée lorsque l'utilisateur sélectionne une réponse
  * @param isAnswered - Indique si la question a déjà reçu une réponse
  * @param selectedOptionId - ID de l'option actuellement sélectionnée (si applicable)
- * @param previousScore - Score avant la réponse à cette question (non affiché)
- * @param currentScore - Score actuel après la réponse (non affiché)
+ * @param previousScore - Score avant la réponse à cette question
+ * @param currentScore - Score actuel après la réponse
  */
 interface QuestionCardProps {
   question: Question;
@@ -49,29 +50,22 @@ interface QuestionCardProps {
 
 /**
  * Composant QuestionCard - Carte affichant une question et ses options de réponse
- * Optimisé pour réduire les re-rendus et éviter les scintillements
+ * Utilisé dans le questionnaire d'évaluation du profil d'investisseur
  */
-const QuestionCard = React.memo(({ 
+const QuestionCard = ({ 
   question, 
   onAnswer, 
   isAnswered = false,
   selectedOptionId,
+  previousScore,
+  currentScore
 }: QuestionCardProps) => {
   const [selected, setSelected] = useState<string | null>(selectedOptionId || null);
   const [isAnimating, setIsAnimating] = useState(false);
   const isMobile = useIsMobile();
 
-  // Mettre à jour selected si selectedOptionId change
-  useEffect(() => {
-    if (selectedOptionId !== undefined && selectedOptionId !== selected) {
-      setSelected(selectedOptionId);
-    }
-  }, [selectedOptionId, selected]);
-
-  // Gère la sélection d'une option par l'utilisateur - mémorisé pour éviter les re-rendus inutiles
-  const handleOptionSelect = useCallback((optionId: string, value: number) => {
-    if (isAnimating || isAnswered) return;
-    
+  // Gère la sélection d'une option par l'utilisateur
+  const handleOptionSelect = (optionId: string, value: number) => {
     setSelected(optionId);
     setIsAnimating(true);
     
@@ -80,7 +74,12 @@ const QuestionCard = React.memo(({
       onAnswer(question.id, optionId, value);
       setIsAnimating(false);
     }, 400);
-  }, [question.id, onAnswer, isAnimating, isAnswered]);
+  };
+
+  // Calcule la différence de score
+  const scoreDifference = (currentScore !== undefined && previousScore !== undefined) 
+    ? currentScore - previousScore 
+    : null;
 
   return (
     <motion.div 
@@ -103,11 +102,36 @@ const QuestionCard = React.memo(({
           />
         ))}
       </div>
+
+      {/* Affichage de l'évolution du score */}
+      {scoreDifference !== null && (
+        <motion.div 
+          className="mt-3 sm:mt-4 p-2 sm:p-3 bg-[#ea384c]/10 border border-[#ea384c] rounded-lg text-[#ea384c] font-medium"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+        >
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            {scoreDifference > 0 ? (
+              <>
+                <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{isMobile ? "+"+scoreDifference.toFixed(1) : "Score augmenté de "+scoreDifference.toFixed(1)+" points"}</span>
+              </>
+            ) : scoreDifference < 0 ? (
+              <>
+                <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{isMobile ? Math.abs(scoreDifference).toFixed(1) : "Score diminué de "+Math.abs(scoreDifference).toFixed(1)+" points"}</span>
+              </>
+            ) : (
+              <span>Score inchangé</span>
+            )}
+            <span className="ml-auto font-bold">Score: {currentScore?.toFixed(1)}</span>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
-});
-
-QuestionCard.displayName = 'QuestionCard';
+};
 
 /**
  * Interface pour les propriétés du composant OptionButton
@@ -126,16 +150,8 @@ interface OptionButtonProps {
 /**
  * Composant OptionButton - Bouton représentant une option de réponse
  * Composant interne utilisé par QuestionCard
- * Mémoizé pour éviter les re-rendus inutiles
  */
-const OptionButton = React.memo(({ option, isSelected, isDisabled, onSelect }: OptionButtonProps) => {
-  // Fonction de clic mémorisée pour éviter les re-rendus
-  const handleClick = useCallback(() => {
-    if (!isDisabled) {
-      onSelect(option.id, option.value);
-    }
-  }, [option.id, option.value, onSelect, isDisabled]);
-
+const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButtonProps) => {
   return (
     <motion.div
       whileHover={{ scale: isDisabled ? 1 : 1.02 }}
@@ -147,9 +163,8 @@ const OptionButton = React.memo(({ option, isSelected, isDisabled, onSelect }: O
           "w-full justify-start text-left py-2 px-3 sm:p-4 h-auto min-h-[50px] sm:min-h-[60px] transition-all duration-300",
           isSelected && "border-primary bg-primary/5"
         )}
-        onClick={handleClick}
+        onClick={() => onSelect(option.id, option.value)}
         disabled={isDisabled}
-        type="button"
       >
         <span className="flex-1 whitespace-normal break-words text-[0.7rem] sm:text-xs leading-tight">
           {option.text}
@@ -157,8 +172,6 @@ const OptionButton = React.memo(({ option, isSelected, isDisabled, onSelect }: O
       </Button>
     </motion.div>
   );
-});
-
-OptionButton.displayName = 'OptionButton';
+};
 
 export default QuestionCard;

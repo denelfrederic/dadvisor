@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { storeUserSession } from "@/utils/auth";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export function useAuthCallback() {
   const [error, setError] = useState<string | null>(null);
@@ -12,29 +12,7 @@ export function useAuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        console.log("Traitement du callback d'authentification OAuth ou Magic Link...");
-        console.log("URL actuelle:", window.location.href);
-        
-        // Vérifier si l'URL contient une erreur
-        const url = new URL(window.location.href);
-        const hashParams = new URLSearchParams(url.hash.substring(1));
-        
-        if (hashParams.has('error')) {
-          const errorCode = hashParams.get('error_code');
-          const errorDescription = hashParams.get('error_description');
-          
-          console.error("Erreur détectée dans l'URL:", {
-            error: hashParams.get('error'),
-            errorCode,
-            errorDescription
-          });
-          
-          if (errorCode === 'otp_expired') {
-            throw new Error("Le lien de connexion a expiré. Veuillez demander un nouveau magic link.");
-          } else {
-            throw new Error(errorDescription || "Une erreur s'est produite durant l'authentification.");
-          }
-        }
+        console.log("Traitement du callback d'authentification OAuth...");
         
         // Add a timeout to prevent indefinite loading
         const timeoutId = setTimeout(() => {
@@ -43,7 +21,7 @@ export function useAuthCallback() {
           navigate("/auth");
         }, 15000); // 15 seconds timeout
         
-        // Check the current session to see if the OAuth or Magic Link flow succeeded
+        // Check the current session to see if the OAuth flow succeeded
         const { data, error } = await supabase.auth.getSession();
         
         // Clear the timeout since we got a response
@@ -55,7 +33,7 @@ export function useAuthCallback() {
         }
         
         if (data?.session?.user) {
-          console.log("Callback: Utilisateur authentifié avec succès", data.session.user);
+          console.log("OAuth callback: User authenticated successfully", data.session.user);
           
           // Create user object
           const user = {
@@ -70,20 +48,22 @@ export function useAuthCallback() {
           storeUserSession(user);
           
           // Show success message
-          toast.success(`Bienvenue, ${user.name} !`);
+          toast({
+            title: "Connexion réussie",
+            description: `Bienvenue, ${user.name} !`,
+          });
           
-          // Redirect to home page
-          console.log("Redirection vers la page d'accueil après authentification");
+          // Redirect to home page instead of questionnaire
+          console.log("Redirecting to home page after OAuth login");
           navigate("/");
         } else {
-          console.error("Callback: Aucune session trouvée");
+          console.error("OAuth callback: No session found");
           setError("Aucune session trouvée après l'authentification. Veuillez réessayer.");
           navigate("/auth");
         }
       } catch (e: any) {
-        console.error("Erreur dans le processus d'authentification:", e);
+        console.error("Error in OAuth callback:", e);
         setError(e.message || "Une erreur s'est produite durant l'authentification.");
-        toast.error("Erreur de connexion: " + (e.message || "Veuillez réessayer"));
         navigate("/auth");
       }
     };

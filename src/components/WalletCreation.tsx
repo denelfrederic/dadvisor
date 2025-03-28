@@ -6,20 +6,41 @@ import WalletInfo from "./wallet/WalletInfo";
 import CreateWalletButton from "./wallet/CreateWalletButton";
 
 interface WalletCreationProps {
-  onWalletCreated?: (walletAddress: string) => void;
+  onWalletCreated: (walletAddress: string) => void;
 }
 
-/**
- * Composant de création de coffre numérique (wallet)
- * Affiche les informations sur le coffre et un bouton pour en créer un
- */
 const WalletCreation = ({ onWalletCreated }: WalletCreationProps) => {
   const [isCreating, setIsCreating] = useState(false);
   
-  // Fonction vide qui ne fait rien, pour satisfaire les props du bouton
-  const handleCreateWallet = () => {
-    // Ne fait rien
-    console.log("Fonctionnalité de création de coffre numérique non disponible");
+  const handleCreateWallet = async () => {
+    setIsCreating(true);
+    
+    try {
+      // Call to the Ibex API to create a wallet
+      const response = await fetch("https://api-testnet.ibexwallet.org/api/v1/wallets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          network: "ethereum"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create wallet");
+      }
+
+      const data = await response.json();
+      const walletAddress = data.address;
+      
+      // Pass the wallet address to the parent component
+      onWalletCreated(walletAddress);
+    } catch (error) {
+      console.error("Failed to create wallet:", error);
+    } finally {
+      setIsCreating(false);
+    }
   };
   
   return (

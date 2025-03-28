@@ -13,95 +13,90 @@ export const fetchProfileData = async ({
   setProfileData,
   setLoading
 }: LoadProfileParams): Promise<void> => {
-  try {
-    setLoading(true);
-    
-    // Double-vérification de l'authentification directement depuis Supabase
-    const { data: sessionData } = await supabase.auth.getSession();
-    const isAuthenticated = !!sessionData.session;
-    
-    // Cas spécial: administrateur visualisant le profil d'un utilisateur spécifique
-    // ou l'utilisateur visualisant son propre profil
-    const targetUserId = userId || (isAuthenticated ? sessionData.session?.user.id : null);
-    
-    console.log("fetchProfileData - ID utilisateur cible:", targetUserId);
-    console.log("fetchProfileData - Session courante:", sessionData.session);
-    
-    // Log du flux de contrôle pour diagnostic
-    console.log("fetchProfileData - Flux de contrôle: Début du chargement");
-    
-    // Vérifier d'abord s'il existe des données temporaires (pour les utilisateurs connectés ou non)
+  // Double-vérification de l'authentification directement depuis Supabase
+  const { data: sessionData } = await supabase.auth.getSession();
+  const isAuthenticated = !!sessionData.session;
+  
+  // Cas spécial: administrateur visualisant le profil d'un utilisateur spécifique
+  // ou l'utilisateur visualisant son propre profil
+  const targetUserId = userId || (isAuthenticated ? sessionData.session?.user.id : null);
+  
+  console.log("ID utilisateur cible:", targetUserId);
+  console.log("Session courante:", sessionData.session);
+  
+  if (!targetUserId) {
+    // Si pas d'utilisateur, vérifier s'il existe des données temporaires
     const tempData = checkForTemporaryData();
-    console.log("fetchProfileData - Données temporaires trouvées:", !!tempData);
-    
-    // Variable pour stocker les données de profil de la base de données
-    let dbProfileData = null;
-    
-    // Si l'utilisateur est connecté, essayer de récupérer son profil depuis la base de données
-    if (targetUserId) {
-      console.log("fetchProfileData - Tentative de récupération du profil depuis la base de données");
-      
-      const { data, error } = await supabase
-        .from('investment_profiles')
-        .select('*')
-        .eq('user_id', targetUserId)
-        .maybeSingle();
-
-      if (data) {
-        // Profil trouvé dans la base de données
-        console.log("fetchProfileData - Profil trouvé dans la base de données:", data);
-        
-        // Utiliser une assertion de type pour gérer les données JSON
-        const profileDataObj = data.profile_data as unknown as {
-          analysis: ProfileData["analysis"];
-          investmentStyleInsights: string[];
-          answers: Record<string, { optionId: string; value: number }>;
-        };
-
-        dbProfileData = {
-          score: data.score,
-          profileType: data.profile_type,
-          analysis: profileDataObj.analysis,
-          investmentStyleInsights: profileDataObj.investmentStyleInsights
-        };
-      } else if (error && error.code !== 'PGRST116') {
-        // Erreur autre que "no rows returned"
-        console.error("fetchProfileData - Erreur lors du chargement du profil:", error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de charger votre profil d'investissement."
-        });
-        setLoading(false);
-        return;
-      }
-    }
-    
-    // Décider quelles données utiliser en priorité
-    if (dbProfileData) {
-      console.log("fetchProfileData - Utilisation des données de la base de données");
-      setProfileData(dbProfileData);
-      setLoading(false);
-      return;
-    } else if (tempData) {
-      console.log("fetchProfileData - Utilisation des données temporaires");
+    if (tempData) {
       setProfileData(tempData);
       setLoading(false);
       return;
     }
     
-    // Aucune donnée trouvée, ni dans la base ni temporaire
-    console.log("fetchProfileData - Aucun profil trouvé, redirection vers le questionnaire");
+    // Aucune donnée trouvée, rediriger vers l'authentification
     toast({
-      title: "Profil non trouvé",
-      description: "Vous n'avez pas encore créé de profil d'investissement."
+      variant: "destructive",
+      title: "Accès refusé",
+      description: "Vous devez être connecté pour accéder à cette page."
     });
-    
-    // Rediriger vers le questionnaire
-    navigate("/questionnaire");
-    
+    navigate("/auth");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('investment_profiles')
+      .select('*')
+      .eq('user_id', targetUserId)
+      .single();
+
+    if (error) {
+      console.error("Erreur lors du chargement du profil:", error);
+      if (error.code === 'PGRST116') {
+        // Si aucun profil n'est trouvé dans la base de données,
+        // vérifier s'il existe des données temporaires (uniquement pour l'utilisateur actuel)
+        const tempData = checkForTemporaryData();
+        if (tempData && !userId) {
+          setProfileData(tempData);
+          setLoading(false);
+          return;
+        }
+        
+        toast({
+          variant: "destructive",
+          title: "Profil non trouvé",
+          description: "Vous n'avez pas encore créé de profil d'investissement."
+        });
+        
+        if (!userId) {
+          navigate("/questionnaire");
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de charger votre profil d'investissement."
+        });
+      }
+      return;
+    }
+
+    // Utiliser une assertion de type pour gérer les données JSON
+    const profileDataObj = data.profile_data as unknown as {
+      analysis: ProfileData["analysis"];
+      investmentStyleInsights: string[];
+      answers: Record<string, { optionId: string; value: number }>;
+    };
+
+    setProfileData({
+      score: data.score,
+      profileType: data.profile_type,
+      analysis: profileDataObj.analysis,
+      investmentStyleInsights: profileDataObj.investmentStyleInsights
+    });
   } catch (error) {
-    console.error("fetchProfileData - Erreur lors de l'analyse du profil:", error);
+    console.error("Erreur lors de l'analyse du profil:", error);
     toast({
       variant: "destructive", 
       title: "Erreur",

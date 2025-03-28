@@ -1,144 +1,128 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { User } from "@/utils/auth";
+import { User, getLoggedInUser } from "@/utils/auth";
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Hook pour gérer l'état d'authentification de l'utilisateur
- * 
- * Fournit l'utilisateur actuel, l'état de chargement et des fonctions pour
- * mettre à jour l'utilisateur.
- */
 export function useAuthStatus() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  /**
-   * Récupère l'utilisateur depuis le localStorage
-   * Utile pour éviter un écran blanc pendant le chargement initial
-   */
+  // Fonction pour récupérer l'utilisateur depuis localStorage
   const getUserFromLocalStorage = useCallback((): User | null => {
     try {
       const storedUser = localStorage.getItem('user');
-      return storedUser ? JSON.parse(storedUser) : null;
+      if (storedUser) {
+        return JSON.parse(storedUser);
+      }
     } catch (error) {
       console.error("Erreur lors de la récupération de l'utilisateur depuis localStorage:", error);
-      return null;
     }
+    return null;
   }, []);
 
-  /**
-   * Met à jour l'utilisateur dans le localStorage et l'état
-   * Centralise la logique de mise à jour de l'utilisateur
-   */
-  const updateUserState = useCallback((userData: User | null) => {
-    setUser(userData);
-    
-    if (userData) {
-      try {
-        localStorage.setItem('user', JSON.stringify(userData));
-      } catch (error) {
-        console.error("Erreur lors de la sauvegarde de l'utilisateur dans localStorage:", error);
-      }
-    } else {
-      localStorage.removeItem('user');
-    }
-  }, []);
-
-  /**
-   * Crée un objet utilisateur à partir des données de session Supabase
-   */
-  const createUserFromSession = useCallback((session: any): User => {
-    const sessionUser = session.user;
-    return {
-      id: sessionUser.id,
-      email: sessionUser.email || "",
-      name: sessionUser.user_metadata?.name || sessionUser.email?.split('@')[0] || "",
-      profilePicture: sessionUser.user_metadata?.avatar_url,
-      authProvider: (sessionUser.app_metadata?.provider || "email") as "google" | "linkedin" | "email"
-    };
-  }, []);
-
-  /**
-   * Vérifie l'état d'authentification auprès de Supabase
-   * Gère la récupération de session et la mise à jour de l'état utilisateur
-   */
-  const checkAuthStatus = useCallback(async () => {
+  // Fonction pour vérifier l'état d'authentification
+  const checkAuth = useCallback(async () => {
     try {
-      // Récupérer d'abord depuis localStorage pour un chargement rapide
+      // Essayer d'abord de récupérer depuis localStorage pour éviter un écran blanc
       const localUser = getUserFromLocalStorage();
       if (localUser) {
         setUser(localUser);
+        setIsLoading(false); // Important: mettre fin au chargement même si on vérifie la session plus tard
       }
-
+      
       // Vérifier la session avec Supabase
-      const { data: sessionData, error } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error("Erreur lors de la récupération de la session:", error);
-        updateUserState(null);
-        return;
-      }
-      
-      if (sessionData?.session) {
+      if (sessionData && sessionData.session) {
         // Session valide trouvée
-        const userData = createUserFromSession(sessionData.session);
-        console.log("Session valide trouvée:", userData);
-        updateUserState(userData);
+        const sessionUser = sessionData.session.user;
+        
+        try {
+          // Tenter de récupérer l'utilisateur complet
+          const currentUser = await getLoggedInUser();
+          
+          if (currentUser) {
+            setUser(currentUser);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+          } else {
+            // Fallback vers les données de base de la session
+            const basicUser: User = {
+              id: sessionUser.id,
+              email: sessionUser.email || "",
+              name: sessionUser.email?.split('@')[0] || "",
+              authProvider: "email"
+            };
+            setUser(basicUser);
+            localStorage.setItem('user', JSON.stringify(basicUser));
+          }
+        } catch (error) {
+          console.error("Erreur lors de la récupération des données utilisateur:", error);
+        }
       } else if (localUser) {
         // Si aucune session n'est trouvée mais qu'un utilisateur local existe,
-        // vérifier si cet utilisateur est toujours valide ou supprimer les données
-        console.log("Aucune session active trouvée, mais utilisateur local présent");
-        updateUserState(null);
+        // vérifier si cet utilisateur est toujours valide
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // Session invalide, nettoyer l'utilisateur
+          setUser(null);
+          localStorage.removeItem('user');
+        }
       } else {
         // Aucune session et aucun utilisateur local
-        console.log("Aucune session active ni utilisateur local");
-        updateUserState(null);
+        setUser(null);
+        localStorage.removeItem('user');
       }
     } catch (error) {
       console.error("Erreur lors de la vérification d'authentification:", error);
-      updateUserState(null);
     } finally {
       setIsLoading(false);
     }
-  }, [getUserFromLocalStorage, updateUserState, createUserFromSession]);
+  }, [getUserFromLocalStorage]);
 
-  // Effectuer la vérification initiale et configurer les écouteurs d'événements
+  // Effectuer la vérification initiale
   useEffect(() => {
-    // Configuration de l'écouteur pour les changements d'état d'authentification
-    const setupAuthListener = () => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          console.log("État d'authentification modifié:", event);
-          
-          if (session) {
-            // Utilisateur connecté ou token actualisé
-            const userData = createUserFromSession(session);
-            updateUserState(userData);
-          } else if (event === 'SIGNED_OUT') {
-            // Utilisateur déconnecté
-            updateUserState(null);
-          }
-          
-          // Toujours mettre fin au chargement après un événement d'authentification
+    checkAuth();
+    
+    // Configurer l'écouteur pour les changements d'état d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("État d'authentification modifié:", event, session);
+        
+        if (event === 'SIGNED_IN' && session) {
+          // Utilisateur connecté
+          const userObj: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            name: session.user.email?.split('@')[0] || "",
+            authProvider: "email"
+          };
+          setUser(userObj);
+          localStorage.setItem('user', JSON.stringify(userObj));
           setIsLoading(false);
+        } else if (event === 'SIGNED_OUT') {
+          // Utilisateur déconnecté
+          setUser(null);
+          localStorage.removeItem('user');
+          setIsLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Mise à jour du token - s'assurer que les données utilisateur sont à jour
+          const userObj: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            name: session.user.email?.split('@')[0] || "",
+            authProvider: "email"
+          };
+          setUser(userObj);
+          localStorage.setItem('user', JSON.stringify(userObj));
         }
-      );
-      
-      return subscription;
-    };
-
-    // Configurer l'écouteur
-    const subscription = setupAuthListener();
+      }
+    );
     
-    // Vérifier l'état actuel de l'authentification
-    checkAuthStatus();
-    
-    // Nettoyer l'abonnement lors du démontage
+    // Nettoyer l'abonnement
     return () => {
       subscription.unsubscribe();
     };
-  }, [checkAuthStatus, createUserFromSession, updateUserState]);
+  }, [checkAuth]);
 
-  return { user, isLoading, setUser: updateUserState };
+  return { user, isLoading, setUser };
 }

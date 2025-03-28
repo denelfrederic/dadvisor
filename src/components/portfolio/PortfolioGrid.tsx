@@ -2,7 +2,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import PortfolioCard, { Portfolio } from "@/components/PortfolioCard";
-import { useAuthStatus } from "@/hooks/use-auth-status";
 
 /**
  * Interface pour les propriétés du composant PortfolioGrid
@@ -26,18 +25,13 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({
   onSelectPortfolio,
   onViewDetails
 }) => {
-  const { user } = useAuthStatus();
-  
-  // Ne montre "Recommandé" que si l'utilisateur est connecté et qu'un ID a été recommandé
-  const showRecommended = !!user && !!recommendedPortfolioId;
-  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
       {portfolios.map((portfolio) => (
         <PortfolioCard
           key={portfolio.id}
           portfolio={portfolio}
-          isRecommended={showRecommended && portfolio.id === recommendedPortfolioId}
+          isRecommended={portfolio.id === recommendedPortfolioId}
           onSelect={onSelectPortfolio}
           isSelected={selectedPortfolioId === portfolio.id}
           onViewDetails={onViewDetails}

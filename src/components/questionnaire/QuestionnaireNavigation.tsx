@@ -3,19 +3,14 @@ import { Button } from "@/components/ui/button";
 import { useQuestionnaire } from "@/contexts/questionnaire";
 import { questions } from "@/utils/questionnaire";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { memo, useCallback, useMemo } from "react";
 
-/**
- * Composant de navigation du questionnaire
- * Affiche les boutons pour naviguer entre les questions
- * Memoizé pour éviter les re-rendus inutiles
- */
-const QuestionnaireNavigation = memo(() => {
+const QuestionnaireNavigation = () => {
   const { 
     currentQuestionIndex, 
     setCurrentQuestionIndex, 
     answers, 
     isComplete, 
+    score, 
     setPreviousScore,
     setIsComplete
   } = useQuestionnaire();
@@ -23,41 +18,16 @@ const QuestionnaireNavigation = memo(() => {
   const isMobile = useIsMobile();
   const currentQuestion = questions[currentQuestionIndex];
 
-  // Callbacks mémorisés pour éviter les re-rendus
-  const handlePrevious = useCallback(() => {
-    if (currentQuestionIndex > 0) {
-      const previousQuestionIndex = currentQuestionIndex - 1;
-      setCurrentQuestionIndex(previousQuestionIndex);
-    }
-  }, [currentQuestionIndex, setCurrentQuestionIndex]);
-
-  const handleNext = useCallback(() => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      setIsComplete(true);
-    }
-  }, [currentQuestionIndex, setCurrentQuestionIndex, setIsComplete]);
-
-  // Texte pour le bouton suivant, mémorisé pour éviter les re-rendus
-  const nextButtonText = useMemo(() => {
-    return isMobile 
-      ? "Suiv." 
-      : currentQuestionIndex < questions.length - 1 
-        ? "Question suivante" 
-        : "Terminer";
-  }, [isMobile, currentQuestionIndex]);
-
-  // Vérifie si le bouton suivant est désactivé, mémorisé pour éviter les re-rendus
-  const isNextDisabled = useMemo(() => {
-    return !answers[currentQuestion?.id] || isComplete;
-  }, [answers, currentQuestion?.id, isComplete]);
-
   return (
     <div className="flex justify-between items-center mt-4">
       <Button
         variant="outline"
-        onClick={handlePrevious}
+        onClick={() => {
+          if (currentQuestionIndex > 0) {
+            const previousQuestionIndex = currentQuestionIndex - 1;
+            setCurrentQuestionIndex(previousQuestionIndex);
+          }
+        }}
         disabled={currentQuestionIndex === 0 || isComplete}
         className="text-[11px] sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
       >
@@ -69,16 +39,20 @@ const QuestionnaireNavigation = memo(() => {
       </div>
       
       <Button
-        onClick={handleNext}
-        disabled={isNextDisabled}
+        onClick={() => {
+          if (currentQuestionIndex < questions.length - 1) {
+            setCurrentQuestionIndex(currentQuestionIndex + 1);
+          } else {
+            setIsComplete(true);
+          }
+        }}
+        disabled={!answers[currentQuestion.id] || isComplete}
         className="text-[11px] sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
       >
-        {nextButtonText}
+        {isMobile ? "Suiv." : currentQuestionIndex < questions.length - 1 ? "Question suivante" : "Terminer"}
       </Button>
     </div>
   );
-});
-
-QuestionnaireNavigation.displayName = 'QuestionnaireNavigation';
+};
 
 export default QuestionnaireNavigation;

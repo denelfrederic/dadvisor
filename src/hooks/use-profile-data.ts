@@ -13,37 +13,25 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 export function useProfileData(user: User | null): ProfileCheckResult {
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [loadAttempted, setLoadAttempted] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const userIdParam = searchParams.get('userId');
   
   // Fonction pour naviguer (utilisée dans les fonctions de chargement et sauvegarde)
   const navigateTo = (path: string) => {
-    console.log("Navigation vers:", path);
     navigate(path);
   };
 
   // Charger les données de profil au montage du composant
   useEffect(() => {
-    const targetUserId = userIdParam || (user?.id || null);
-    
-    console.log("useProfileData - Chargement des données de profil pour l'utilisateur:", targetUserId);
-    console.log("useProfileData - État de l'utilisateur:", user);
-    console.log("useProfileData - Données temporaires présentes:", hasTempData());
-    
-    // Marquer que nous avons tenté de charger les données
-    if (!loadAttempted) {
-      setLoadAttempted(true);
-      
-      fetchProfileData({
-        userId: targetUserId,
-        navigate: navigateTo,
-        setProfileData,
-        setLoading
-      });
-    }
-  }, [user, navigate, userIdParam, loadAttempted]);
+    const targetUserId = userIdParam || user?.id;
+    fetchProfileData({
+      userId: targetUserId,
+      navigate: navigateTo,
+      setProfileData,
+      setLoading
+    });
+  }, [user, navigate, userIdParam]);
 
   return {
     loading,

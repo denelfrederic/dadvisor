@@ -1,20 +1,42 @@
 
-import { QuestionnaireProvider } from "@/contexts/questionnaire";
+import { QuestionnaireProvider, useQuestionnaire } from "@/contexts/questionnaire";
+import QuestionnaireProgress from "@/components/questionnaire/QuestionnaireProgress";
+import QuestionnaireNavigation from "@/components/questionnaire/QuestionnaireNavigation";
+import ProfileAnalysisDisplay from "@/components/questionnaire/ProfileAnalysisDisplay";
+import QuestionnaireIntroduction from "@/components/questionnaire/QuestionnaireIntroduction";
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
-import QuestionnaireContainer from "@/components/questionnaire/QuestionnaireContainer";
-import { useQuestionnairePageEffects } from "@/hooks/useQuestionnairePageEffects";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
+
+/**
+ * Main content component for the questionnaire
+ */
+const QuestionnaireContent = () => {
+  const { showAnalysis, showIntroduction, setShowIntroduction } = useQuestionnaire();
+
+  if (showIntroduction) {
+    return <QuestionnaireIntroduction onStart={() => setShowIntroduction(false)} />;
+  }
+
+  return (
+    <>
+      {!showAnalysis ? (
+        <>
+          <QuestionnaireProgress />
+          <QuestionnaireNavigation />
+        </>
+      ) : (
+        <ProfileAnalysisDisplay />
+      )}
+    </>
+  );
+};
 
 /**
  * Page Questionnaire - Évalue le profil d'investisseur de l'utilisateur
  * Présente une série de questions pour déterminer la tolérance au risque
  */
 const Questionnaire = () => {
-  // Utiliser le hook d'effets pour gérer les effets de page
-  useQuestionnairePageEffects();
-  const isMobile = useIsMobile();
-  
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -26,7 +48,9 @@ const Questionnaire = () => {
             Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
           </p>
           
-          <QuestionnaireContainer />
+          <QuestionnaireProvider>
+            <QuestionnaireContent />
+          </QuestionnaireProvider>
         </div>
       </div>
       <BottomNavbar />

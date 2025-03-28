@@ -2,10 +2,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
-import { useRef } from "react";
-import { useAuthStatus } from "@/hooks/use-auth-status";
-import { useHasProfile } from "@/hooks/use-has-profile";
 
 /**
  * Interface pour les propriétés du composant HeroSection
@@ -22,30 +18,6 @@ interface HeroSectionProps {
 const HeroSection = ({
   parallaxOffset
 }: HeroSectionProps) => {
-  const { user } = useAuthStatus();
-  const { hasProfile, isLoading } = useHasProfile();
-  
-  const getButtonText = () => {
-    if (isLoading) return "Chargement...";
-    if (!user) return "Découvrir mon profil";
-    return hasProfile ? "Voir mon profil" : "Découvrir mon profil";
-  };
-
-  const getDestination = () => {
-    // Toujours rediriger vers le questionnaire directement pour un nouvel utilisateur
-    if (!user) return "/questionnaire";
-    // Si l'utilisateur est connecté, diriger en fonction de s'il a un profil ou non
-    return hasProfile ? "/profile-analysis" : "/questionnaire";
-  };
-  
-  // Fonction pour défiler vers la section des fonctionnalités
-  const scrollToFeatures = () => {
-    const featuresSection = document.getElementById('features-section');
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-  
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Arrière-plan avec effet de parallaxe */}
@@ -105,33 +77,13 @@ const HeroSection = ({
               transition={{ duration: 0.6, delay: 0.5 }} 
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Button 
-                size="lg" 
-                asChild 
-                disabled={isLoading}
-              >
-                <Link to={getDestination()}>{getButtonText()}</Link>
+              <Button size="lg" asChild>
+                <Link to="/questionnaire">Découvrir mon profil</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/portfolios">Explorer les portefeuilles</Link>
               </Button>
             </motion.div>
-          </motion.div>
-          
-          {/* Indicateur de défilement */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, y: [0, 10, 0] }}
-            transition={{ 
-              opacity: { duration: 0.6, delay: 1.2 },
-              y: { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
-            }}
-            className="absolute bottom-8 left-1/2 transform -translate-x-1/2 cursor-pointer"
-            onClick={scrollToFeatures}
-            aria-label="Défiler vers le bas pour voir plus"
-          >
-            <ChevronDown className="h-10 w-10 text-dadvisor-navy/60" />
-            <span className="sr-only">Défiler vers le bas</span>
           </motion.div>
         </div>
       </div>
