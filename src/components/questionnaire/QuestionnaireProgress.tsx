@@ -18,8 +18,6 @@ const QuestionnaireProgress = () => {
     currentQuestionIndex, 
     handleAnswer, 
     answers, 
-    previousScore, 
-    score, 
     isComplete,
     setShowAnalysis
   } = useQuestionnaire();
@@ -108,10 +106,7 @@ const QuestionnaireProgress = () => {
         className="mt-6 sm:mt-10 bg-primary/10 p-4 sm:p-6 rounded-lg text-center"
       >
         <h2 className="text-lg sm:text-xl font-medium mb-2">Questionnaire terminé !</h2>
-        <p className="text-sm sm:text-base">Votre score de risque est de {score}</p>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-          Vous allez être redirigé vers l'analyse détaillée...
-        </p>
+        <p className="text-sm sm:text-base">Vous allez être redirigé vers l'analyse détaillée...</p>
         
         {redirectAttempted && (
           <button 
@@ -160,8 +155,6 @@ const QuestionnaireProgress = () => {
               onAnswer={handleAnswer}
               isAnswered={false}
               selectedOptionId={answers && answers[currentQuestion.id]?.optionId}
-              previousScore={previousScore}
-              currentScore={score}
             />
           </motion.div>
         </AnimatePresence>
