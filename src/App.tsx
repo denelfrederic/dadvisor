@@ -24,7 +24,6 @@ import Dao from './pages/Dao';
 import Faq from './pages/Faq';
 import MyAdvisor from './pages/MyAdvisor';
 import MyPortfolioCreator from './pages/MyPortfolioCreator';
-import AgentIA from './pages/AgentIA';
 
 // Import contexts
 import { AuthProvider } from './contexts/auth';
@@ -68,7 +67,6 @@ function App() {
               <Route path="/myportfoliocreator" element={<MyPortfolioCreator />} />
               <Route path="/admin-check" element={<AdminCheck />} />
               <Route path="/adminllm" element={<Assistant_Admin />} />
-              <Route path="/agent-ia" element={<AgentIA />} />
               {/* Redirection de /assistant vers /adminllm */}
               <Route path="/assistant" element={<Navigate to="/adminllm" replace />} />
               <Route path="*" element={<NotFound />} />

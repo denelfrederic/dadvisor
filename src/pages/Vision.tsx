@@ -1,6 +1,5 @@
 
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page Vision - Présentation de la vision et des objectifs de l'entreprise
@@ -15,7 +14,6 @@ const Vision = () => {
           Page en construction...
         </p>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

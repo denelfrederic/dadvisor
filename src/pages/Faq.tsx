@@ -2,7 +2,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 import FaqSection from "@/components/faq/FaqSection";
 import FaqCategories from "@/components/faq/FaqCategories";
 
@@ -36,8 +35,6 @@ const Faq = () => {
           </div>
         </div>
       </main>
-      
-      <BottomNavbar />
     </div>
   );
 };

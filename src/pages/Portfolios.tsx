@@ -8,7 +8,6 @@ import ContinueButton from "@/components/portfolio/ContinueButton";
 import LoadingIndicator from "@/components/portfolio/LoadingIndicator";
 import { usePortfolioSelection } from "@/hooks/portfolio/usePortfolioSelection";
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 import { QuestionnaireResponses } from "@/utils/questionnaire";
 
 /**
@@ -74,8 +73,6 @@ const Portfolios = () => {
         isOpen={isDetailsOpen}
         onClose={handleCloseDetails}
       />
-      
-      <BottomNavbar />
     </div>
   );
 };

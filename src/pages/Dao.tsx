@@ -1,6 +1,5 @@
 
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page DAO - Organisation Autonome Décentralisée
@@ -15,7 +14,6 @@ const Dao = () => {
           Page en construction...
         </p>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page 404 - Affichée lorsqu'une route n'existe pas
@@ -40,7 +39,6 @@ const NotFound = () => {
           </Button>
         </div>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

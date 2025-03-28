@@ -1,6 +1,6 @@
+
 import React from "react";
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -109,7 +109,6 @@ const MyAdvisor = () => {
           </div>
         </motion.div>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

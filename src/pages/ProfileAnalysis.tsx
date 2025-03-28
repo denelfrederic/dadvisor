@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/utils/auth";
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 
 const ProfileAnalysis = () => {
   const { user: authUser } = useAuthStatus();
@@ -72,7 +71,6 @@ const ProfileAnalysis = () => {
           )}
         </div>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

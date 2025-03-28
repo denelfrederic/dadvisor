@@ -5,7 +5,6 @@ import QuestionnaireNavigation from "@/components/questionnaire/QuestionnaireNav
 import ProfileAnalysisDisplay from "@/components/questionnaire/ProfileAnalysisDisplay";
 import QuestionnaireIntroduction from "@/components/questionnaire/QuestionnaireIntroduction";
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 import { motion } from "framer-motion";
 
 /**
@@ -53,7 +52,6 @@ const Questionnaire = () => {
           </QuestionnaireProvider>
         </div>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

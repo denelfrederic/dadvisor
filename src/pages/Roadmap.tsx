@@ -1,6 +1,5 @@
 
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -137,7 +136,6 @@ const Roadmap = () => {
           </RoadmapItem>
         </div>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

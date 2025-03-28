@@ -7,7 +7,6 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { checkUserProfile } from "@/utils/profile-check";
 import { useToast } from "@/components/ui/use-toast";
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 
 const AdminCheck = () => {
   const [email, setEmail] = useState("frederic.denel@dadvisor.ai");
@@ -100,7 +99,6 @@ const AdminCheck = () => {
           )}
         </div>
       </div>
-      <BottomNavbar />
     </div>
   );
 };

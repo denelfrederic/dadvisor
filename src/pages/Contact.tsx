@@ -3,7 +3,6 @@ import React from 'react';
 import Navbar from "@/components/Navbar";
 import ContactHeader from "@/components/contact/ContactHeader";
 import ContactSection from "@/components/contact/ContactSection";
-import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page Contact - Permet aux utilisateurs de contacter directement DADVISOR
@@ -16,7 +15,6 @@ const Contact = () => {
         <ContactHeader />
         <ContactSection />
       </div>
-      <BottomNavbar />
     </div>
   );
 };

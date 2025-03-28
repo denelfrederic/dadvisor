@@ -1,6 +1,5 @@
 
 import Navbar from "@/components/Navbar";
-import BottomNavbar from "@/components/BottomNavbar";
 
 /**
  * Page "Qui sommes nous" - Présentation de l'équipe et de l'entreprise
@@ -15,7 +14,6 @@ const About = () => {
           Page en construction...
         </p>
       </div>
-      <BottomNavbar />
     </div>
   );
 };
