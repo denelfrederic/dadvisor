@@ -1,6 +1,8 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 interface QuestionnaireIntroductionProps {
   onStart: () => void;
@@ -11,19 +13,40 @@ interface QuestionnaireIntroductionProps {
  * @param onStart Fonction appelée lorsque l'utilisateur clique sur "Commencer"
  */
 const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) => {
+  const [isClicked, setIsClicked] = useState(false);
+  
+  // Effet pour suivre l'état du clic et éviter les clics multiples
+  useEffect(() => {
+    if (isClicked) {
+      const timer = setTimeout(() => {
+        setIsClicked(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isClicked]);
+  
   // Fonction pour gérer le clic avec un log de débogage
   const handleStartClick = () => {
-    console.log("Bouton commencer cliqué");
+    if (isClicked) return; // Éviter les clics multiples
+    
+    console.log("Bouton commencer cliqué - Tentative de démarrage");
+    setIsClicked(true);
+    
+    // Notification visible pour l'utilisateur
+    toast.info("Démarrage du questionnaire...");
     
     // Attendre un peu pour éviter les clics accidentels doubles
     setTimeout(() => {
       // Appel explicite de la fonction onStart passée en props
       if (typeof onStart === 'function') {
+        console.log("Exécution de la fonction onStart");
         onStart();
       } else {
         console.error("La fonction onStart n'est pas définie correctement");
+        toast.error("Erreur de démarrage. Veuillez rafraîchir la page.");
       }
-    }, 50);
+    }, 100);
   };
 
   return (
@@ -59,9 +82,10 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
           <Button 
             onClick={handleStartClick} 
             size="lg" 
-            className="px-8 bg-dadvisor-blue hover:bg-dadvisor-navy"
+            disabled={isClicked}
+            className={`px-8 ${isClicked ? 'bg-gray-400' : 'bg-dadvisor-blue hover:bg-dadvisor-navy'} transition-colors relative`}
           >
-            Commencer le questionnaire
+            {isClicked ? "Démarrage en cours..." : "Commencer le questionnaire"}
           </Button>
         </div>
       </div>

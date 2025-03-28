@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 /**
  * Main content component for the questionnaire
@@ -15,10 +16,24 @@ import { useEffect } from "react";
 const QuestionnaireContent = () => {
   const { showAnalysis, showIntroduction, setShowIntroduction } = useQuestionnaire();
 
-  // Fonction pour démarrer le questionnaire
+  // Fonction pour démarrer le questionnaire avec gestion d'erreur
   const handleStartQuestionnaire = () => {
-    console.log("Démarrage du questionnaire depuis QuestionnaireContent");
-    setShowIntroduction(false);
+    try {
+      console.log("Démarrage du questionnaire depuis QuestionnaireContent");
+      // Utiliser le toast pour une notification visible
+      toast.success("Questionnaire démarré");
+      
+      // Définir explicitement à false pour garantir le changement d'état
+      setShowIntroduction(false);
+      
+      // Double vérification après un court délai
+      setTimeout(() => {
+        setShowIntroduction(false);
+      }, 100);
+    } catch (error) {
+      console.error("Erreur lors du démarrage:", error);
+      toast.error("Une erreur est survenue. Veuillez rafraîchir la page.");
+    }
   };
 
   // Log d'état pour le débogage
@@ -26,12 +41,28 @@ const QuestionnaireContent = () => {
     console.log("État actuel - showIntroduction:", showIntroduction, "showAnalysis:", showAnalysis);
   }, [showIntroduction, showAnalysis]);
 
+  // Rendu conditionnel basé sur l'état
   if (showIntroduction) {
-    return <QuestionnaireIntroduction onStart={handleStartQuestionnaire} />;
+    return (
+      <motion.div
+        key="introduction"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <QuestionnaireIntroduction onStart={handleStartQuestionnaire} />
+      </motion.div>
+    );
   }
 
+  // Si l'introduction n'est pas affichée, montrer le questionnaire ou l'analyse
   return (
-    <>
+    <motion.div
+      key="questionnaire-content"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
       {!showAnalysis ? (
         <>
           <QuestionnaireProgress />
@@ -40,7 +71,7 @@ const QuestionnaireContent = () => {
       ) : (
         <ProfileAnalysisDisplay />
       )}
-    </>
+    </motion.div>
   );
 };
 
