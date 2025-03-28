@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -62,8 +62,8 @@ const QuestionCard = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const isMobile = useIsMobile();
 
-  // Gère la sélection d'une option par l'utilisateur
-  const handleOptionSelect = (optionId: string, value: number) => {
+  // Gère la sélection d'une option par l'utilisateur - mémorisé pour éviter les re-rendus inutiles
+  const handleOptionSelect = useCallback((optionId: string, value: number) => {
     setSelected(optionId);
     setIsAnimating(true);
     
@@ -72,7 +72,7 @@ const QuestionCard = ({
       onAnswer(question.id, optionId, value);
       setIsAnimating(false);
     }, 400);
-  };
+  }, [question.id, onAnswer]);
 
   return (
     <motion.div 
@@ -118,7 +118,7 @@ interface OptionButtonProps {
  * Composant interne utilisé par QuestionCard
  * Maintenant mémoizé pour éviter les re-rendus inutiles
  */
-const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButtonProps) => {
+const OptionButton = React.memo(({ option, isSelected, isDisabled, onSelect }: OptionButtonProps) => {
   return (
     <motion.div
       whileHover={{ scale: isDisabled ? 1 : 1.02 }}
@@ -139,6 +139,8 @@ const OptionButton = ({ option, isSelected, isDisabled, onSelect }: OptionButton
       </Button>
     </motion.div>
   );
-};
+});
+
+OptionButton.displayName = 'OptionButton';
 
 export default QuestionCard;

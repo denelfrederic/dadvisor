@@ -5,15 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 /**
  * Composant d'affichage de la progression du questionnaire
  * Gère l'affichage des questions, la barre de progression et le message de complétion
+ * Optimisé pour réduire les scintillements et les re-rendus inutiles
  */
-const QuestionnaireProgress = () => {
+const QuestionnaireProgress = memo(() => {
   const { 
     currentQuestionIndex, 
     handleAnswer, 
@@ -27,9 +28,13 @@ const QuestionnaireProgress = () => {
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
   const [redirectAttempted, setRedirectAttempted] = useState(false);
   
-  // Vérification que currentQuestionIndex est valide
-  const safeIndex = Math.min(Math.max(0, currentQuestionIndex || 0), questions.length - 1);
-  const currentQuestion = questions[safeIndex];
+  // Mémoisation de l'index sécurisé et de la question actuelle
+  const safeIndex = useMemo(() => 
+    Math.min(Math.max(0, currentQuestionIndex || 0), questions.length - 1), 
+    [currentQuestionIndex]
+  );
+  
+  const currentQuestion = useMemo(() => questions[safeIndex], [safeIndex]);
   const totalQuestions = questions.length;
 
   // Effet pour gérer l'affichage du message de complétion et la redirection
@@ -131,36 +136,42 @@ const QuestionnaireProgress = () => {
     );
   }
 
+  // Génération des étiquettes pour la barre de progression
+  const progressLabels = useMemo(() => 
+    isMobile ? 
+      Array.from({ length: totalQuestions }, (_, index) => `${index + 1}`) : 
+      Array.from({ length: totalQuestions }, (_, index) => `Question ${index + 1}`),
+    [totalQuestions, isMobile]
+  );
+
   return (
     <>
       <ProgressBar 
         currentStep={safeIndex + 1} 
         totalSteps={totalQuestions}
-        labels={isMobile ? 
-          Array.from({ length: totalQuestions }, (_, index) => `${index + 1}`) : 
-          Array.from({ length: totalQuestions }, (_, index) => `Question ${index + 1}`)}
+        labels={progressLabels}
       />
       
       <div className="mb-6 sm:mb-10">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={safeIndex}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <QuestionCard
-              question={currentQuestion}
-              onAnswer={handleAnswer}
-              isAnswered={false}
-              selectedOptionId={answers && answers[currentQuestion.id]?.optionId}
-            />
-          </motion.div>
-        </AnimatePresence>
+        <motion.div
+          key={safeIndex}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <QuestionCard
+            question={currentQuestion}
+            onAnswer={handleAnswer}
+            isAnswered={false}
+            selectedOptionId={answers && answers[currentQuestion.id]?.optionId}
+          />
+        </motion.div>
       </div>
     </>
   );
-};
+});
+
+QuestionnaireProgress.displayName = 'QuestionnaireProgress';
 
 export default QuestionnaireProgress;
