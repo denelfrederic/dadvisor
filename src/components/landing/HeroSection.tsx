@@ -26,13 +26,15 @@ const HeroSection = ({
   const { hasProfile, isLoading } = useHasProfile();
   
   const getButtonText = () => {
-    if (!user) return "Découvrir mon profil";
     if (isLoading) return "Chargement...";
-    return hasProfile ? "Voir mon profil d'investisseur" : "Découvrir mon profil";
+    if (!user) return "Découvrir mon profil";
+    return hasProfile ? "Voir mon profil" : "Découvrir mon profil";
   };
 
   const getDestination = () => {
-    if (!user) return "/auth";
+    // Toujours rediriger vers le questionnaire directement pour un nouvel utilisateur
+    if (!user) return "/questionnaire";
+    // Si l'utilisateur est connecté, diriger en fonction de s'il a un profil ou non
     return hasProfile ? "/profile-analysis" : "/questionnaire";
   };
   

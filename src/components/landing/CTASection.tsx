@@ -16,11 +16,13 @@ const CTASection = () => {
 
   const getButtonText = () => {
     if (isLoading) return "Chargement...";
-    return hasProfile ? "Voir mon profil d'investisseur" : "Découvrir mon profil";
+    if (!user) return "Découvrir mon profil";
+    return hasProfile ? "Voir mon profil" : "Découvrir mon profil";
   };
 
-  // Toujours diriger vers le questionnaire, même si l'utilisateur n'est pas connecté
+  // Toujours diriger vers le questionnaire directement pour un nouvel utilisateur non connecté
   const getDestination = () => {
+    if (!user) return "/questionnaire";
     return hasProfile ? "/profile-analysis" : "/questionnaire";
   };
 
