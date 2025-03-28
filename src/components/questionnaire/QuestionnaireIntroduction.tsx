@@ -14,12 +14,16 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
   // Fonction pour gérer le clic avec un log de débogage
   const handleStartClick = () => {
     console.log("Bouton commencer cliqué");
-    // Appel explicite de la fonction onStart passée en props
-    if (typeof onStart === 'function') {
-      onStart();
-    } else {
-      console.error("La fonction onStart n'est pas définie correctement");
-    }
+    
+    // Attendre un peu pour éviter les clics accidentels doubles
+    setTimeout(() => {
+      // Appel explicite de la fonction onStart passée en props
+      if (typeof onStart === 'function') {
+        onStart();
+      } else {
+        console.error("La fonction onStart n'est pas définie correctement");
+      }
+    }, 50);
   };
 
   return (
@@ -55,7 +59,7 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
           <Button 
             onClick={handleStartClick} 
             size="lg" 
-            className="px-8"
+            className="px-8 bg-dadvisor-blue hover:bg-dadvisor-navy"
           >
             Commencer le questionnaire
           </Button>

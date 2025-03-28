@@ -60,9 +60,7 @@ const Questionnaire = () => {
             Répondez honnêtement aux questions suivantes pour déterminer votre profil d'investissement.
           </p>
           
-          <QuestionnaireProvider>
-            <QuestionnaireContent />
-          </QuestionnaireProvider>
+          <QuestionnaireContent />
         </div>
       </div>
       <BottomNavbar />

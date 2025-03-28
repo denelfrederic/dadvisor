@@ -8,6 +8,7 @@ import { useQuestionnaireNavigation } from "./hooks/useQuestionnaireNavigation";
 import { useQuestionnaireSaving } from "./hooks/useQuestionnaireSaving";
 import { useQuestionnaireEffects } from "./hooks/useQuestionnaireEffects";
 import { useQuestionnaireInitializer } from "./hooks/useQuestionnaireInitializer";
+import { toast } from "sonner";
 
 /**
  * Fournisseur du contexte du questionnaire
@@ -66,7 +67,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     setSaving
   });
 
-  // Initialisation des données avec un log de débogage
+  // Initialisation et gestion des effets secondaires
   useQuestionnaireInitializer({
     setAnswers,
     setScore,
@@ -103,7 +104,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
   };
 
   // Log pour débogage
-  console.log("QuestionnaireProvider - État setShowIntroduction:", typeof setShowIntroduction);
+  console.log("QuestionnaireProvider actif - État setShowIntroduction:", typeof setShowIntroduction);
 
   return (
     <QuestionnaireContext.Provider value={{

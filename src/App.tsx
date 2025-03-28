@@ -44,37 +44,39 @@ function App() {
     <div className="App">
       <AuthProvider>
         <BrowserRouter>
-          <QuestionnaireProvider>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/profile-analysis" element={<ProfileAnalysis />} />
-              {/* Redirection de /profile vers /profile-analysis */}
-              <Route path="/profile" element={<Navigate to="/profile-analysis" replace />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/questionnaire" element={<Questionnaire />} />
-              <Route path="/investment" element={<Investment />} />
-              <Route path="/portfolios" element={<Portfolios />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/vision" element={<Vision />} />
-              <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/dao" element={<Dao />} />
-              <Route path="/faq" element={<Faq />} />
-              <Route path="/myadvisor" element={<MyAdvisor />} />
-              <Route path="/myportfoliocreator" element={<MyPortfolioCreator />} />
-              <Route path="/admin-check" element={<AdminCheck />} />
-              <Route path="/adminllm" element={<Assistant_Admin />} />
-              <Route path="/agent-ia" element={<AgentIA />} />
-              {/* Redirection de /assistant vers /adminllm */}
-              <Route path="/assistant" element={<Navigate to="/adminllm" replace />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </QuestionnaireProvider>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/profile-analysis" element={<ProfileAnalysis />} />
+            {/* Redirection de /profile vers /profile-analysis */}
+            <Route path="/profile" element={<Navigate to="/profile-analysis" replace />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/questionnaire" element={
+              <QuestionnaireProvider>
+                <Questionnaire />
+              </QuestionnaireProvider>
+            } />
+            <Route path="/investment" element={<Investment />} />
+            <Route path="/portfolios" element={<Portfolios />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/vision" element={<Vision />} />
+            <Route path="/roadmap" element={<Roadmap />} />
+            <Route path="/dao" element={<Dao />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/myadvisor" element={<MyAdvisor />} />
+            <Route path="/myportfoliocreator" element={<MyPortfolioCreator />} />
+            <Route path="/admin-check" element={<AdminCheck />} />
+            <Route path="/adminllm" element={<Assistant_Admin />} />
+            <Route path="/agent-ia" element={<AgentIA />} />
+            {/* Redirection de /assistant vers /adminllm */}
+            <Route path="/assistant" element={<Navigate to="/adminllm" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
         </BrowserRouter>
       </AuthProvider>
     </div>
