@@ -214,13 +214,17 @@ const Auth = () => {
   };
 
   /**
-   * Gère la demande de réinitialisation de mot de passe
+   * Gère l'envoi d'un magic link pour la connexion sans mot de passe
    */
   const handleResetPassword = async (email: string) => {
     try {
       setAuthError(null);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/auth?reset=true',
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          // Rediriger l'utilisateur vers la page d'accueil après connexion avec le magic link
+          redirectTo: window.location.origin,
+        }
       });
       
       if (error) {
@@ -277,7 +281,7 @@ const Auth = () => {
     return <AuthLoading />;
   }
 
-  // Formulaire de réinitialisation de mot de passe
+  // Formulaire d'envoi de magic link
   if (showResetForm) {
     return (
       <AuthLayout 
