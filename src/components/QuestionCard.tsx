@@ -49,10 +49,9 @@ interface QuestionCardProps {
 
 /**
  * Composant QuestionCard - Carte affichant une question et ses options de réponse
- * Utilisé dans le questionnaire d'évaluation du profil d'investisseur
- * L'affichage du score a été supprimé pour améliorer les performances
+ * Optimisé pour réduire les re-rendus et éviter les scintillements
  */
-const QuestionCard = ({ 
+const QuestionCard = React.memo(({ 
   question, 
   onAnswer, 
   isAnswered = false,
@@ -62,8 +61,17 @@ const QuestionCard = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const isMobile = useIsMobile();
 
+  // Mettre à jour selected si selectedOptionId change
+  useEffect(() => {
+    if (selectedOptionId !== undefined && selectedOptionId !== selected) {
+      setSelected(selectedOptionId);
+    }
+  }, [selectedOptionId, selected]);
+
   // Gère la sélection d'une option par l'utilisateur - mémorisé pour éviter les re-rendus inutiles
   const handleOptionSelect = useCallback((optionId: string, value: number) => {
+    if (isAnimating || isAnswered) return;
+    
     setSelected(optionId);
     setIsAnimating(true);
     
@@ -72,7 +80,7 @@ const QuestionCard = ({
       onAnswer(question.id, optionId, value);
       setIsAnimating(false);
     }, 400);
-  }, [question.id, onAnswer]);
+  }, [question.id, onAnswer, isAnimating, isAnswered]);
 
   return (
     <motion.div 
@@ -97,7 +105,9 @@ const QuestionCard = ({
       </div>
     </motion.div>
   );
-};
+});
+
+QuestionCard.displayName = 'QuestionCard';
 
 /**
  * Interface pour les propriétés du composant OptionButton
@@ -116,9 +126,16 @@ interface OptionButtonProps {
 /**
  * Composant OptionButton - Bouton représentant une option de réponse
  * Composant interne utilisé par QuestionCard
- * Maintenant mémoizé pour éviter les re-rendus inutiles
+ * Mémoizé pour éviter les re-rendus inutiles
  */
 const OptionButton = React.memo(({ option, isSelected, isDisabled, onSelect }: OptionButtonProps) => {
+  // Fonction de clic mémorisée pour éviter les re-rendus
+  const handleClick = useCallback(() => {
+    if (!isDisabled) {
+      onSelect(option.id, option.value);
+    }
+  }, [option.id, option.value, onSelect, isDisabled]);
+
   return (
     <motion.div
       whileHover={{ scale: isDisabled ? 1 : 1.02 }}
@@ -130,8 +147,9 @@ const OptionButton = React.memo(({ option, isSelected, isDisabled, onSelect }: O
           "w-full justify-start text-left py-2 px-3 sm:p-4 h-auto min-h-[50px] sm:min-h-[60px] transition-all duration-300",
           isSelected && "border-primary bg-primary/5"
         )}
-        onClick={() => onSelect(option.id, option.value)}
+        onClick={handleClick}
         disabled={isDisabled}
+        type="button"
       >
         <span className="flex-1 whitespace-normal break-words text-[0.7rem] sm:text-xs leading-tight">
           {option.text}

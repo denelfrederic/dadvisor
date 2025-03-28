@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useQuestionnaire } from "@/contexts/questionnaire";
 import { questions } from "@/utils/questionnaire";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 
 /**
  * Composant de navigation du questionnaire
@@ -40,11 +40,18 @@ const QuestionnaireNavigation = memo(() => {
   }, [currentQuestionIndex, setCurrentQuestionIndex, setIsComplete]);
 
   // Texte pour le bouton suivant, mémorisé pour éviter les re-rendus
-  const nextButtonText = isMobile 
-    ? "Suiv." 
-    : currentQuestionIndex < questions.length - 1 
-      ? "Question suivante" 
-      : "Terminer";
+  const nextButtonText = useMemo(() => {
+    return isMobile 
+      ? "Suiv." 
+      : currentQuestionIndex < questions.length - 1 
+        ? "Question suivante" 
+        : "Terminer";
+  }, [isMobile, currentQuestionIndex]);
+
+  // Vérifie si le bouton suivant est désactivé, mémorisé pour éviter les re-rendus
+  const isNextDisabled = useMemo(() => {
+    return !answers[currentQuestion?.id] || isComplete;
+  }, [answers, currentQuestion?.id, isComplete]);
 
   return (
     <div className="flex justify-between items-center mt-4">
@@ -63,7 +70,7 @@ const QuestionnaireNavigation = memo(() => {
       
       <Button
         onClick={handleNext}
-        disabled={!answers[currentQuestion.id] || isComplete}
+        disabled={isNextDisabled}
         className="text-[11px] sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
       >
         {nextButtonText}

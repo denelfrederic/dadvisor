@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect, useState, useMemo, memo } from "react";
+import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -36,6 +36,11 @@ const QuestionnaireProgress = memo(() => {
   
   const currentQuestion = useMemo(() => questions[safeIndex], [safeIndex]);
   const totalQuestions = questions.length;
+
+  // Fonction de réponse memoizée pour éviter les re-rendus
+  const memoizedHandleAnswer = useCallback((questionId: string, optionId: string, value: number) => {
+    handleAnswer(questionId, optionId, value);
+  }, [handleAnswer]);
 
   // Effet pour gérer l'affichage du message de complétion et la redirection
   useEffect(() => {
@@ -144,6 +149,12 @@ const QuestionnaireProgress = memo(() => {
     [totalQuestions, isMobile]
   );
 
+  // Optimisation: mémoriser l'ID de l'option sélectionnée
+  const selectedOptionId = useMemo(() => 
+    answers && answers[currentQuestion.id]?.optionId,
+    [answers, currentQuestion.id]
+  );
+
   return (
     <>
       <ProgressBar 
@@ -153,20 +164,22 @@ const QuestionnaireProgress = memo(() => {
       />
       
       <div className="mb-6 sm:mb-10">
-        <motion.div
-          key={safeIndex}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-        >
-          <QuestionCard
-            question={currentQuestion}
-            onAnswer={handleAnswer}
-            isAnswered={false}
-            selectedOptionId={answers && answers[currentQuestion.id]?.optionId}
-          />
-        </motion.div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={safeIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <QuestionCard
+              question={currentQuestion}
+              onAnswer={memoizedHandleAnswer}
+              isAnswered={false}
+              selectedOptionId={selectedOptionId}
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
     </>
   );
