@@ -228,16 +228,16 @@ const Auth = () => {
       }
       
       toast({
-        title: "Demande envoyée",
-        description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe.",
+        title: "Magic link envoyé",
+        description: "Vérifiez votre boîte mail pour vous connecter avec le magic link.",
       });
       setShowResetForm(false);
     } catch (error: any) {
-      setAuthError(error.message || "Une erreur s'est produite lors de la demande de réinitialisation.");
+      setAuthError(error.message || "Une erreur s'est produite lors de l'envoi du magic link.");
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: error.message || "Une erreur s'est produite lors de la demande de réinitialisation.",
+        description: error.message || "Une erreur s'est produite lors de l'envoi du magic link.",
       });
     }
   };
