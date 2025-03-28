@@ -223,7 +223,7 @@ const Auth = () => {
         email: email,
         options: {
           // Rediriger l'utilisateur vers la page d'accueil après connexion avec le magic link
-          redirectTo: window.location.origin,
+          emailRedirectTo: window.location.origin,
         }
       });
       
