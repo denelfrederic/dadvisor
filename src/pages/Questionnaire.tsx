@@ -7,6 +7,7 @@ import QuestionnaireIntroduction from "@/components/questionnaire/QuestionnaireI
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 /**
  * Main content component for the questionnaire
@@ -14,8 +15,19 @@ import { motion } from "framer-motion";
 const QuestionnaireContent = () => {
   const { showAnalysis, showIntroduction, setShowIntroduction } = useQuestionnaire();
 
+  // Fonction pour démarrer le questionnaire
+  const handleStartQuestionnaire = () => {
+    console.log("Démarrage du questionnaire depuis QuestionnaireContent");
+    setShowIntroduction(false);
+  };
+
+  // Log d'état pour le débogage
+  useEffect(() => {
+    console.log("État actuel - showIntroduction:", showIntroduction, "showAnalysis:", showAnalysis);
+  }, [showIntroduction, showAnalysis]);
+
   if (showIntroduction) {
-    return <QuestionnaireIntroduction onStart={() => setShowIntroduction(false)} />;
+    return <QuestionnaireIntroduction onStart={handleStartQuestionnaire} />;
   }
 
   return (

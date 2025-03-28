@@ -66,7 +66,7 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     setSaving
   });
 
-  // Initialisation des données
+  // Initialisation des données avec un log de débogage
   useQuestionnaireInitializer({
     setAnswers,
     setScore,
@@ -101,6 +101,9 @@ export const QuestionnaireProvider = ({ children }: { children: ReactNode }) => 
     }
     return Promise.resolve();
   };
+
+  // Log pour débogage
+  console.log("QuestionnaireProvider - État setShowIntroduction:", typeof setShowIntroduction);
 
   return (
     <QuestionnaireContext.Provider value={{

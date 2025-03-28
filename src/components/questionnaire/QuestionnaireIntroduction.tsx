@@ -11,6 +11,17 @@ interface QuestionnaireIntroductionProps {
  * @param onStart Fonction appelée lorsque l'utilisateur clique sur "Commencer"
  */
 const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) => {
+  // Fonction pour gérer le clic avec un log de débogage
+  const handleStartClick = () => {
+    console.log("Bouton commencer cliqué");
+    // Appel explicite de la fonction onStart passée en props
+    if (typeof onStart === 'function') {
+      onStart();
+    } else {
+      console.error("La fonction onStart n'est pas définie correctement");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -41,7 +52,11 @@ const QuestionnaireIntroduction = ({ onStart }: QuestionnaireIntroductionProps) 
         </p>
         
         <div className="text-center mt-6">
-          <Button onClick={onStart} size="lg" className="px-8">
+          <Button 
+            onClick={handleStartClick} 
+            size="lg" 
+            className="px-8"
+          >
             Commencer le questionnaire
           </Button>
         </div>
